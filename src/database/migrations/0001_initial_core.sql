@@ -1,7 +1,7 @@
 -- Etheria - migration 0001
 -- Socle : comptes, identités, profils et économie.
 -- À exécuter une seule fois sur une base PostgreSQL dédiée.
--- Cette migration ne crée aucun compte Neon et ne contacte aucun service distant.
+-- Cette migration ne crée aucun projet Supabase et ne contacte aucun service distant.
 
 BEGIN;
 
