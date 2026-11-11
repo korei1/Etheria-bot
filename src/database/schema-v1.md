@@ -107,9 +107,30 @@ Identité et état persistant des PNJ : `id`, `name`, `npc_type`, `home_location
 
 ### `npc_memories`
 Souvenirs ciblés : `id`, `npc_id`, `subject_account_id`, `memory_type`, `summary`, `importance`, `created_at`, `last_recalled_at`.
-- Prévoir une politique de conservation et de limitation pour éviter une croissance illimitée.
+- La mémoire persistante conserve les faits utiles à la continuité des relations, pas chaque message ou détail de conversation.
+- Les souvenirs proches ou répétitifs sont regroupés ; les événements anciens sont périodiquement résumés en souvenirs plus compacts.
+- Chaque souvenir possède une importance et une durée de conservation adaptées à son type. Les souvenirs importants pour une relation ou une quête ne sont pas supprimés automatiquement.
+- Les données brutes temporaires ne sont conservées que pendant une durée définie, puis supprimées ou agrégées après vérification des besoins du jeu.
 
-## 8. Sécurité et intégrité
+## 8. Conservation, archivage et fichiers
+
+### Mémoire et historiques
+
+- Ne pas enregistrer chaque action technique ou chaque message comme un événement permanent. Persister les changements d'état utiles et les événements de jeu significatifs.
+- Définir une durée de conservation par catégorie : données opérationnelles, événements temporaires, souvenirs de PNJ, journaux d'audit et transactions économiques.
+- Résumer et regrouper les anciens événements narratifs lorsqu'un résumé conserve suffisamment de contexte pour le gameplay.
+- Archiver les historiques volumineux dans des tables d'archives PostgreSQL ou dans un stockage objet externe selon leur besoin d'accès. Les archives doivent rester exportables et réimportables.
+- Ne jamais supprimer les transactions économiques nécessaires à l'audit. Si le volume le justifie, les partitionner ou les archiver selon une procédure contrôlée, sans casser leur traçabilité.
+- Prévoir une tâche de maintenance qui applique les politiques de rétention, avec journalisation et possibilité de restauration. Aucune suppression automatique ne doit être activée avant validation des durées.
+
+### Fichiers et médias
+
+- Les images, illustrations, sons, vidéos et autres fichiers binaires sont stockés dans un stockage objet, jamais directement dans les tables PostgreSQL.
+- PostgreSQL ne conserve que les métadonnées nécessaires : identifiant, clé/chemin de stockage, type MIME, taille, propriétaire éventuel, date de création et statut.
+- Les services de jeu manipulent une interface de stockage abstraite ; le fournisseur (par exemple Supabase Storage) ne doit pas être imposé dans la logique métier.
+- Les fichiers doivent être servis avec des règles d'accès adaptées. Les secrets et URL privées temporaires ne sont jamais enregistrés dans le dépôt Git.
+
+## 9. Sécurité et intégrité
 
 - Ne jamais stocker de token Discord, mot de passe ou secret dans les tables de jeu ou dans Git.
 - Les secrets d'exécution seront fournis par variables d'environnement sur l'hébergeur.
@@ -119,7 +140,7 @@ Souvenirs ciblés : `id`, `npc_id`, `subject_account_id`, `memory_type`, `summar
 - Prévoir sauvegardes, restauration et migrations versionnées avant l'ouverture aux joueurs.
 - Les journaux ne doivent pas contenir de secrets ni de données personnelles inutiles.
 
-## 9. Ordre conseillé de mise en œuvre
+## 10. Ordre conseillé de mise en œuvre
 
 1. Comptes et identités.
 2. Profils, portefeuille et journal des transactions.
@@ -130,13 +151,14 @@ Souvenirs ciblés : `id`, `npc_id`, `subject_account_id`, `memory_type`, `summar
 7. Guildes, relations et PNJ.
 8. Outils d'administration, sauvegarde et observabilité.
 
-## 10. Points à valider avant la première migration
+## 11. Points à valider avant la première migration
 
 - Le code interne définitif de la monnaie Teas.
 - La liste finale des pays et la structure géographique.
 - Les champs exacts des compagnons et le format des variantes/capacités.
 - Les règles définitives de progression générale.
-- Les politiques de conservation des historiques et souvenirs des PNJ.
+- Les durées de conservation par catégorie et les règles de résumé/archivage des souvenirs et historiques.
+- Le fournisseur de stockage objet et les règles d'accès aux médias.
 - Le système d'authentification commun du futur site et de l'application.
 
 Aucune règle encore provisoire ne doit être figée dans une migration sans validation.
