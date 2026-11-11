@@ -1,0 +1,33 @@
+name: Vérification du bot Etheria
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: TypeScript et compilation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Installer les dépendances
+        run: npm install
+
+      - name: Vérifier les types
+        run: npm run typecheck
+
+      - name: Compiler le projet
+        run: npm run build
