@@ -1,6 +1,6 @@
 import { readdir } from "node:fs/promises";
-import { join } from "node:path";
-import { pathToFileURL } from "node:url";
+import { dirname, join } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import type { Client } from "discord.js";
 import { logger } from "./logger.js";
 
@@ -10,8 +10,10 @@ interface EventModule {
   execute: (...args: any[]) => void | Promise<void>;
 }
 
+const currentDirectory = dirname(fileURLToPath(import.meta.url));
+
 export async function loadEvents(client: Client): Promise<void> {
-  const eventsDirectory = join(import.meta.dirname, "../events");
+  const eventsDirectory = join(currentDirectory, "../events");
   const files = (await readdir(eventsDirectory))
     .filter((file) => file.endsWith(".js"))
     .sort();
