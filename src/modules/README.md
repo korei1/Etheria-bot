@@ -25,3 +25,12 @@ Chaque domaine du jeu possède son propre dossier. Un module ne doit pas accéde
 6. Les règles communes (identifiants, dates, erreurs et journaux) seront définies dans le cœur technique.
 
 Les dossiers sont des emplacements préparés. Les mécaniques de jeu seront implémentées progressivement après validation du modèle de données et de la base de données.
+
+
+## Conservation des données et médias
+
+- Les données persistantes sont limitées aux informations utiles au gameplay, à la continuité du monde et à l'audit.
+- Les événements répétitifs ou anciens peuvent être regroupés en résumés ; les souvenirs importants des PNJ sont conservés selon des règles de priorité.
+- Les historiques volumineux suivent une politique de rétention et d'archivage définie dans `src/database/schema-v1.md`. Les transactions économiques traçables ne sont jamais effacées pour gagner de la place.
+- Les fichiers médias (illustrations, avatars, sons, etc.) passent par un service de stockage objet distinct. Les modules ne stockent en base que leurs références et métadonnées.
+- Les modules utilisent des interfaces internes pour la base de données et le stockage de fichiers : le code métier ne doit pas dépendre directement de Supabase, afin de permettre un changement de fournisseur.
