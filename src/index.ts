@@ -1,24 +1,20 @@
 import "dotenv/config";
-import { Client, Events, GatewayIntentBits } from "discord.js";
+import { Client, GatewayIntentBits } from "discord.js";
+import { loadConfig } from "./core/config.js";
+import { loadEvents } from "./core/event-loader.js";
+import { logger } from "./core/logger.js";
 
-const token = process.env.DISCORD_TOKEN;
-
-if (!token) {
-  throw new Error(
-    "DISCORD_TOKEN est manquant. Configurez-le dans les variables d'environnement."
-  );
-}
+const config = loadConfig();
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds]
 });
 
-client.once(Events.ClientReady, (readyClient) => {
-  console.log(`Etheria est connecté en tant que ${readyClient.user.tag}.`);
-});
+await loadEvents(client);
 
-client.on(Events.Error, (error) => {
-  console.error("Erreur du client Discord :", error);
-});
-
-await client.login(token);
+try {
+  await client.login(config.discordToken);
+} catch (error) {
+  logger.error("Impossible de connecter Etheria à Discord.", error);
+  process.exitCode = 1;
+}
