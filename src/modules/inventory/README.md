@@ -24,6 +24,23 @@ Le modèle représente le stockage actuel par code + quantité. Il ne crée pas 
 
 La provenance complète d'un objet n'est pas encore stockée de manière uniforme : les journaux de collecte et de fabrication gardent leurs événements propres. Le modèle ne prétend donc pas fournir un historique exhaustif des objets.
 
+## Contrats de propriétés des objets
+
+`item-properties.ts` définit des propriétés facultatives, sans attribuer de valeurs aux objets existants :
+
+- **Physiques** : masse, volume et dimensions, avec unité explicite.
+- **Durabilité** : état actuel et maximum, lorsque cette propriété s'applique.
+- **Économie** : valeur et code de devise.
+- **Empilement** : mode et quantité maximale éventuelle.
+- **Équipement** : emplacement et compatibilités éventuelles.
+- **État d'une instance** : clés d'état/qualité, durabilité propre et provenance.
+
+Les propriétés communes appartiennent à la définition catalogue ; l'état et la provenance appartiennent à une instance ou à un lot détenu. Les origines prévues dans le contrat couvrent collecte, fabrication, découverte, achat, échange, héritage et don.
+
+**Aucune valeur n'est renseignée pour les 11 objets existants.** Les règles d'empilement déjà utilisées par les tables d'inventaire restent un comportement technique historique, pas une décision canonique sur la taille maximale des piles ni sur l'empilabilité de chaque objet. Le stockage actuel ne conserve pas encore l'état individuel ou la provenance complète de chaque objet.
+
+Les validateurs vérifient la cohérence des propriétés lorsqu'elles seront renseignées. Aucun changement de schéma SQL ni migration Supabase n'est inclus dans cette étape.
+
 ## Service de réception
 
 `addCollectedResourceToInventory` ajoute au sac actuellement équipé une quantité de ressource déjà validée par un système appelant.
