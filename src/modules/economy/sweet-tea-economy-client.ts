@@ -1,5 +1,3 @@
-import { timingSafeEqual } from "node:crypto";
-
 export type SweetTeaWalletOperation = "balance" | "credit" | "debit";
 
 export interface SweetTeaWalletRequest {
