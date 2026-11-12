@@ -42,8 +42,8 @@ function validateConfig(config: SweetTeaEconomyConfig): URL {
   } catch {
     throw new SweetTeaEconomyError("L'URL du pont Sweet Tea Economy est invalide.");
   }
-  if (url.protocol !== "https:") {
-    throw new SweetTeaEconomyError("Le pont Sweet Tea Economy doit obligatoirement utiliser HTTPS.");
+  if (url.protocol !== "https:" || url.username || url.password) {
+    throw new SweetTeaEconomyError("Le pont Sweet Tea Economy doit utiliser une URL HTTPS sans identifiants intégrés.");
   }
   if (!config.sharedSecret.trim()) {
     throw new SweetTeaEconomyError("Le secret du pont Sweet Tea Economy est absent.");
@@ -85,6 +85,9 @@ export class SweetTeaEconomyClient {
     }
 
     const timeoutMs = this.config.timeoutMs ?? 18_000;
+    if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1_000 || timeoutMs > 20_000) {
+      throw new SweetTeaEconomyError("Le délai du pont doit être compris entre 1 et 20 secondes.");
+    }
     let response: Response;
     try {
       response = await fetch(this.url, {
