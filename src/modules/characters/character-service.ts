@@ -79,6 +79,13 @@ export class NoOriginCountryAvailableError extends Error {
   }
 }
 
+export class AvatarModelUnavailableError extends Error {
+  constructor() {
+    super("Le modèle d'avatar choisi n'est plus disponible.");
+    this.name = "AvatarModelUnavailableError";
+  }
+}
+
 export class NoStartingSpawnAvailableError extends Error {
   constructor() {
     super("Aucun point de départ naturel, sûr et accessible n'est configuré dans ce pays.");
@@ -220,6 +227,18 @@ export async function createCharacter(
       }
     }
 
+    if (!input.avatarModelKey) {
+      throw new AvatarModelUnavailableError();
+    }
+
+    const avatarModel = await client.query(
+      "SELECT 1 FROM avatar_models WHERE model_key = $1 AND is_active = TRUE LIMIT 1",
+      [input.avatarModelKey]
+    );
+    if (!avatarModel.rowCount) {
+      throw new AvatarModelUnavailableError();
+    }
+
     // Le point d'apparition est tiré uniquement parmi les zones naturelles
     // sûres et accessibles du pays attribué. Le poids permet de régler la
     // fréquence de chaque zone sans coder de lieu fictif dans l'application.
@@ -328,6 +347,7 @@ export async function getActiveCharacter(
        first_name,
        public_pseudonym,
        origin_country_id,
+       spawn_zone_id,
        age_years,
        is_orphan,
        level,
