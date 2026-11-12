@@ -13,7 +13,8 @@ export type InitialExplorationScene =
 export type InitialExplorationAction =
   | "listen_wind"
   | "observe_surroundings"
-  | "follow_wind";
+  | "follow_wind"
+  | "inspect_path";
 
 export interface InitialExplorationState {
   scene: InitialExplorationScene;
@@ -148,6 +149,11 @@ export async function performInitialExplorationAction(
           throw new InvalidExplorationActionError("Il faut d'abord prendre le temps de percevoir le vent.");
         }
         nextScene = "cliff_overlook";
+        break;
+      case "inspect_path":
+        if (progress.current_scene_key !== "cliff_overlook") {
+          throw new InvalidExplorationActionError();
+        }
         break;
       default:
         throw new InvalidExplorationActionError();
