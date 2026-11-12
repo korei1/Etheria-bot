@@ -19,7 +19,7 @@ export interface ItemDefinition {
   readonly temporaryCampStorage?: true;
 }
 
-export const ITEM_CATALOG: readonly ItemDefinition[] = [
+export const ITEM_CATALOG = [
   {
     code: "unidentified_local_berries",
     label: "Baies locales non identifiées",
@@ -76,7 +76,9 @@ export const ITEM_CATALOG: readonly ItemDefinition[] = [
     label: "Barrière en bois fragile N1",
     category: "crafted_object"
   }
-] as const;
+] as const satisfies readonly ItemDefinition[];
+
+export type ItemCode = (typeof ITEM_CATALOG)[number]["code"];
 
 const itemsByCode = new Map(ITEM_CATALOG.map((item) => [item.code, item]));
 
