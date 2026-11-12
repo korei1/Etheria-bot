@@ -146,7 +146,7 @@ export async function withdrawFoundItemFromTemporaryCamp(
   }
 ): Promise<void> {
   const itemCode = input.itemCode.trim();
-  if (!NON_CRAFTABLE_FOUND_ITEMS.has(itemCode)) {
+  if (getItemDefinition(itemCode)?.temporaryCampStorage !== true) {
     throw new CampStorageItemError("Cet objet ne fait pas partie des objets trouvés stockables.");
   }
 
