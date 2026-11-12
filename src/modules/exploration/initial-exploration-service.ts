@@ -14,7 +14,11 @@ export type InitialExplorationScene =
   | "water_source_found"
   | "thirst_restored"
   | "plants_gathered"
-  | "canteen_crafted";
+  | "canteen_crafted"
+  | "cave_found"
+  | "cave_shelter"
+  | "campfire_lit"
+  | "berries_roasted";
 
 export type InitialExplorationAction =
   | "listen_wind"
@@ -26,7 +30,11 @@ export type InitialExplorationAction =
   | "discover_water_source"
   | "drink_from_hands"
   | "gather_canteen_plants"
-  | "craft_initial_canteen";
+  | "craft_initial_canteen"
+  | "seek_shelter"
+  | "enter_cave"
+  | "light_campfire"
+  | "roast_local_berries";
 
 export interface InitialExplorationState {
   scene: InitialExplorationScene;
@@ -386,6 +394,122 @@ export async function performInitialExplorationAction(
           characterId: input.characterId,
           questKey: INITIAL_QUEST_KEY,
           milestoneKey: "premiere_gourde_fabriquee",
+          sourceKey: "initial_survival"
+        });
+        break;
+      case "seek_shelter":
+        if (progress.current_scene_key !== "canteen_crafted") {
+          throw new InvalidExplorationActionError("Tu dois d'abord avoir fabriqué ta première gourde.");
+        }
+        nextScene = "cave_found";
+        await client.query(
+          `UPDATE character_survival_progress
+           SET first_cave_discovered_at = COALESCE(first_cave_discovered_at, NOW()),
+               updated_at = NOW()
+           WHERE character_id = $1`,
+          [input.characterId]
+        );
+        await recordQuestMilestoneInTransaction(client, {
+          eventId: randomUUID(),
+          characterId: input.characterId,
+          questKey: INITIAL_QUEST_KEY,
+          milestoneKey: "grotte_decouverte",
+          sourceKey: "initial_survival"
+        });
+        break;
+      case "enter_cave":
+        if (progress.current_scene_key !== "cave_found") {
+          throw new InvalidExplorationActionError("Tu dois d'abord avoir repéré la grotte.");
+        }
+        nextScene = "cave_shelter";
+        await client.query(
+          `UPDATE character_survival_progress
+           SET first_cave_shelter_at = COALESCE(first_cave_shelter_at, NOW()),
+               updated_at = NOW()
+           WHERE character_id = $1`,
+          [input.characterId]
+        );
+        await recordQuestMilestoneInTransaction(client, {
+          eventId: randomUUID(),
+          characterId: input.characterId,
+          questKey: INITIAL_QUEST_KEY,
+          milestoneKey: "abri_grotte_installe",
+          sourceKey: "initial_survival"
+        });
+        break;
+      case "light_campfire":
+        if (progress.current_scene_key !== "cave_shelter") {
+          throw new InvalidExplorationActionError("Tu dois d'abord être à l'abri dans la grotte.");
+        }
+        nextScene = "campfire_lit";
+        await client.query(
+          `UPDATE character_survival_progress
+           SET first_campfire_lit_at = COALESCE(first_campfire_lit_at, NOW()),
+               updated_at = NOW()
+           WHERE character_id = $1`,
+          [input.characterId]
+        );
+        await client.query(
+          `INSERT INTO character_skill_progress (character_id, skill_key, level, experience)
+           VALUES ($1, 'fire_mastery', 1, 0)
+           ON CONFLICT (character_id, skill_key) DO UPDATE
+             SET level = GREATEST(character_skill_progress.level, 1),
+                 updated_at = NOW()`,
+          [input.characterId]
+        );
+        await client.query(
+          `INSERT INTO character_unlocked_features (character_id, feature_key)
+           VALUES ($1, 'cooking')
+           ON CONFLICT (character_id, feature_key) DO NOTHING`,
+          [input.characterId]
+        );
+        await recordQuestMilestoneInTransaction(client, {
+          eventId: randomUUID(),
+          characterId: input.characterId,
+          questKey: INITIAL_QUEST_KEY,
+          milestoneKey: "premier_feu_allume",
+          sourceKey: "initial_survival"
+        });
+        break;
+      case "roast_local_berries":
+        if (progress.current_scene_key !== "campfire_lit") {
+          throw new InvalidExplorationActionError("Tu dois d'abord avoir allumé le feu.");
+        }
+        const cookingBagResult = await client.query<{ id: string }>(
+          `SELECT id FROM character_inventory_bags
+           WHERE character_id = $1 AND is_equipped = TRUE FOR UPDATE`,
+          [input.characterId]
+        );
+        const cookingBag = cookingBagResult.rows[0];
+        if (!cookingBag) throw new InvalidExplorationActionError("Tu n'as pas de sac équipé.");
+        const berriesResult = await client.query<{ id: string }>(
+          `SELECT id FROM character_inventory_slots
+           WHERE bag_id = $1 AND item_code = 'unidentified_local_berries' FOR UPDATE`,
+          [cookingBag.id]
+        );
+        const berries = berriesResult.rows[0];
+        if (!berries) {
+          throw new InvalidExplorationActionError("Tu n'as plus de baies locales dans ton sac à faire cuire.");
+        }
+        await client.query(
+          `UPDATE character_inventory_slots
+           SET item_code = 'roasted_local_berries', created_at = NOW()
+           WHERE id = $1`,
+          [berries.id]
+        );
+        await client.query(
+          `UPDATE character_survival_progress
+           SET first_food_cooked_at = COALESCE(first_food_cooked_at, NOW()),
+               updated_at = NOW()
+           WHERE character_id = $1`,
+          [input.characterId]
+        );
+        nextScene = "berries_roasted";
+        await recordQuestMilestoneInTransaction(client, {
+          eventId: randomUUID(),
+          characterId: input.characterId,
+          questKey: INITIAL_QUEST_KEY,
+          milestoneKey: "premieres_baies_cuites",
           sourceKey: "initial_survival"
         });
         break;
