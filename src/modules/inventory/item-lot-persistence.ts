@@ -97,7 +97,7 @@ export async function addCraftedItemLot(
 /** Déplace les lots d'une ligne de sac vers une ligne de stockage de camp. */
 export async function moveInventoryLotsToCampStorage(
   client: PoolClient,
-  input: { inventorySlotId: string; campStorageEntryId: string; itemCode: string }
+  input: { inventorySlotId: string; campStorageEntryId: string; itemCode: string; quantity: number }
 ): Promise<void> {
   const result = await client.query<{ total: string }>(
     `SELECT COALESCE(SUM(quantity), 0)::text AS total
@@ -105,8 +105,8 @@ export async function moveInventoryLotsToCampStorage(
      WHERE inventory_slot_id = $1 AND item_code = $2`,
     [input.inventorySlotId, input.itemCode]
   );
-  if (Number(result.rows[0]?.total ?? 0) <= 0) {
-    throw new Error("Aucun lot traçable ne correspond à l'objet du sac.");
+  if (Number(result.rows[0]?.total ?? 0) !== input.quantity) {
+    throw new Error("Les lots persistés ne correspondent pas exactement au stock du sac.");
   }
   await client.query(
     `UPDATE character_item_lots
