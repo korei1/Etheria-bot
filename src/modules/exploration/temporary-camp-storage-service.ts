@@ -1,6 +1,7 @@
 import type { Pool } from "pg";
 import { getItemDefinition } from "../inventory/item-catalog.js";
 import { createItemStack, type ItemStack } from "../inventory/item-model.js";
+import { moveInventoryLotsToCampStorage, movePartialCampStorageLotsToInventory } from "../inventory/item-lot-persistence.js";
 
 const INITIAL_CAVE_CAMP_CODE = "initial_cave_camp";
 
@@ -117,14 +118,22 @@ export async function depositFoundItemAtTemporaryCamp(
     const carried = item.rows[0];
     if (!carried) throw new CampStorageItemError("Cet objet ne se trouve pas dans ton sac porté.");
 
-    await client.query(
+    const destination = await client.query<{ id: string }>(
       `INSERT INTO character_temporary_camp_storage (camp_id, item_code, quantity)
        VALUES ($1, $2, $3)
        ON CONFLICT (camp_id, item_code) DO UPDATE
          SET quantity = character_temporary_camp_storage.quantity + EXCLUDED.quantity,
-             updated_at = NOW()`,
+             updated_at = NOW()
+       RETURNING id`,
       [campId, itemCode, carried.quantity]
     );
+    const storageEntryId = destination.rows[0]?.id;
+    if (!storageEntryId) throw new CampStorageItemError("La destination du stockage n'a pas été créée.");
+    await moveInventoryLotsToCampStorage(client, {
+      inventorySlotId: carried.id,
+      campStorageEntryId: storageEntryId,
+      itemCode
+    });
     await client.query("DELETE FROM character_inventory_slots WHERE id = $1", [carried.id]);
     await client.query("COMMIT");
   } catch (error) {
@@ -200,18 +209,28 @@ export async function withdrawFoundItemFromTemporaryCamp(
     const entry = stored.rows[0];
     if (!entry) throw new CampStorageItemError("Cet objet n'est pas stocké dans le camp.");
 
-    if (existingItem.rows[0]) {
+    let destinationSlotId = existingItem.rows[0]?.id;
+    if (destinationSlotId) {
       await client.query(
         "UPDATE character_inventory_slots SET quantity = quantity + 1 WHERE id = $1",
-        [existingItem.rows[0].id]
+        [destinationSlotId]
       );
     } else {
-      await client.query(
+      const inserted = await client.query<{ id: string }>(
         `INSERT INTO character_inventory_slots (bag_id, slot_number, item_code, quantity)
-         VALUES ($1, $2, $3, 1)`,
+         VALUES ($1, $2, $3, 1)
+         RETURNING id`,
         [equippedBag.id, freeSlot, itemCode]
       );
+      destinationSlotId = inserted.rows[0]?.id;
+      if (!destinationSlotId) throw new CampStorageItemError("L'emplacement du sac n'a pas été créé.");
     }
+    await movePartialCampStorageLotsToInventory(client, {
+      campStorageEntryId: entry.id,
+      inventorySlotId: destinationSlotId,
+      itemCode,
+      quantity: 1
+    });
     if (entry.quantity === 1) {
       await client.query("DELETE FROM character_temporary_camp_storage WHERE id = $1", [entry.id]);
     } else {
