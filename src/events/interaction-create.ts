@@ -224,10 +224,54 @@ function initialExplorationPayload(
 
   if (scene === "canteen_crafted") {
     return {
-      content: "Tu viens de fabriquer ta première gourde de niveau 1 à partir de plantes tressées. Sa capacité correspond à l'équivalent de deux mains jointes remplies d'eau. Cette quantité suffit à restaurer entièrement ta soif.\\n\\n**Gourde** : niveau 1.",
+      content: "Tu viens de fabriquer ta première gourde de niveau 1 à partir de plantes tressées. Sa capacité correspond à l'équivalent de deux mains jointes remplies d'eau. Cette quantité suffit à restaurer entièrement ta soif.\\n\\n**Gourde** : niveau 1.\\n\\nLe jour décline. Le vent se renforce et l'air devient froid. Tu aperçois une ouverture dans la roche qui pourrait offrir un abri.",
       components: [
         new ActionRowBuilder<ButtonBuilder>().addComponents(
-          explorationButton("etheria:exploration:observe_surroundings", "Observer les environs", ButtonStyle.Secondary)
+          explorationButton("etheria:exploration:seek_shelter", "Chercher un abri")
+        )
+      ]
+    };
+  }
+
+  if (scene === "cave_found") {
+    return {
+      content: "À mesure que la nuit approche, le froid et le vent deviennent plus difficiles à supporter. Tu as repéré une grotte dans la roche. Son entrée semble offrir une protection contre les intempéries, même si tu ignores ce qui se trouve plus loin.",
+      components: [
+        new ActionRowBuilder<ButtonBuilder>().addComponents(
+          explorationButton("etheria:exploration:enter_cave", "Entrer dans la grotte")
+        )
+      ]
+    };
+  }
+
+  if (scene === "cave_shelter") {
+    return {
+      content: "Tu t'installes à l'abri dans la grotte. Tu peux enfin te protéger du vent. La nuit est tombée et tu comprends qu'il te faudrait une source de chaleur et de lumière pour rendre cet endroit plus accueillant.",
+      components: [
+        new ActionRowBuilder<ButtonBuilder>().addComponents(
+          explorationButton("etheria:exploration:light_campfire", "Allumer un feu")
+        )
+      ]
+    };
+  }
+
+  if (scene === "campfire_lit") {
+    return {
+      content: "Le feu éclaire la grotte et apporte une chaleur bienvenue. Tu viens de faire ta première expérience de maîtrise du feu. **Maîtrise du feu : niveau 1.** La compétence de cuisine est désormais déverrouillée. Les baies récoltées peuvent être rôties près des flammes.",
+      components: [
+        new ActionRowBuilder<ButtonBuilder>().addComponents(
+          explorationButton("etheria:exploration:roast_local_berries", "Faire rôtir les baies")
+        )
+      ]
+    };
+  }
+
+  if (scene === "berries_roasted") {
+    return {
+      content: "Tu fais rôtir les baies près du feu. Leur texture et leur odeur ont changé sous l'effet de la chaleur. Tu as préparé ton premier aliment cuit et découvert les bases de la cuisine. La grotte devient ton premier abri temporaire pour la nuit.",
+      components: [
+        new ActionRowBuilder<ButtonBuilder>().addComponents(
+          explorationButton("etheria:exploration:observe_surroundings", "Observer la grotte", ButtonStyle.Secondary)
         )
       ]
     };
@@ -364,7 +408,8 @@ export default {
         const allowedActions: InitialExplorationAction[] = [
           "listen_wind", "observe_surroundings", "follow_wind", "inspect_path",
           "descend_path", "collect_local_berries", "discover_water_source",
-          "drink_from_hands", "gather_canteen_plants", "craft_initial_canteen"
+          "drink_from_hands", "gather_canteen_plants", "craft_initial_canteen",
+          "seek_shelter", "enter_cave", "light_campfire", "roast_local_berries"
         ];
         if (!allowedActions.includes(action)) {
           await interaction.editReply("Cette action d'exploration n'est pas reconnue.");
