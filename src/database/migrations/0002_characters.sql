@@ -24,7 +24,8 @@ CREATE TABLE characters (
     CHECK (status IN ('active', 'deceased')),
 
   -- Continuité familiale après la mort d'un personnage.
-  predecessor_character_id UUID REFERENCES characters(id)\n    ON DELETE NO ACTION DEFERRABLE INITIALLY DEFERRED,
+  predecessor_character_id UUID REFERENCES characters(id)
+    ON DELETE NO ACTION DEFERRABLE INITIALLY DEFERRED,
   relationship_to_predecessor TEXT,
 
   -- Clé technique d'un modèle d'avatar disponible, pas une image libre.
