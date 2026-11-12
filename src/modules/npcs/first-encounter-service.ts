@@ -1,4 +1,9 @@
 import type { Pool, PoolClient } from "pg";
+import {
+  INITIAL_QUEST_FIRST_NPC_MILESTONE,
+  INITIAL_QUEST_KEY,
+  recordQuestMilestoneInTransaction
+} from "../quests/quest-service.js";
 
 export interface DiscoveredSpawnLocation {
   countryName: string;
@@ -229,6 +234,16 @@ export async function recordNpcEncounter(
        VALUES ($1, $2, $3, $4, $5, $6)`,
       [encounterId, accountId, characterId, npcKey, encounteredAt, isFirstEncounter]
     );
+
+    if (isFirstEncounter) {
+      await recordQuestMilestoneInTransaction(client, {
+        eventId: encounterId,
+        characterId,
+        questKey: INITIAL_QUEST_KEY,
+        milestoneKey: INITIAL_QUEST_FIRST_NPC_MILESTONE,
+        sourceKey: npcKey
+      });
+    }
 
     await client.query("COMMIT");
 
