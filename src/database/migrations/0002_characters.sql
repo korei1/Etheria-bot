@@ -18,6 +18,7 @@ CREATE TABLE characters (
 
   -- Tous les personnages commencent à 13 ans et au niveau 1.
   age_years INTEGER NOT NULL DEFAULT 13 CHECK (age_years >= 13),
+  is_orphan BOOLEAN NOT NULL DEFAULT TRUE,
   level INTEGER NOT NULL DEFAULT 1 CHECK (level >= 1),
 
   status TEXT NOT NULL DEFAULT 'active'
