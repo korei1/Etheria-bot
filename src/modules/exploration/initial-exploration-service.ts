@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
+import { addCraftedItemLot, addInventoryItemLot, consumeInventoryItemLots } from "../inventory/item-lot-persistence.js";
 import {
   INITIAL_QUEST_KEY,
   recordQuestMilestoneInTransaction
@@ -351,11 +352,20 @@ export async function performInitialExplorationAction(
         );
         const plantSlots = Number(plantCount.rows[0]?.count ?? 0);
         if (plantSlots >= plantBag.capacity) throw new InvalidExplorationActionError("Ton sac est plein.");
-        await client.query(
+        const gatheredFibers = await client.query<{ id: string }>(
           `INSERT INTO character_inventory_slots (bag_id, slot_number, item_code, quantity)
-           VALUES ($1, $2, 'braiding_plant_fibers', 1)`,
+           VALUES ($1, $2, 'braiding_plant_fibers', 1)
+           RETURNING id`,
           [plantBag.id, plantSlots + 1]
         );
+        const gatheredFiberSlotId = gatheredFibers.rows[0]?.id;
+        if (!gatheredFiberSlotId) throw new InvalidExplorationActionError("Les fibres n'ont pas pu être ajoutées au sac.");
+        await addInventoryItemLot(client, {
+          inventorySlotId: gatheredFiberSlotId,
+          itemCode: "braiding_plant_fibers",
+          quantity: 1,
+          origin: { originType: "collection", sourceReference: "initial_canteen_plants", occurredAt: new Date() }
+        });
         await client.query(
           `UPDATE character_survival_progress
            SET initial_canteen_recipe_unlocked_at = COALESCE(initial_canteen_recipe_unlocked_at, NOW()),
@@ -383,12 +393,23 @@ export async function performInitialExplorationAction(
         );
         const fibers = fiberResult.rows[0];
         if (!fibers) throw new InvalidExplorationActionError("Il te manque les plantes nécessaires à la fabrication.");
+        await consumeInventoryItemLots(client, {
+          inventorySlotId: fibers.id,
+          itemCode: "braiding_plant_fibers",
+          quantity: 1
+        });
         await client.query(
           `UPDATE character_inventory_slots
            SET item_code = 'woven_canteen_level_1', quantity = 1, created_at = NOW()
            WHERE id = $1`,
           [fibers.id]
         );
+        await addCraftedItemLot(client, {
+          inventorySlotId: fibers.id,
+          itemCode: "woven_canteen_level_1",
+          quantity: 1,
+          recipeKey: "initial_canteen"
+        });
         await client.query(
           `UPDATE character_survival_progress
            SET initial_canteen_crafted_at = COALESCE(initial_canteen_crafted_at, NOW()),
@@ -499,12 +520,23 @@ export async function performInitialExplorationAction(
         if (!berries) {
           throw new InvalidExplorationActionError("Tu n'as plus de baies locales dans ton sac à faire cuire.");
         }
+        await consumeInventoryItemLots(client, {
+          inventorySlotId: berries.id,
+          itemCode: "unidentified_local_berries",
+          quantity: 1
+        });
         await client.query(
           `UPDATE character_inventory_slots
            SET item_code = 'roasted_local_berries', created_at = NOW()
            WHERE id = $1`,
           [berries.id]
         );
+        await addInventoryItemLot(client, {
+          inventorySlotId: berries.id,
+          itemCode: "roasted_local_berries",
+          quantity: 1,
+          origin: { originType: "crafting", sourceReference: "initial_berry_roasting", occurredAt: new Date() }
+        });
         await client.query(
           `UPDATE character_survival_progress
            SET first_food_cooked_at = COALESCE(first_food_cooked_at, NOW()),
@@ -580,11 +612,20 @@ export async function performInitialExplorationAction(
         if (ruinsUsedSlots >= ruinsBag.capacity) {
           throw new InvalidExplorationActionError("Ton sac est plein. Tu ne peux pas emporter les fragments trouvés.");
         }
-        await client.query(
+        const discoveredFragment = await client.query<{ id: string }>(
           `INSERT INTO character_inventory_slots (bag_id, slot_number, item_code, quantity)
-           VALUES ($1, $2, 'unidentified_history_fragment', 1)`,
+           VALUES ($1, $2, 'unidentified_history_fragment', 1)
+           RETURNING id`,
           [ruinsBag.id, ruinsUsedSlots + 1]
         );
+        const fragmentSlotId = discoveredFragment.rows[0]?.id;
+        if (!fragmentSlotId) throw new InvalidExplorationActionError("Le fragment n'a pas pu être ajouté au sac.");
+        await addInventoryItemLot(client, {
+          inventorySlotId: fragmentSlotId,
+          itemCode: "unidentified_history_fragment",
+          quantity: 1,
+          origin: { originType: "discovery", sourceReference: "nearby_ruins", occurredAt: new Date() }
+        });
         await client.query(
           `UPDATE character_survival_progress
            SET first_ruins_explored_at = COALESCE(first_ruins_explored_at, NOW()),
@@ -663,11 +704,20 @@ export async function performInitialExplorationAction(
           throw new InvalidExplorationActionError("Ton sac est plein.");
         }
 
-        await client.query(
+        const collectedBerries = await client.query<{ id: string }>(
           `INSERT INTO character_inventory_slots (bag_id, slot_number, item_code, quantity)
-           VALUES ($1, $2, 'unidentified_local_berries', 1)`,
+           VALUES ($1, $2, 'unidentified_local_berries', 1)
+           RETURNING id`,
           [bag.id, usedSlots + 1]
         );
+        const berrySlotId = collectedBerries.rows[0]?.id;
+        if (!berrySlotId) throw new InvalidExplorationActionError("Les baies n'ont pas pu être ajoutées au sac.");
+        await addInventoryItemLot(client, {
+          inventorySlotId: berrySlotId,
+          itemCode: "unidentified_local_berries",
+          quantity: 1,
+          origin: { originType: "collection", sourceReference: "initial_local_berries", occurredAt: new Date() }
+        });
         nextScene = "berries_collected";
         await recordQuestMilestoneInTransaction(client, {
           eventId: randomUUID(),
