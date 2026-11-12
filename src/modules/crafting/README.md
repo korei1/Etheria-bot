@@ -7,12 +7,14 @@ Cette fondation fournit un contrat commun pour décrire les recettes d'artisanat
 ## Règles de conception
 
 - Une recette possède une clé stable, une liste d'ingrédients avec quantités et un résultat.
-- Une recette peut déclarer une fonctionnalité déverrouillée et une compétence/niveau requis.
+- Une recette peut déclarer une fonctionnalité déverrouillée, une compétence/niveau requis, une scène obligatoire et une récompense d'expérience explicite.
 - Les quantités doivent être des entiers strictement positifs.
 - Un même ingrédient ne doit pas être déclaré plusieurs fois dans une recette.
 - Les objets sont référencés par leurs codes techniques, jamais par des noms affichés saisis librement.
 - Le registre central est l'unique source de recettes canoniques ; les interfaces ne doivent pas inventer leurs propres recettes.
-- La validation structurelle ne remplace pas les contrôles transactionnels d'inventaire, de capacité, de présence au lieu requis et de progression lors de l'exécution.
+- Le moteur verrouille le personnage et le sac, vérifie le compte propriétaire, les prérequis et les stocks, puis consomme les ingrédients, ajoute le résultat et crédite éventuellement l'expérience dans une transaction PostgreSQL unique.
+- Chaque fabrication est protégée par un UUID d'interaction unique pour éviter les doubles exécutions lors des répétitions Discord.
+- Si le résultat est déjà présent dans le sac, sa pile est augmentée ; sinon un emplacement libéré ou libre est utilisé.
 
 ## État du catalogue
 
@@ -28,14 +30,10 @@ Les activités suivantes ont été retenues comme pistes de développement du ca
 
 Aucun ingrédient, matériau, quantité, outil, durée, poste de travail ou condition de déblocage n'est ajouté par cette fondation.
 
-## Intégration ultérieure
+## État de l'exécution
 
-Avant de rendre une recette exécutable, il faudra :
-1. valider canoniquement ses ingrédients, quantités, résultat et conditions ;
-2. relier les codes d'objets au catalogue général et aux emplacements de stockage ;
-3. implémenter une exécution transactionnelle qui verrouille le personnage et son inventaire ;
-4. vérifier les ingrédients, les compétences, les fonctionnalités déverrouillées et le lieu requis ;
-5. consommer les ingrédients et créer le résultat dans une seule transaction ;
-6. enregistrer l'action de façon idempotente et accorder la progression selon les règles générales d'Etheria.
+Le moteur `craftItem` est implémenté, mais aucune recette n'est encore enregistrée dans le catalogue. Il ne peut donc pas encore être appelé pour fabriquer un objet concret.
 
-Aucune migration SQL n'est nécessaire pour ce contrat de données initial.
+La migration `0016_crafting_events.sql` doit être examinée puis exécutée sur Supabase avant toute utilisation du moteur. Elle crée le journal idempotent des fabrications. Elle n'a pas été exécutée sur la base distante.
+
+L'expérience n'est créditée que si une recette déclare explicitement une récompense. Le moteur n'invente aucun gain et ne modifie pas le niveau : les seuils de passage de niveau ne sont pas encore définis.
