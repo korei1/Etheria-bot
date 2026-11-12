@@ -9,6 +9,7 @@ CREATE TABLE character_creation_drafts (
   account_id UUID PRIMARY KEY REFERENCES accounts(id) ON DELETE CASCADE,
   first_name TEXT NOT NULL,
   public_pseudonym TEXT NOT NULL,
+  avatar_model_key TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CONSTRAINT character_drafts_first_name_not_empty
