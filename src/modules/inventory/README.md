@@ -41,6 +41,14 @@ Les propriétés communes appartiennent à la définition catalogue ; l'état et
 
 Les validateurs vérifient la cohérence des propriétés lorsqu'elles seront renseignées. Aucun changement de schéma SQL ni migration Supabase n'est inclus dans cette étape.
 
+### Exposition dans les vues d'inventaire
+
+`createItemStackView` expose désormais les propriétés communes de la définition catalogue lorsqu'elles existent, ainsi qu'un état facultatif validé fourni par le service appelant. Les vues Discord et les futurs services peuvent donc consommer un contrat unique sans recopier les propriétés.
+
+L'état facultatif ne doit être fourni que si le stock représenté est homogène. Le stockage SQL actuel agrège encore les quantités par code d'objet : il ne peut pas conserver de façon fiable des états ou provenances différents pour chaque unité d'une même pile. Aucun état n'est donc persisté automatiquement et aucune provenance n'est inventée lors d'une collecte, fabrication, découverte ou manipulation.
+
+La prochaine évolution de persistance devra introduire un modèle de lots/instances traçables et migrer les contenants de manière contrôlée. Elle devra préserver les quantités, les emplacements et les transactions actuelles avant de permettre des états distincts par objet.
+
 ## Service de réception
 
 `addCollectedResourceToInventory` ajoute au sac actuellement équipé une quantité de ressource déjà validée par un système appelant.
