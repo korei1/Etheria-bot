@@ -149,11 +149,17 @@ export default {
     }
 
     if (interaction.isButton() && interaction.customId === "etheria:character:begin") {
-      const account = await getAccount(interaction).catch(() => null);
-      const draft = account
-        ? await getCharacterDraft(getDatabase(), account.accountId).catch(() => null)
-        : null;
-      await showCharacterModal(interaction, draft);
+      try {
+        const account = await getAccount(interaction);
+        const draft = await getCharacterDraft(getDatabase(), account.accountId);
+        await showCharacterModal(interaction, draft);
+      } catch (error) {
+        logger.error("Impossible de démarrer la création du personnage.", error);
+        await interaction.reply({
+          content: "Impossible de démarrer la création de ton personnage pour le moment. Réessaie.",
+          ephemeral: true
+        });
+      }
       return;
     }
 
