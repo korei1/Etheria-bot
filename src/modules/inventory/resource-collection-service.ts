@@ -1,4 +1,4 @@
-import type { Pool } from "pg";
+import type { Pool, PoolClient } from "pg";
 
 export interface AddCollectedResourceInput {
   accountId: string;
@@ -39,6 +39,29 @@ export class ResourceCollectionIdempotencyError extends ResourceCollectionError 
  */
 export async function addCollectedResourceToInventory(
   pool: Pool,
+  input: AddCollectedResourceInput
+): Promise<AddCollectedResourceResult> {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const result = await addCollectedResourceToInventoryInTransaction(client, input);
+    await client.query("COMMIT");
+    return result;
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => undefined);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * Variante sans BEGIN/COMMIT pour permettre au futur moteur du monde de
+ * verrouiller et consommer une source de ressource dans la même transaction
+ * que l'ajout au sac. L'appelant possède et termine la transaction.
+ */
+export async function addCollectedResourceToInventoryInTransaction(
+  client: PoolClient,
   input: AddCollectedResourceInput
 ): Promise<AddCollectedResourceResult> {
   const sourceKey = input.sourceKey.trim();
@@ -153,12 +176,5 @@ export async function addCollectedResourceToInventory(
       [input.interactionId, input.characterId, sourceKey, itemCode, input.quantity, slotNumber]
     );
 
-    await client.query("COMMIT");
-    return { itemCode, quantity: input.quantity, replayed: false, slotNumber };
-  } catch (error) {
-    await client.query("ROLLBACK").catch(() => undefined);
-    throw error;
-  } finally {
-    client.release();
-  }
+  return { itemCode, quantity: input.quantity, replayed: false, slotNumber };
 }
