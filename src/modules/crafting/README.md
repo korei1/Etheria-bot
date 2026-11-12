@@ -50,7 +50,7 @@ Aucun ingrédient, matériau, quantité, outil, durée, poste de travail ou cond
 
 Le moteur `craftItem` est implémenté et les trois premières recettes sont maintenant enregistrées dans le catalogue. Il vérifie le personnage actif, le sac porté, les ressources, la scène requise et l'idempotence, puis effectue la fabrication dans une transaction PostgreSQL unique.
 
-L'interface Discord d'artisanat n'est pas encore raccordée. Les ressources `long_flexible_grass`, `large_resistant_leaves` et `sturdy_wooden_branches` doivent encore être intégrées aux mécanismes de collecte du monde avant que toutes les recettes soient accessibles en jeu.
+L'interface Discord d'artisanat n'est pas encore raccordée. Les ressources `long_flexible_grass`, `large_resistant_leaves` et `sturdy_wooden_branches` doivent encore être intégrées aux mécanismes de collecte du monde avant que toutes les recettes soient accessibles en jeu. Le service générique de réception dans l'inventaire est préparé, mais aucun emplacement ni mécanisme de récolte n'est encore défini.
 
 La migration `0016_crafting_events.sql` doit être examinée puis exécutée sur Supabase avant toute utilisation du moteur. Elle crée le journal idempotent des fabrications. Elle n'a pas été exécutée sur la base distante.
 
