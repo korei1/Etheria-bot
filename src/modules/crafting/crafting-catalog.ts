@@ -1,5 +1,6 @@
 import type { CraftingRecipe } from "./crafting-types.js";
 import { validateCraftingRecipe } from "./crafting-types.js";
+import { getItemDefinition } from "../inventory/item-catalog.js";
 
 /**
  * Registre central des recettes canoniques.
@@ -48,6 +49,14 @@ export function validateCraftingCatalog(): string[] {
     recipeKeys.add(recipe.key);
     for (const issue of validateCraftingRecipe(recipe)) {
       issues.push(issue.recipeKey + ": " + issue.message);
+    }
+    for (const itemCode of [
+      ...recipe.ingredients.map((ingredient) => ingredient.itemCode),
+      recipe.output.itemCode
+    ]) {
+      if (!getItemDefinition(itemCode)) {
+        issues.push(recipe.key + ": objet absent du catalogue : " + itemCode);
+      }
     }
   }
   return issues;
