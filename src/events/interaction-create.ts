@@ -47,7 +47,7 @@ import {
   CraftingRequirementError,
   CraftingRecipeUnavailableError
 } from "../modules/crafting/crafting-service.js";
-import { getItemDefinition } from "../modules/inventory/item-catalog.js";
+import { getItemDisplayName } from "../modules/inventory/item-model.js";
 import { getDatabasePool } from "../database/client.js";
 import { logger } from "../core/logger.js";
 
@@ -483,7 +483,7 @@ export default {
           characterId: character.id,
           recipeKey
         });
-        const outputName = getItemDefinition(result.outputItemCode)?.label ?? result.outputItemCode;
+        const outputName = getItemDisplayName(result.output.itemCode);
         await interaction.editReply(
           `Fabrication terminée : **${result.outputQuantity} × ${outputName}**.`
         );
@@ -531,7 +531,7 @@ export default {
           content:
             "**Stockage du camp temporaire**\\n" +
             (storedFragment
-              ? `${getItemDefinition(storedFragment.itemCode)?.label ?? storedFragment.itemCode} : **${storedFragment.quantity}**`
+              ? `${getItemDisplayName(storedFragment.itemCode)} : **${storedFragment.quantity}**`
               : "Le stockage est actuellement vide.") +
             "\\n\\nCe stockage est uniquement accessible depuis ton camp. Les objets déposés ne sont plus dans ton sac porté.",
           components: [row]
