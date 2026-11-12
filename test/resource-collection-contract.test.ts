@@ -43,6 +43,10 @@ function createFakeDatabase(options?: {
         rows = [];
       } else if (normalized.startsWith("select slot_number from character_inventory_slots")) {
         rows = [];
+      } else if (normalized.startsWith("insert into character_inventory_slots")) {
+        rows = [{ id: "slot-1" }];
+      } else if (normalized.startsWith("insert into character_item_lots")) {
+        rows = [{ id: "lot-1" }];
       }
 
       return { rows: rows as T[], command: "SELECT", rowCount: rows.length, oid: 0, fields: [] };
