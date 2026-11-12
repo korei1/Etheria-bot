@@ -18,7 +18,11 @@ export type InitialExplorationScene =
   | "cave_found"
   | "cave_shelter"
   | "campfire_lit"
-  | "berries_roasted";
+  | "berries_roasted"
+  | "morning_outside_cave"
+  | "ruins_found"
+  | "ruins_explored"
+  | "temporary_camp_established";
 
 export type InitialExplorationAction =
   | "listen_wind"
@@ -34,7 +38,11 @@ export type InitialExplorationAction =
   | "seek_shelter"
   | "enter_cave"
   | "light_campfire"
-  | "roast_local_berries";
+  | "roast_local_berries"
+  | "wake_after_first_night"
+  | "discover_nearby_ruins"
+  | "explore_ruins"
+  | "return_to_cave";
 
 export interface InitialExplorationState {
   scene: InitialExplorationScene;
@@ -510,6 +518,114 @@ export async function performInitialExplorationAction(
           characterId: input.characterId,
           questKey: INITIAL_QUEST_KEY,
           milestoneKey: "premieres_baies_cuites",
+          sourceKey: "initial_survival"
+        });
+        break;
+      case "wake_after_first_night":
+        if (progress.current_scene_key !== "berries_roasted") {
+          throw new InvalidExplorationActionError("Tu dois d'abord avoir passé ta première nuit dans la grotte.");
+        }
+        nextScene = "morning_outside_cave";
+        await client.query(
+          `UPDATE character_survival_progress
+           SET first_morning_after_shelter_at = COALESCE(first_morning_after_shelter_at, NOW()),
+               updated_at = NOW()
+           WHERE character_id = $1`,
+          [input.characterId]
+        );
+        await recordQuestMilestoneInTransaction(client, {
+          eventId: randomUUID(),
+          characterId: input.characterId,
+          questKey: INITIAL_QUEST_KEY,
+          milestoneKey: "premier_matin_apres_nuit",
+          sourceKey: "initial_survival"
+        });
+        break;
+      case "discover_nearby_ruins":
+        if (progress.current_scene_key !== "morning_outside_cave") {
+          throw new InvalidExplorationActionError("Tu dois d'abord être sorti de la grotte au matin.");
+        }
+        nextScene = "ruins_found";
+        await client.query(
+          `UPDATE character_survival_progress
+           SET first_ruins_discovered_at = COALESCE(first_ruins_discovered_at, NOW()),
+               updated_at = NOW()
+           WHERE character_id = $1`,
+          [input.characterId]
+        );
+        await recordQuestMilestoneInTransaction(client, {
+          eventId: randomUUID(),
+          characterId: input.characterId,
+          questKey: INITIAL_QUEST_KEY,
+          milestoneKey: "premieres_ruines_decouvertes",
+          sourceKey: "initial_exploration"
+        });
+        break;
+      case "explore_ruins":
+        if (progress.current_scene_key !== "ruins_found") {
+          throw new InvalidExplorationActionError("Tu dois d'abord avoir découvert les ruines.");
+        }
+        const ruinsBagResult = await client.query<{ id: string; capacity: number }>(
+          `SELECT id, capacity FROM character_inventory_bags
+           WHERE character_id = $1 AND is_equipped = TRUE FOR UPDATE`,
+          [input.characterId]
+        );
+        const ruinsBag = ruinsBagResult.rows[0];
+        if (!ruinsBag) throw new InvalidExplorationActionError("Tu n'as pas de sac équipé.");
+        const ruinsSlotsResult = await client.query<{ count: number }>(
+          `SELECT COUNT(*)::integer AS count FROM character_inventory_slots WHERE bag_id = $1`,
+          [ruinsBag.id]
+        );
+        const ruinsUsedSlots = Number(ruinsSlotsResult.rows[0]?.count ?? 0);
+        if (ruinsUsedSlots >= ruinsBag.capacity) {
+          throw new InvalidExplorationActionError("Ton sac est plein. Tu ne peux pas emporter les fragments trouvés.");
+        }
+        await client.query(
+          `INSERT INTO character_inventory_slots (bag_id, slot_number, item_code, quantity)
+           VALUES ($1, $2, 'unidentified_history_fragment', 1)`,
+          [ruinsBag.id, ruinsUsedSlots + 1]
+        );
+        await client.query(
+          `UPDATE character_survival_progress
+           SET first_ruins_explored_at = COALESCE(first_ruins_explored_at, NOW()),
+               first_history_fragments_collected_at = COALESCE(first_history_fragments_collected_at, NOW()),
+               updated_at = NOW()
+           WHERE character_id = $1`,
+          [input.characterId]
+        );
+        nextScene = "ruins_explored";
+        await recordQuestMilestoneInTransaction(client, {
+          eventId: randomUUID(),
+          characterId: input.characterId,
+          questKey: INITIAL_QUEST_KEY,
+          milestoneKey: "premiers_fragments_histoire_trouves",
+          sourceKey: "initial_exploration"
+        });
+        break;
+      case "return_to_cave":
+        if (progress.current_scene_key !== "ruins_explored") {
+          throw new InvalidExplorationActionError("Tu dois d'abord avoir exploré les ruines.");
+        }
+        await client.query(
+          `INSERT INTO character_temporary_camps (character_id, camp_code, shelter_type, status)
+           VALUES ($1, 'initial_cave_camp', 'cave', 'temporary')
+           ON CONFLICT (character_id, camp_code) DO UPDATE
+             SET status = 'temporary', updated_at = NOW()`,
+          [input.characterId]
+        );
+        await client.query(
+          `UPDATE character_survival_progress
+           SET first_temporary_camp_established_at = COALESCE(first_temporary_camp_established_at, NOW()),
+               updated_at = NOW()
+           WHERE character_id = $1`,
+          [input.characterId]
+        );
+        nextScene = "temporary_camp_established";
+        await recordQuestMilestoneInTransaction(client, {
+          eventId: randomUUID(),
+          characterId: input.characterId,
+          questKey: INITIAL_QUEST_KEY,
+          milestoneKey: "premier_camp_temporaire_installe",
           sourceKey: "initial_survival"
         });
         break;
