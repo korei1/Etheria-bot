@@ -1,6 +1,6 @@
 import type { Pool } from "pg";
 import { createItemLot, type ItemLot } from "./item-lots.js";
-import type { ItemInstanceState } from "./item-properties.js";
+import type { ItemInstanceState, ItemOriginType } from "./item-properties.js";
 
 interface ItemLotRow {
   id: string;
@@ -11,9 +11,7 @@ interface ItemLotRow {
   slot_number: number | null;
   camp_id: string | null;
   instance_state: ItemInstanceState | null;
-  origin_type: ItemInstanceState["provenance"] extends infer P
-    ? P extends { originType: infer T } ? T | null : string | null
-    : string | null;
+  origin_type: ItemOriginType | null;
   origin_reference: string | null;
   origin_occurred_at: Date | null;
 }
