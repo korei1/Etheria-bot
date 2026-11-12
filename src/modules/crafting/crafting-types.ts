@@ -19,6 +19,8 @@ export interface CraftingRecipe {
   readonly output: { readonly itemCode: string; readonly quantity: number };
   readonly requiredFeatureKey?: string;
   readonly requiredSkill?: CraftingSkillRequirement;
+  readonly requiredSceneKey?: string;
+  readonly progressionReward?: { readonly skillKey: string; readonly experience: number };
 }
 
 export interface CraftingRecipeValidationIssue {
@@ -51,6 +53,15 @@ export function validateCraftingRecipe(recipe: CraftingRecipe): CraftingRecipeVa
   if (!recipe.output.itemCode.trim()) add("L'objet produit doit posséder un code.");
   if (!Number.isInteger(recipe.output.quantity) || recipe.output.quantity <= 0) {
     add("La quantité produite doit être un entier positif.");
+  }
+  if (recipe.requiredSceneKey !== undefined && !recipe.requiredSceneKey.trim()) {
+    add("La scène requise doit posséder une clé.");
+  }
+  if (recipe.progressionReward) {
+    if (!recipe.progressionReward.skillKey.trim()) add("La compétence récompensée doit posséder une clé.");
+    if (!Number.isSafeInteger(recipe.progressionReward.experience) || recipe.progressionReward.experience <= 0) {
+      add("L'expérience attribuée doit être un entier positif sûr.");
+    }
   }
   if (recipe.requiredSkill) {
     if (!recipe.requiredSkill.skillKey.trim()) add("La compétence requise doit posséder une clé.");
