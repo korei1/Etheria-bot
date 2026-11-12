@@ -12,7 +12,7 @@ export interface SweetTeaWalletResult {
   operationId: string;
   success: boolean;
   walletBalance: number;
-  errorCode?: "INSUFFICIENT_FUNDS" | "INVALID_MEMBER" | "INVALID_AMOUNT" | "DUPLICATE_CONFLICT";
+  errorCode?: "INSUFFICIENT_FUNDS" | "INVALID_MEMBER" | "INVALID_AMOUNT" | "INVALID_OPERATION" | "DUPLICATE_CONFLICT";
 }
 
 export interface SweetTeaEconomyConfig {
