@@ -401,7 +401,7 @@ export default {
         await deleteCharacterDraft(getDatabase(), account.accountId);
 
         await interaction.editReply(
-          `Ton personnage **${character.firstName}** est officiellement créé !\nPseudonyme public : **${character.publicPseudonym}**\nÂge : **13 ans**\nNiveau : **1**\n\nTon pseudonyme est désormais verrouillé définitivement.`
+          `Ton personnage **${character.firstName}** est officiellement créé !\nPseudonyme public : **${character.publicPseudonym}**\nÂge : **13 ans**\nNiveau : **1**\nQuête initiale : **Suivre le vent** (commencée)\n\nTon pseudonyme est désormais verrouillé définitivement.\n\n**Tu ouvres les yeux.** Tu es seul, au milieu de la nature. Tu ne sais pas où tu te trouves. Une brise passe près de toi. En tendant l'oreille, tu remarques le souffle du vent autour de toi...`
         );
       } catch (error) {
         if (error instanceof PseudonymUnavailableError) {
