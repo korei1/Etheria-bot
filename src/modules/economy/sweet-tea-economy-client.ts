@@ -73,6 +73,9 @@ export class SweetTeaEconomyClient {
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(request.operationId)) {
       throw new SweetTeaEconomyError("L'identifiant d'opération doit être un UUID valide.");
     }
+    if (!["balance", "credit", "debit"].includes(request.operation)) {
+      throw new SweetTeaEconomyError("L'opération économique demandée est invalide.");
+    }
     if (!/^\d{17,20}$/.test(request.discordUserId)) {
       throw new SweetTeaEconomyError("L'identifiant Discord du membre est invalide.");
     }
@@ -120,7 +123,9 @@ export class SweetTeaEconomyClient {
       result.operationId !== request.operationId ||
       typeof result.success !== "boolean" ||
       !Number.isSafeInteger(result.walletBalance) ||
-      (result.walletBalance as number) < 0
+      (result.walletBalance as number) < 0 ||
+      (result.errorCode !== undefined &&
+        !["INSUFFICIENT_FUNDS", "INVALID_MEMBER", "INVALID_AMOUNT", "INVALID_OPERATION", "DUPLICATE_CONFLICT"].includes(result.errorCode))
     ) {
       throw new SweetTeaEconomyUnavailableError();
     }
