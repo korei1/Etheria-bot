@@ -91,13 +91,13 @@ export async function revealSpawnLocationAfterFirstNpcEncounter(
          z.biome_name,
          z.terrain_description,
          z.settlement_proximity,
-         $3::timestamptz AS spawn_location_revealed_at
+         $2::timestamptz AS spawn_location_revealed_at
        FROM starting_spawn_zones z
        JOIN countries c ON c.id = z.country_id
        WHERE z.id = $1
          AND c.is_secret = FALSE
        LIMIT 1`,
-      [characterRow.spawn_zone_id, input.characterId, discoveredAt]
+      [characterRow.spawn_zone_id, discoveredAt]
     );
 
     const row = location.rows[0];
