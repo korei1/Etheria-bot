@@ -40,6 +40,10 @@ test("refuses invalid member identifiers and amounts before network access", asy
     client.execute({ ...validRequest, amount: 0 }),
     SweetTeaEconomyError
   );
+  await assert.rejects(
+    client.execute({ ...validRequest, operation: "transfer" as "debit" }),
+    SweetTeaEconomyError
+  );
 });
 
 test("returns the balance reported by Sweet Tea Economy", async () => {
