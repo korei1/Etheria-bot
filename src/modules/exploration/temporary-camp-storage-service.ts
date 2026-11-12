@@ -1,7 +1,7 @@
 import type { Pool } from "pg";
+import { getItemDefinition } from "../inventory/item-catalog.js";
 
 const INITIAL_CAVE_CAMP_CODE = "initial_cave_camp";
-const NON_CRAFTABLE_FOUND_ITEMS = new Set(["unidentified_history_fragment"]);
 
 export interface CampStorageEntry {
   itemCode: string;
@@ -80,7 +80,7 @@ export async function depositFoundItemAtTemporaryCamp(
   }
 ): Promise<void> {
   const itemCode = input.itemCode.trim();
-  if (!NON_CRAFTABLE_FOUND_ITEMS.has(itemCode)) {
+  if (getItemDefinition(itemCode)?.temporaryCampStorage !== true) {
     throw new CampStorageItemError("Seuls les objets trouvés et non fabriqués peuvent être déposés ici.");
   }
 
