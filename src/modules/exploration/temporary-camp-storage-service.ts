@@ -32,6 +32,18 @@ export async function listTemporaryCampStorage(
   pool: Pool,
   input: { accountId: string; characterId: string }
 ): Promise<CampStorageEntry[]> {
+  const presence = await pool.query(
+    `SELECT 1
+     FROM character_temporary_camps c
+     JOIN characters ch ON ch.id = c.character_id
+     JOIN character_exploration_progress p ON p.character_id = ch.id
+     WHERE ch.id = $1 AND ch.account_id = $2 AND ch.status = 'active'
+       AND c.camp_code = $3 AND c.status = 'temporary'
+       AND p.current_scene_key = 'temporary_camp_established'`,
+    [input.characterId, input.accountId, INITIAL_CAVE_CAMP_CODE]
+  );
+  if (!presence.rowCount) throw new CampStorageUnavailableError();
+
   const result = await pool.query<{
     item_code: string;
     quantity: number;
