@@ -21,7 +21,6 @@ function createFakeDatabase(options?: {
     quantity: number;
     slot_number: number;
   };
-  sourceAvailable?: boolean;
 }) {
   const calls: QueryCall[] = [];
   let released = false;
