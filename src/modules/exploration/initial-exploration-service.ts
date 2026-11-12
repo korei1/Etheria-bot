@@ -162,12 +162,19 @@ export async function getInitialExplorationState(
      LIMIT 1`,
     [characterId]
   );
+  const needs = await pool.query<NeedsRow>(
+    `SELECT thirst_percent, hunger_percent FROM character_needs WHERE character_id = $1`,
+    [characterId]
+  );
+  const values = needs.rows[0] ?? { thirst_percent: 100, hunger_percent: 100 };
 
   return {
     scene: row.current_scene_key,
     updatedAt: row.updated_at,
     bagCapacity: bag.rows[0]?.capacity ?? null,
-    bagUsedSlots: Number(bag.rows[0]?.used_slots ?? 0)
+    bagUsedSlots: Number(bag.rows[0]?.used_slots ?? 0),
+    thirstPercent: values.thirst_percent,
+    hungerPercent: values.hunger_percent
   };
 }
 
