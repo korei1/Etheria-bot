@@ -9,6 +9,21 @@ Le catalogue ne fixe volontairement ni poids, valeur, empilabilité, durabilité
 Le service de collecte refuse désormais les codes absents du catalogue. Le catalogue des recettes vérifie que chaque ingrédient et chaque résultat y est déclaré. Le stockage du camp lit son autorisation depuis la définition de l'objet ; à ce stade, seul le fragment historique non identifié possède explicitement cette autorisation, conformément à la règle déjà implémentée.
 
 
+## Modèle commun des objets
+
+`item-model.ts` sépare la définition catalogue du stock détenu :
+
+- `ItemDefinition` décrit le type d'objet : code, nom et catégorie.
+- `ItemStack` représente une quantité agrégée d'un même code dans un contenant.
+- `ItemContainer` identifie les contenants actuellement implémentés : sac porté ou stockage physique du camp.
+- `ItemStackView` réunit la définition, le stock et son contenant pour les interfaces.
+- `createItemStack` vérifie l'existence du code et la validité de la quantité ; la limite technique suit le type PostgreSQL `INTEGER` existant.
+- `getItemDisplayName` fournit un libellé unique depuis le catalogue.
+
+Le modèle représente le stockage actuel par code + quantité. Il ne crée pas d'identifiant individuel pour chaque unité et ne décrète pas que tous les objets devront être empilables dans les futures règles de gameplay. Les notions de poids, encombrement, durabilité, valeur, rareté, état, équipement et propriétés spécifiques restent non renseignées tant qu'elles ne sont pas définies canoniquement.
+
+La provenance complète d'un objet n'est pas encore stockée de manière uniforme : les journaux de collecte et de fabrication gardent leurs événements propres. Le modèle ne prétend donc pas fournir un historique exhaustif des objets.
+
 ## Service de réception
 
 `addCollectedResourceToInventory` ajoute au sac actuellement équipé une quantité de ressource déjà validée par un système appelant.
