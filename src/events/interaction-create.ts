@@ -260,7 +260,7 @@ export default {
 
 
     if (interaction.isButton() && interaction.customId.startsWith("etheria:exploration:")) {
-      await interaction.deferReply({ ephemeral: true });
+      await interaction.deferUpdate();
       try {
         const account = await getAccount(interaction);
         const character = await getActiveCharacter(getDatabase(), account.accountId);
