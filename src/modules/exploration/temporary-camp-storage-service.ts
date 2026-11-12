@@ -166,6 +166,11 @@ export async function withdrawFoundItemFromTemporaryCamp(
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
+    const lockedCharacter = await client.query(
+      "SELECT id FROM characters WHERE id = $1 AND account_id = $2 AND status = 'active' FOR UPDATE",
+      [input.characterId, input.accountId]
+    );
+    if (!lockedCharacter.rowCount) throw new CampStorageUnavailableError();
     const camp = await client.query<{ id: string }>(
       `SELECT c.id
        FROM character_temporary_camps c
