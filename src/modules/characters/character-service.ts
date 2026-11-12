@@ -1,5 +1,6 @@
 import type { Pool } from "pg";
 import { initializeInitialQuest } from "../quests/quest-service.js";
+import { initializeInitialExploration } from "../exploration/initial-exploration-service.js";
 import type { CharacterGender } from "./character-draft-service.js";
 
 export interface CreateCharacterInput {
@@ -317,6 +318,7 @@ export async function createCharacter(
     }
 
     await initializeInitialQuest(client, row.id);
+    await initializeInitialExploration(client, row.id);
 
     await client.query("COMMIT");
     return mapCharacter(row);
