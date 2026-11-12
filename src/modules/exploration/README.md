@@ -17,6 +17,10 @@
 13. **Entrer dans la grotte** : il s'y installe temporairement pour se protéger du vent et du froid.
 14. **Allumer un feu** : le feu apporte chaleur et lumière. La maîtrise du feu atteint le niveau 1 et la cuisine est déverrouillée.
 15. **Faire rôtir les baies** : le premier échantillon de baies est transformé en baies rôties dans l'inventaire.
+16. **Se réveiller au matin** : après la première nuit dans la grotte, le personnage sort et observe les environs.
+17. **Découvrir les ruines** : il repère des vestiges d'anciennes constructions à proximité.
+18. **Explorer les vestiges** : il trouve un fragment historique non identifié et le range dans son sac.
+19. **Retourner à la grotte** : il revient à son abri et y établit son premier camp temporaire.
 
 ## Besoins vitaux
 
@@ -41,6 +45,11 @@
 - La valeur nutritionnelle des baies rôties n'est pas chiffrée tant que le catalogue alimentaire et le système nutritionnel ne sont pas définis.
 - La grotte est enregistrée comme abri temporaire. Aucun animal n'y est ajouté.
 - Le mécanisme matériel d'allumage du feu n'est pas encore modélisé : aucune recette ni ressource d'allumage n'a été inventée.
+- Le réveil après la première nuit est une étape persistante distincte.
+- Les ruines sont découvertes à proximité de l'abri, sans nom de lieu, civilisation ou date inventés.
+- L'exploration ajoute un fragment historique non identifié dans un emplacement du sac. Aucun contenu historique précis n'est révélé ni inventé à ce stade.
+- Le fragment est un objet transportable et reste dans l'inventaire du personnage.
+- Le retour à la grotte enregistre un camp temporaire associé au personnage. Il ne crée pas une propriété permanente ni un service public.
 
 ## Persistance et intégrité
 
@@ -53,4 +62,4 @@
 
 ## Limites actuelles
 
-Le système de besoins est un socle persistant : la diminution de la soif et de la faim selon le temps écoulé reste à programmer. La source d'eau, les plantes et la grotte sont encore des événements narratifs de cette première séquence, en attente du raccordement au monde géographique et au catalogue écologique. Le remplissage de la gourde et l'usage général des contenants restent à programmer. Le cycle temporel réel, les ressources nécessaires pour allumer le feu et les effets nutritionnels chiffrés de la cuisson restent à définir.
+Le système de besoins est un socle persistant : la diminution de la soif et de la faim selon le temps écoulé reste à programmer. La source d'eau, les plantes, la grotte et les ruines sont encore des événements narratifs de cette première séquence, en attente du raccordement au monde géographique et aux catalogues écologiques/historiques. Le remplissage de la gourde et l'usage général des contenants restent à programmer. Le cycle temporel réel, les ressources nécessaires pour allumer le feu et les effets nutritionnels chiffrés de la cuisson restent à définir. Le fragment historique n'a pas encore de contenu déchiffrable défini.
