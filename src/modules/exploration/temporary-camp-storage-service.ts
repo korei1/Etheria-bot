@@ -1,11 +1,10 @@
 import type { Pool } from "pg";
 import { getItemDefinition } from "../inventory/item-catalog.js";
+import { createItemStack, type ItemStack } from "../inventory/item-model.js";
 
 const INITIAL_CAVE_CAMP_CODE = "initial_cave_camp";
 
-export interface CampStorageEntry {
-  itemCode: string;
-  quantity: number;
+export interface CampStorageEntry extends ItemStack {
   depositedAt: Date;
 }
 
@@ -65,8 +64,7 @@ export async function listTemporaryCampStorage(
   );
 
   return result.rows.map((row) => ({
-    itemCode: row.item_code,
-    quantity: row.quantity,
+    ...createItemStack(row.item_code, Number(row.quantity)),
     depositedAt: row.deposited_at
   }));
 }
