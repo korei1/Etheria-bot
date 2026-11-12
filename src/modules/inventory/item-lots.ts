@@ -1,5 +1,5 @@
 import type { ItemCode } from "./item-catalog.js";
-import { createItemStack, InvalidItemStackError, type ItemContainer } from "./item-model.js";
+import { createItemStack, type ItemContainer } from "./item-model.js";
 import { validateItemInstanceState, type ItemInstanceState } from "./item-properties.js";
 
 /**
