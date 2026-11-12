@@ -13,6 +13,10 @@
 9. **Boire** : il recueille de l'eau dans ses mains et boit. La soif est restaurée entièrement.
 10. **Réunir des plantes** : il collecte des plantes souples à proximité pour apprendre à les tresser.
 11. **Fabriquer la gourde** : il transforme les plantes réunies en une gourde tressée de niveau 1.
+12. **Chercher un abri** : le jour décline, le vent se renforce et le froid s'installe. Le personnage repère une grotte.
+13. **Entrer dans la grotte** : il s'y installe temporairement pour se protéger du vent et du froid.
+14. **Allumer un feu** : le feu apporte chaleur et lumière. La maîtrise du feu atteint le niveau 1 et la cuisine est déverrouillée.
+15. **Faire rôtir les baies** : le premier échantillon de baies est transformé en baies rôties dans l'inventaire.
 
 ## Besoins vitaux
 
@@ -32,6 +36,11 @@
 - La capacité de la gourde de niveau 1 correspond à l'équivalent de deux mains jointes remplies d'eau.
 - Cette quantité suffit à restaurer entièrement la soif.
 - Le système de remplissage, de transport et de consommation d'eau depuis l'inventaire reste à raccorder au moteur général des besoins et des objets.
+- Le premier feu enregistre la maîtrise du feu au niveau 1 et déverrouille la fonctionnalité de cuisine.
+- La cuisson transforme l'échantillon `unidentified_local_berries` en `roasted_local_berries`, sans changer le nombre d'emplacements occupés.
+- La valeur nutritionnelle des baies rôties n'est pas chiffrée tant que le catalogue alimentaire et le système nutritionnel ne sont pas définis.
+- La grotte est enregistrée comme abri temporaire. Aucun animal n'y est ajouté.
+- Le mécanisme matériel d'allumage du feu n'est pas encore modélisé : aucune recette ni ressource d'allumage n'a été inventée.
 
 ## Persistance et intégrité
 
@@ -44,4 +53,4 @@
 
 ## Limites actuelles
 
-Le système de besoins est un socle persistant : la diminution de la soif et de la faim selon le temps écoulé reste à programmer. La source d'eau et les plantes sont encore des événements narratifs de cette première séquence, en attente du raccordement au monde géographique et au catalogue écologique. Le remplissage de la gourde et l'usage général des contenants restent à programmer.
+Le système de besoins est un socle persistant : la diminution de la soif et de la faim selon le temps écoulé reste à programmer. La source d'eau, les plantes et la grotte sont encore des événements narratifs de cette première séquence, en attente du raccordement au monde géographique et au catalogue écologique. Le remplissage de la gourde et l'usage général des contenants restent à programmer. Le cycle temporel réel, les ressources nécessaires pour allumer le feu et les effets nutritionnels chiffrés de la cuisson restent à définir.
