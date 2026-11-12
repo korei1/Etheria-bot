@@ -2,6 +2,7 @@ import type { Pool } from "pg";
 import { getCraftingRecipe } from "./crafting-catalog.js";
 import { validateCraftingRecipe, type CraftingRecipe } from "./crafting-types.js";
 import { createItemStack, type ItemStack } from "../inventory/item-model.js";
+import { addCraftedItemLot, consumeInventoryItemLots } from "../inventory/item-lot-persistence.js";
 
 interface InventorySlotRow {
   id: string;
@@ -227,6 +228,11 @@ export async function craftItem(
     for (const ingredient of recipe.ingredients) {
       const stack = slotByCode.get(ingredient.itemCode);
       if (!stack) continue;
+      await consumeInventoryItemLots(client, {
+        inventorySlotId: stack.id,
+        itemCode: stack.item_code,
+        quantity: ingredient.quantity
+      });
       if (stack.quantity === ingredient.quantity) {
         await client.query("DELETE FROM character_inventory_slots WHERE id = $1", [stack.id]);
         consumedCompletely.add(stack.item_code);
@@ -244,6 +250,12 @@ export async function craftItem(
         "UPDATE character_inventory_slots SET quantity = quantity + $2 WHERE id = $1",
         [outputStack.id, recipe.output.quantity]
       );
+      await addCraftedItemLot(client, {
+        inventorySlotId: outputStack.id,
+        itemCode: recipe.output.itemCode,
+        quantity: recipe.output.quantity,
+        recipeKey: recipe.key
+      });
     } else {
       const occupied = new Set(
         slots
@@ -255,11 +267,20 @@ export async function craftItem(
       if (!freeSlot) {
         throw new CraftingInventoryError("Ton sac est plein et ne peut pas accueillir le résultat.");
       }
-      await client.query(
+      const insertedOutput = await client.query<{ id: string }>(
         `INSERT INTO character_inventory_slots (bag_id, slot_number, item_code, quantity)
-         VALUES ($1, $2, $3, $4)`,
+         VALUES ($1, $2, $3, $4)
+         RETURNING id`,
         [bag.id, freeSlot, recipe.output.itemCode, recipe.output.quantity]
       );
+      const outputSlotId = insertedOutput.rows[0]?.id;
+      if (!outputSlotId) throw new CraftingInventoryError("L'emplacement du résultat n'a pas été créé.");
+      await addCraftedItemLot(client, {
+        inventorySlotId: outputSlotId,
+        itemCode: recipe.output.itemCode,
+        quantity: recipe.output.quantity,
+        recipeKey: recipe.key
+      });
     }
 
     if (recipe.progressionReward) {
