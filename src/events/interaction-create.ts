@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHash } from "node:crypto";
 import {
   ActionRowBuilder,
   ButtonBuilder,
@@ -49,6 +49,14 @@ import {
 } from "../modules/crafting/crafting-service.js";
 import { getDatabasePool } from "../database/client.js";
 import { logger } from "../core/logger.js";
+
+function discordInteractionUuid(interactionId: string): string {
+  const bytes = createHash("sha256").update("etheria:crafting:" + interactionId).digest().subarray(0, 16);
+  bytes[6] = (bytes[6] & 0x0f) | 0x50;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = bytes.toString("hex");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
 
 function getDatabase() {
   return getDatabasePool(process.env.DATABASE_URL?.trim() || undefined);
@@ -469,7 +477,7 @@ export default {
         }
         const recipeKey = interaction.customId.slice("etheria:camp:craft:".length);
         const result = await craftItem(getDatabase(), {
-          interactionId: randomUUID(),
+          interactionId: discordInteractionUuid(interaction.id),
           accountId: account.accountId,
           characterId: character.id,
           recipeKey
