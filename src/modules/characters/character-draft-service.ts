@@ -4,6 +4,7 @@ export interface CharacterCreationDraft {
   accountId: string;
   firstName: string;
   publicPseudonym: string;
+  avatarModelKey: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -12,6 +13,7 @@ interface DraftRow {
   account_id: string;
   first_name: string;
   public_pseudonym: string;
+  avatar_model_key: string | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -38,7 +40,7 @@ export async function isPseudonymAvailable(
 /** Enregistre ou remplace le brouillon modifiable du compte. */
 export async function saveCharacterDraft(
   pool: Pool,
-  input: { accountId: string; firstName: string; publicPseudonym: string }
+  input: { accountId: string; firstName: string; publicPseudonym: string; avatarModelKey?: string | null }
 ): Promise<CharacterCreationDraft> {
   const accountId = input.accountId.trim();
   const firstName = input.firstName.trim();
@@ -50,16 +52,17 @@ export async function saveCharacterDraft(
 
   const result = await pool.query<DraftRow>(
     `INSERT INTO character_creation_drafts (
-       account_id, first_name, public_pseudonym
+       account_id, first_name, public_pseudonym, avatar_model_key
      )
-     VALUES ($1, $2, $3)
+     VALUES ($1, $2, $3, $4)
      ON CONFLICT (account_id)
      DO UPDATE SET
        first_name = EXCLUDED.first_name,
        public_pseudonym = EXCLUDED.public_pseudonym,
+       avatar_model_key = EXCLUDED.avatar_model_key,
        updated_at = NOW()
-     RETURNING account_id, first_name, public_pseudonym, created_at, updated_at`,
-    [accountId, firstName, publicPseudonym]
+     RETURNING account_id, first_name, public_pseudonym, avatar_model_key, created_at, updated_at`,
+    [accountId, firstName, publicPseudonym, input.avatarModelKey ?? null]
   );
 
   const row = result.rows[0];
@@ -69,6 +72,7 @@ export async function saveCharacterDraft(
     accountId: row.account_id,
     firstName: row.first_name,
     publicPseudonym: row.public_pseudonym,
+    avatarModelKey: row.avatar_model_key,
     createdAt: row.created_at,
     updatedAt: row.updated_at
   };
@@ -80,7 +84,7 @@ export async function getCharacterDraft(
   accountId: string
 ): Promise<CharacterCreationDraft | null> {
   const result = await pool.query<DraftRow>(
-    `SELECT account_id, first_name, public_pseudonym, created_at, updated_at
+    `SELECT account_id, first_name, public_pseudonym, avatar_model_key, created_at, updated_at
      FROM character_creation_drafts
      WHERE account_id = $1
      LIMIT 1`,
