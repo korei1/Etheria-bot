@@ -26,10 +26,6 @@ CREATE TABLE character_exploration_events (
 INSERT INTO character_exploration_progress (character_id, current_scene_key)
 SELECT c.id, 'awakening'
 FROM characters c
-JOIN character_quest_progress q
-  ON q.character_id = c.id
- AND q.quest_key = 'suivre_le_vent'
- AND q.current_step_key = 'reveil'
 WHERE c.status = 'active'
 ON CONFLICT (character_id) DO NOTHING;
 
