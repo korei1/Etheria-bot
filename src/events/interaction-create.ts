@@ -20,6 +20,7 @@ import {
   NoStartingSpawnAvailableError
 } from "../modules/characters/character-service.js";
 import {
+  type CharacterGender,
   deleteCharacterDraft,
   getCharacterDraft,
   isPseudonymAvailable,
@@ -52,6 +53,15 @@ function creationButton() {
       .setLabel("Créer mon personnage")
       .setStyle(ButtonStyle.Primary)
   );
+}
+
+function genderSelectionPayload() {
+  const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder().setCustomId("etheria:character:gender:femme").setLabel("Femme").setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId("etheria:character:gender:homme").setLabel("Homme").setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId("etheria:character:gender:agenre").setLabel("Agenre (sans genre)").setStyle(ButtonStyle.Secondary)
+  );
+  return { content: "Choisis le genre de ton personnage.", components: [row] };
 }
 
 function avatarSelectionPayload(models: Awaited<ReturnType<typeof listActiveAvatarModels>>) {
@@ -87,7 +97,7 @@ function avatarSelectionPayload(models: Awaited<ReturnType<typeof listActiveAvat
   );
 
   return {
-    content: "Choisis l'apparence de départ de ton personnage. Les modèles sont variés et aucun choix de genre n'est obligatoire.",
+    content: "Choisis un modèle prédéfini correspondant au genre sélectionné. La personnalisation physique complète n'est pas disponible en V1.",
     embeds,
     components: rows
   };
@@ -207,6 +217,40 @@ export default {
       return;
     }
 
+    if (interaction.isButton() && interaction.customId.startsWith("etheria:character:gender:")) {
+      await interaction.deferReply({ ephemeral: true });
+      try {
+        const account = await getAccount(interaction);
+        const draft = await getCharacterDraft(getDatabase(), account.accountId);
+        if (!draft) {
+          await interaction.editReply("Je n'ai trouvé aucun brouillon. Recommence la création du personnage.");
+          return;
+        }
+        const gender = interaction.customId.slice("etheria:character:gender:".length) as CharacterGender;
+        if (!["femme", "homme", "agenre"].includes(gender)) {
+          await interaction.editReply("Ce choix de genre n'est pas valide.");
+          return;
+        }
+        await saveCharacterDraft(getDatabase(), {
+          accountId: account.accountId,
+          firstName: draft.firstName,
+          publicPseudonym: draft.publicPseudonym,
+          genderIdentity: gender,
+          avatarModelKey: null
+        });
+        const models = await listActiveAvatarModels(getDatabase(), gender);
+        if (models.length === 0) {
+          await interaction.editReply("Aucun modèle prédéfini n'est encore configuré pour ce genre. Ton brouillon est conservé.");
+          return;
+        }
+        await interaction.editReply(avatarSelectionPayload(models));
+      } catch (error) {
+        logger.error("Impossible d'enregistrer le genre du personnage.", error);
+        await interaction.editReply("Impossible d'enregistrer ce choix pour le moment. Réessaie.");
+      }
+      return;
+    }
+
     if (interaction.isButton() && interaction.customId.startsWith("etheria:character:avatar:")) {
       await interaction.deferReply({ ephemeral: true });
 
@@ -219,7 +263,11 @@ export default {
         }
 
         const modelKey = interaction.customId.slice("etheria:character:avatar:".length);
-        const models = await listActiveAvatarModels(getDatabase());
+        if (!draft.genderIdentity) {
+          await interaction.editReply(genderSelectionPayload());
+          return;
+        }
+        const models = await listActiveAvatarModels(getDatabase(), draft.genderIdentity);
         const selectedModel = models.find((model) => model.modelKey === modelKey);
         if (!selectedModel) {
           await interaction.editReply("Ce modèle n'est plus disponible. Recommence le choix de l'avatar.");
@@ -230,6 +278,7 @@ export default {
           accountId: account.accountId,
           firstName: draft.firstName,
           publicPseudonym: draft.publicPseudonym,
+          genderIdentity: draft.genderIdentity,
           avatarModelKey: selectedModel.modelKey
         });
 
@@ -246,7 +295,7 @@ export default {
             `Apparence : **${selectedModel.displayName}**\n\n` +
             "Âge initial : **13 ans**\n" +
             "Statut initial : **orphelin**\n\n" +
-            "Le pays d'origine sera attribué aléatoirement. Le lieu d'apparition sera choisi dans une zone naturelle sûre et accessible de ce pays. Tu peux encore modifier le prénom, le pseudonyme et l'apparence avant la confirmation.",
+            "Ton lieu d'apparition reste secret. Tu le découvriras grâce au premier PNJ rencontré. Tu peux encore modifier ton prénom, ton pseudonyme, ton genre et ton avatar avant la confirmation.",
           embeds: [preview],
           components: [draftButtons()]
         });
@@ -291,10 +340,13 @@ export default {
 
         // Le brouillon est conservé même si le pseudonyme est déjà pris :
         // le joueur peut le corriger sans perdre son prénom.
+        const previousDraft = await getCharacterDraft(getDatabase(), account.accountId);
         await saveCharacterDraft(getDatabase(), {
           accountId: account.accountId,
           firstName,
-          publicPseudonym
+          publicPseudonym,
+          genderIdentity: previousDraft?.genderIdentity ?? null,
+          avatarModelKey: previousDraft?.avatarModelKey ?? null
         });
 
         if (!(await isPseudonymAvailable(getDatabase(), publicPseudonym))) {
@@ -305,15 +357,7 @@ export default {
           return;
         }
 
-        const avatarModels = await listActiveAvatarModels(getDatabase());
-        if (avatarModels.length === 0) {
-          await interaction.editReply(
-            "Ton brouillon est enregistré. Le catalogue des avatars n'est pas encore configuré : la création reprendra dès que les modèles illustrés seront ajoutés."
-          );
-          return;
-        }
-
-        await interaction.editReply(avatarSelectionPayload(avatarModels));
+        await interaction.editReply(genderSelectionPayload());
       } catch (error) {
         logger.error("Impossible d'enregistrer le brouillon du personnage.", error);
         await interaction.editReply(
@@ -349,7 +393,8 @@ export default {
           accountId: account.accountId,
           firstName: draft.firstName,
           publicPseudonym: draft.publicPseudonym,
-          avatarModelKey: draft.avatarModelKey
+          avatarModelKey: draft.avatarModelKey,
+          genderIdentity: draft.genderIdentity ?? undefined
         });
 
         await deleteCharacterDraft(getDatabase(), account.accountId);
@@ -367,11 +412,14 @@ export default {
         }
 
         if (error instanceof AvatarModelUnavailableError) {
-          const models = await listActiveAvatarModels(getDatabase());
+          const latestDraft = await getCharacterDraft(getDatabase(), account.accountId);
+          const models = latestDraft?.genderIdentity
+            ? await listActiveAvatarModels(getDatabase(), latestDraft.genderIdentity)
+            : [];
           await interaction.editReply(
             models.length
               ? avatarSelectionPayload(models)
-              : { content: "Le catalogue des avatars n'est pas encore configuré. Ton brouillon est conservé." }
+              : genderSelectionPayload()
           );
           return;
         }
