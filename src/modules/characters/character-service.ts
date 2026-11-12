@@ -1,4 +1,5 @@
 import type { Pool } from "pg";
+import { initializeInitialQuest } from "../quests/quest-service.js";
 import type { CharacterGender } from "./character-draft-service.js";
 
 export interface CreateCharacterInput {
@@ -315,6 +316,8 @@ export async function createCharacter(
     if (!row) {
       throw new Error("La création du personnage n'a retourné aucune donnée.");
     }
+
+    await initializeInitialQuest(client, row.id);
 
     await client.query("COMMIT");
     return mapCharacter(row);
