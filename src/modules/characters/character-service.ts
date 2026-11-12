@@ -102,7 +102,7 @@ export async function createCharacter(
   const accountId = input.accountId.trim();
   const firstName = input.firstName.trim();
   const publicPseudonym = input.publicPseudonym.trim();
-  const normalizedPseudonym = publicPseudonym.toLocaleLowerCase();
+  const normalizedPseudonym = publicPseudonym.toLowerCase();
 
   if (!accountId || !firstName || !publicPseudonym) {
     throw new Error("Le compte, le prénom et le pseudonyme sont obligatoires.");
