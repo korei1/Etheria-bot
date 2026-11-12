@@ -12,6 +12,10 @@ import {
   getItemDisplayName,
   InvalidItemStackError
 } from "../src/modules/inventory/item-model.js";
+import {
+  validateItemDefinitionProperties,
+  validateItemInstanceState
+} from "../src/modules/inventory/item-properties.js";
 
 test("le catalogue central possède des codes uniques et valides", () => {
   assert.deepEqual(validateItemCatalog(), []);
@@ -68,4 +72,47 @@ test("une vue de stock relie définition, quantité et contenant sans inventer d
 
 test("le nom d'affichage provient du catalogue central", () => {
   assert.equal(getItemDisplayName("woven_rope_level_1"), "Corde tissée N1");
+});
+
+test("les objets existants ne reçoivent aucune propriété non validée par défaut", () => {
+  for (const item of ITEM_CATALOG) {
+    assert.equal(item.properties, undefined);
+  }
+});
+
+test("les propriétés facultatives acceptent des mesures et valeurs cohérentes", () => {
+  assert.deepEqual(validateItemDefinitionProperties({
+    physical: {
+      mass: { value: 12, unit: "unit-test-mass" },
+      volume: { value: 4, unit: "unit-test-volume" }
+    },
+    durability: { current: 5, maximum: 10 },
+    economic: { value: 0, currencyCode: "TEST" },
+    stacking: { mode: "stackable", maximumQuantity: 20 },
+    equipment: { slotKey: "test-slot" }
+  }), []);
+});
+
+test("les propriétés facultatives rejettent les valeurs incohérentes", () => {
+  assert.ok(validateItemDefinitionProperties({
+    physical: { mass: { value: -1, unit: "test" } },
+    durability: { current: 11, maximum: 10 },
+    economic: { value: -2, currencyCode: "" },
+    stacking: { mode: "unique", maximumQuantity: 2 },
+    equipment: { slotKey: " " }
+  }).length >= 5);
+});
+
+test("l'état d'une instance peut conserver qualité, état et provenance sans les imposer", () => {
+  assert.deepEqual(validateItemInstanceState({
+    conditionKey: "condition-test",
+    qualityKey: "quality-test",
+    durability: { current: 3, maximum: 4 },
+    provenance: {
+      originType: "crafting",
+      sourceReference: "craft-event-test",
+      occurredAt: "2026-11-12T20:00:00.000Z"
+    }
+  }), []);
+  assert.deepEqual(validateItemInstanceState({}), []);
 });
