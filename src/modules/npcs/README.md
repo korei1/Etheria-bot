@@ -28,4 +28,4 @@ Le gestionnaire de quête, d'exploration ou de rencontre devra appeler :
 
 ## État de l'intégration
 
-Le service et le stockage sont implémentés. Le dépôt ne contient pas encore de moteur de quête, d'exploration ou de rencontre PNJ qui puisse certifier qu'une rencontre a réellement eu lieu. Le futur gestionnaire de la première rencontre de la quête initiale devra appeler ce service après validation de la scène. Aucun faux bouton de rencontre n'est ajouté pour contourner cette règle.
+Le service d'enregistrement de rencontre est implémenté et raccordé au suivi de la quête « Suivre le vent » : la première rencontre valide le jalon correspondant dans la même transaction que l'enregistrement de la rencontre et la révélation du lieu. Le moteur d'exploration et les scènes PNJ qui certifieront qu'une rencontre a réellement eu lieu restent à construire. Aucun faux bouton de rencontre n'est ajouté pour contourner cette règle.
