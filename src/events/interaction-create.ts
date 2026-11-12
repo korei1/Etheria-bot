@@ -2,6 +2,7 @@ import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
+  EmbedBuilder,
   Events,
   ModalBuilder,
   TextInputBuilder,
@@ -13,7 +14,9 @@ import { getOrCreateAccount } from "../modules/accounts/account-service.js";
 import {
   createCharacter,
   getActiveCharacter,
-  PseudonymUnavailableError
+  PseudonymUnavailableError,
+  AvatarModelUnavailableError,
+  NoStartingSpawnAvailableError
 } from "../modules/characters/character-service.js";
 import {
   deleteCharacterDraft,
@@ -21,6 +24,7 @@ import {
   isPseudonymAvailable,
   saveCharacterDraft
 } from "../modules/characters/character-draft-service.js";
+import { listActiveAvatarModels } from "../modules/characters/avatar-model-service.js";
 import { getDatabasePool } from "../database/client.js";
 import { logger } from "../core/logger.js";
 
@@ -47,6 +51,36 @@ function creationButton() {
       .setLabel("Créer mon personnage")
       .setStyle(ButtonStyle.Primary)
   );
+}
+
+function avatarSelectionPayload(models: Awaited<ReturnType<typeof listActiveAvatarModels>>) {
+  const visibleModels = models.slice(0, 10);
+  const embeds = visibleModels.map((model) =>
+    new EmbedBuilder()
+      .setTitle(model.displayName)
+      .setDescription(model.description ?? "Modèle prédéfini")
+      .setImage(model.imageUrl)
+  );
+
+  const rows: ActionRowBuilder<ButtonBuilder>[] = [];
+  for (let index = 0; index < visibleModels.length; index += 5) {
+    const row = new ActionRowBuilder<ButtonBuilder>();
+    for (const model of visibleModels.slice(index, index + 5)) {
+      row.addComponents(
+        new ButtonBuilder()
+          .setCustomId(`etheria:character:avatar:${model.modelKey}`)
+          .setLabel(model.displayName.slice(0, 80))
+          .setStyle(ButtonStyle.Secondary)
+      );
+    }
+    rows.push(row);
+  }
+
+  return {
+    content: "Choisis l'apparence de départ de ton personnage. Les modèles sont variés et aucun choix de genre n'est obligatoire.",
+    embeds,
+    components: rows
+  };
 }
 
 function draftButtons() {
@@ -163,6 +197,56 @@ export default {
       return;
     }
 
+    if (interaction.isButton() && interaction.customId.startsWith("etheria:character:avatar:")) {
+      await interaction.deferReply({ ephemeral: true });
+
+      try {
+        const account = await getAccount(interaction);
+        const draft = await getCharacterDraft(getDatabase(), account.accountId);
+        if (!draft) {
+          await interaction.editReply("Je n'ai trouvé aucun brouillon. Recommence la création du personnage.");
+          return;
+        }
+
+        const modelKey = interaction.customId.slice("etheria:character:avatar:".length);
+        const models = await listActiveAvatarModels(getDatabase());
+        const selectedModel = models.find((model) => model.modelKey === modelKey);
+        if (!selectedModel) {
+          await interaction.editReply("Ce modèle n'est plus disponible. Recommence le choix de l'avatar.");
+          return;
+        }
+
+        await saveCharacterDraft(getDatabase(), {
+          accountId: account.accountId,
+          firstName: draft.firstName,
+          publicPseudonym: draft.publicPseudonym,
+          avatarModelKey: selectedModel.modelKey
+        });
+
+        const preview = new EmbedBuilder()
+          .setTitle(selectedModel.displayName)
+          .setDescription(selectedModel.description ?? "Apparence choisie")
+          .setImage(selectedModel.imageUrl);
+
+        await interaction.editReply({
+          content:
+            "**Récapitulatif de ton personnage**\n\n" +
+            `Prénom : **${draft.firstName}**\n` +
+            `Pseudonyme public : **${draft.publicPseudonym}**\n` +
+            `Apparence : **${selectedModel.displayName}**\n\n` +
+            "Âge initial : **13 ans**\n" +
+            "Statut initial : **orphelin**\n\n" +
+            "Le pays d'origine sera attribué aléatoirement. Le lieu d'apparition sera choisi dans une zone naturelle sûre et accessible de ce pays. Tu peux encore modifier le prénom, le pseudonyme et l'apparence avant la confirmation.",
+          embeds: [preview],
+          components: [draftButtons()]
+        });
+      } catch (error) {
+        logger.error("Impossible d'enregistrer le choix d'avatar.", error);
+        await interaction.editReply("Impossible d'enregistrer ce modèle pour le moment. Réessaie.");
+      }
+      return;
+    }
+
     if (interaction.isButton() && interaction.customId === "etheria:character:edit") {
       try {
         const account = await getAccount(interaction);
@@ -211,16 +295,15 @@ export default {
           return;
         }
 
-        await interaction.editReply({
-          content:
-            "**Récapitulatif de ton personnage**\n\n" +
-            `Prénom : **${firstName}**\n` +
-            `Pseudonyme public : **${publicPseudonym}**\n\n` +
-            "Âge initial : **13 ans**\n" +
-            "Statut initial : **orphelin**\n\n" +
-            "Tu peux encore modifier le prénom et le pseudonyme. Le pseudonyme ne sera réservé définitivement qu'après confirmation.",
-          components: [draftButtons()]
-        });
+        const avatarModels = await listActiveAvatarModels(getDatabase());
+        if (avatarModels.length === 0) {
+          await interaction.editReply(
+            "Ton brouillon est enregistré. Le catalogue des avatars n'est pas encore configuré : la création reprendra dès que les modèles illustrés seront ajoutés."
+          );
+          return;
+        }
+
+        await interaction.editReply(avatarSelectionPayload(avatarModels));
       } catch (error) {
         logger.error("Impossible d'enregistrer le brouillon du personnage.", error);
         await interaction.editReply(
@@ -255,7 +338,8 @@ export default {
         const character = await createCharacter(getDatabase(), {
           accountId: account.accountId,
           firstName: draft.firstName,
-          publicPseudonym: draft.publicPseudonym
+          publicPseudonym: draft.publicPseudonym,
+          avatarModelKey: draft.avatarModelKey
         });
 
         await deleteCharacterDraft(getDatabase(), account.accountId);
@@ -269,6 +353,23 @@ export default {
             content: "Ce pseudonyme vient d'être utilisé par quelqu'un d'autre. Modifie-le pour confirmer ton personnage.",
             components: [creationButton()]
           });
+          return;
+        }
+
+        if (error instanceof AvatarModelUnavailableError) {
+          const models = await listActiveAvatarModels(getDatabase());
+          await interaction.editReply(
+            models.length
+              ? avatarSelectionPayload(models)
+              : { content: "Le catalogue des avatars n'est pas encore configuré. Ton brouillon est conservé." }
+          );
+          return;
+        }
+
+        if (error instanceof NoStartingSpawnAvailableError) {
+          await interaction.editReply(
+            "Ton personnage n'a pas encore été créé : aucune zone de départ sûre et accessible n'est configurée pour son pays. Ton brouillon est conservé."
+          );
           return;
         }
 
