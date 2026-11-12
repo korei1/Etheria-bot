@@ -1,4 +1,4 @@
-import type { Pool } from "pg";
+import type { Pool, PoolClient } from "pg";
 
 export interface DiscoveredSpawnLocation {
   countryName: string;
@@ -67,7 +67,7 @@ export class EncounterIdConflictError extends Error {
 }
 
 async function getDiscoveredSpawnLocation(
-  client: Awaited<ReturnType<Pool["connect"]>>,
+  client: PoolClient,
   spawnZoneId: string,
   discoveredAt: Date
 ): Promise<DiscoveredSpawnLocation> {
