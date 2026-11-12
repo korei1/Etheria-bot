@@ -1,28 +1,33 @@
-# Première séquence d'exploration : réveil et vent
+# Première séquence d'exploration : réveil, falaise et premières ressources
 
 ## Parcours jouable
 
-Le premier écran après confirmation du personnage propose deux actions Discord :
-- Écouter le vent.
-- Observer autour de soi.
+1. **Réveil** : le personnage ouvre les yeux seul dans la nature. Le lieu exact reste inconnu.
+2. **Percevoir le vent** : il peut écouter le vent ou observer les alentours.
+3. **Suivre le vent** : il atteint un point de vue au bord d'une falaise.
+4. **Examiner ou descendre** : le passage naturel peut être examiné avant que le joueur choisisse de descendre.
+5. **Découvrir le sac** : au pied de la falaise, le personnage trouve son premier sac tressé de niveau initial, d'une capacité de cinq emplacements.
+6. **Découvrir les baies** : des baies locales sont présentes à proximité. Le personnage ne connaît ni leur nom ni leurs propriétés.
+7. **Première collecte** : il peut recueillir un échantillon de baies non identifiées. L'échantillon occupe un emplacement du sac.
 
-Écouter le vent fait progresser la scène : le personnage perçoit mieux le souffle et peut en suivre la direction. Observer reste une action libre et ne force pas la progression.
+## Inventaire initial
 
-Après avoir perçu le vent, le joueur peut :
-- Suivre le vent.
-- Continuer à observer.
+- Aucun objet n'est possédé au réveil.
+- Le sac est découvert dans l'environnement, au pied de la falaise.
+- Le sac possède cinq emplacements.
+- Le premier échantillon est enregistré sous un code technique neutre, sans attribuer de nom fictif à une espèce végétale.
+- Le personnage ne connaît pas les propriétés des baies.
+- Le sac et son contenu sont persistants et enregistrés en base.
 
-Suivre le vent conduit au point de vue au bord de la falaise. Le personnage distingue mieux le paysage alentour. Un passage naturel permet de descendre, mais le joueur n'est pas forcé de se précipiter. Il peut examiner le passage ou observer le paysage.
-
-## Persistance
+## Persistance et intégrité
 
 - La scène courante est enregistrée dans `character_exploration_progress`.
 - Chaque action Discord est enregistrée dans `character_exploration_events`.
 - L'identifiant de l'interaction Discord sert de clé d'idempotence.
-- Les jalons « vent perçu » et « point de vue atteint » sont ajoutés à « Suivre le vent » dans la même transaction que l'action d'exploration.
-- La progression est initialisée avec la création confirmée du personnage.
-- Le lieu géographique d'apparition n'est jamais consulté ou retourné par ce module.
+- La découverte du sac, son équipement et la validation du jalon de quête ont lieu dans la transaction de descente.
+- La collecte de l'échantillon, la mise à jour de l'inventaire et le jalon de quête sont transactionnels.
+- Le lieu géographique d'apparition n'est jamais lu ou retourné par ce module.
 
 ## Limites actuelles
 
-Cette première tranche s'arrête au point de vue au bord de la falaise. La descente, la découverte du sac et la collecte des premières ressources seront raccordées dans les étapes suivantes, avec les règles de terrain et d'inventaire déjà définies.
+Le premier échantillon est un objet technique générique en attente du catalogue botanique régional. La collecte répétée, l'identification des espèces, leurs propriétés et les quantités récoltables dépendront du catalogue réel des ressources et du système écologique. Aucune espèce, aucun lieu et aucune propriété botanique ne sont inventés ici.
