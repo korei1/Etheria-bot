@@ -234,9 +234,10 @@ export default {
             account.accountId,
             activeCharacter.id
           );
+          const explorationPayload = initialExplorationPayload(exploration.scene);
           await interaction.editReply({
-            content: `Bon retour dans Etheria, **${activeCharacter.publicPseudonym}** ! Ton personnage est au niveau ${activeCharacter.level}.\\n\\n`,
-            ...initialExplorationPayload(exploration.scene)
+            ...explorationPayload,
+            content: `Bon retour dans Etheria, **${activeCharacter.publicPseudonym}** ! Ton personnage est au niveau ${activeCharacter.level}.\\n\\n${explorationPayload.content}`
           });
           return;
         }
@@ -493,10 +494,11 @@ export default {
 
         await deleteCharacterDraft(getDatabase(), account.accountId);
 
+        const openingPayload = initialExplorationPayload("awakening");
         await interaction.editReply({
+          ...openingPayload,
           content:
-            `Ton personnage **${character.firstName}** est officiellement créé !\\nPseudonyme public : **${character.publicPseudonym}**\\nÂge : **13 ans**\\nNiveau : **1**\\nQuête initiale : **Suivre le vent** (commencée)\\n\\nTon pseudonyme est désormais verrouillé définitivement.\\n\\n`,
-          ...initialExplorationPayload("awakening")
+            `Ton personnage **${character.firstName}** est officiellement créé !\\nPseudonyme public : **${character.publicPseudonym}**\\nÂge : **13 ans**\\nNiveau : **1**\\nQuête initiale : **Suivre le vent** (commencée)\\n\\nTon pseudonyme est désormais verrouillé définitivement.\\n\\n${openingPayload.content}`
         });
       } catch (error) {
         if (error instanceof PseudonymUnavailableError) {
