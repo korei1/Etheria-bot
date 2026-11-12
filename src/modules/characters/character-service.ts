@@ -210,6 +210,7 @@ export async function createCharacter(
              WHERE z.country_id = c.id
                AND z.is_active = TRUE
                AND z.is_natural = TRUE
+               AND z.is_wilderness = TRUE
                AND z.is_safe_for_new_character = TRUE
                AND z.is_accessible_for_new_character = TRUE
            )
@@ -248,6 +249,7 @@ export async function createCharacter(
        WHERE country_id = $1
          AND is_active = TRUE
          AND is_natural = TRUE
+         AND is_wilderness = TRUE
          AND is_safe_for_new_character = TRUE
          AND is_accessible_for_new_character = TRUE
        ORDER BY -ln(random()) / spawn_weight
