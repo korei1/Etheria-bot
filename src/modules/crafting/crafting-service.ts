@@ -1,6 +1,6 @@
 import type { Pool } from "pg";
 import { getCraftingRecipe } from "./crafting-catalog.js";
-import { validateCraftingRecipe, type CraftingIngredient, type CraftingRecipe } from "./crafting-types.js";
+import { validateCraftingRecipe, type CraftingRecipe } from "./crafting-types.js";
 
 interface InventorySlotRow {
   id: string;
@@ -66,17 +66,6 @@ function validateRecipeOrThrow(recipe: CraftingRecipe): void {
       "La recette est invalide : " + issues.map((issue) => issue.message).join(" ")
     );
   }
-}
-
-function sameIngredients(
-  stored: unknown,
-  expected: readonly CraftingIngredient[]
-): boolean {
-  if (!Array.isArray(stored) || stored.length !== expected.length) return false;
-  return expected.every((ingredient, index) => {
-    const candidate = stored[index] as { itemCode?: unknown; quantity?: unknown };
-    return candidate?.itemCode === ingredient.itemCode && candidate?.quantity === ingredient.quantity;
-  });
 }
 
 /**
