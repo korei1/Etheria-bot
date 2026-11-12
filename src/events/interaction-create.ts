@@ -33,6 +33,13 @@ import {
   type InitialExplorationAction,
   type InitialExplorationScene
 } from "../modules/exploration/initial-exploration-service.js";
+import {
+  CampStorageItemError,
+  CampStorageUnavailableError,
+  depositFoundItemAtTemporaryCamp,
+  listTemporaryCampStorage,
+  withdrawFoundItemFromTemporaryCamp
+} from "../modules/exploration/temporary-camp-storage-service.js";
 import { getDatabasePool } from "../database/client.js";
 import { logger } from "../core/logger.js";
 
@@ -437,6 +444,89 @@ export default {
       return;
     }
 
+
+    if (interaction.isButton() && interaction.customId === "etheria:camp:storage") {
+      await interaction.deferReply({ ephemeral: true });
+      try {
+        const account = await getAccount(interaction);
+        const character = await getActiveCharacter(getDatabase(), account.accountId);
+        if (!character) {
+          await interaction.editReply("Aucun personnage actif n'a été trouvé.");
+          return;
+        }
+        const entries = await listTemporaryCampStorage(getDatabase(), {
+          accountId: account.accountId,
+          characterId: character.id
+        });
+        const storedFragment = entries.find((entry) => entry.itemCode === "unidentified_history_fragment");
+        const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+          new ButtonBuilder()
+            .setCustomId("etheria:camp:deposit_fragment")
+            .setLabel("Déposer le fragment")
+            .setStyle(ButtonStyle.Secondary),
+          new ButtonBuilder()
+            .setCustomId("etheria:camp:withdraw_fragment")
+            .setLabel("Retirer le fragment")
+            .setStyle(ButtonStyle.Primary)
+            .setDisabled(!storedFragment)
+        );
+        await interaction.editReply({
+          content:
+            "**Stockage du camp temporaire**\\n" +
+            (storedFragment
+              ? `Fragment historique non identifié : **${storedFragment.quantity}**`
+              : "Le stockage est actuellement vide.") +
+            "\\n\\nCe stockage est uniquement accessible depuis ton camp. Les objets déposés ne sont plus dans ton sac porté.",
+          components: [row]
+        });
+      } catch (error) {
+        if (error instanceof CampStorageUnavailableError) {
+          await interaction.editReply(error.message);
+          return;
+        }
+        logger.error("Impossible d'ouvrir le stockage du camp.", error);
+        await interaction.editReply("Impossible d'ouvrir le stockage du camp pour le moment.");
+      }
+      return;
+    }
+
+    if (
+      interaction.isButton() &&
+      ["etheria:camp:deposit_fragment", "etheria:camp:withdraw_fragment"].includes(interaction.customId)
+    ) {
+      await interaction.deferReply({ ephemeral: true });
+      try {
+        const account = await getAccount(interaction);
+        const character = await getActiveCharacter(getDatabase(), account.accountId);
+        if (!character) {
+          await interaction.editReply("Aucun personnage actif n'a été trouvé.");
+          return;
+        }
+        if (interaction.customId === "etheria:camp:deposit_fragment") {
+          await depositFoundItemAtTemporaryCamp(getDatabase(), {
+            accountId: account.accountId,
+            characterId: character.id,
+            itemCode: "unidentified_history_fragment"
+          });
+          await interaction.editReply("Le fragment historique a été déposé dans le stockage du camp. Il ne se trouve plus dans ton sac porté.");
+        } else {
+          await withdrawFoundItemFromTemporaryCamp(getDatabase(), {
+            accountId: account.accountId,
+            characterId: character.id,
+            itemCode: "unidentified_history_fragment"
+          });
+          await interaction.editReply("Le fragment historique a été remis dans ton sac porté.");
+        }
+      } catch (error) {
+        if (error instanceof CampStorageUnavailableError || error instanceof CampStorageItemError) {
+          await interaction.editReply(error.message);
+          return;
+        }
+        logger.error("Impossible de modifier le stockage du camp.", error);
+        await interaction.editReply("Le stockage n'a pas pu être modifié. Ton inventaire est conservé.");
+      }
+      return;
+    }
 
     if (interaction.isButton() && interaction.customId.startsWith("etheria:exploration:")) {
       await interaction.deferUpdate();
