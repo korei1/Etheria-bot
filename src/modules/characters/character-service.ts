@@ -1,4 +1,5 @@
 import type { Pool } from "pg";
+import type { CharacterGender } from "./character-draft-service.js";
 
 export interface CreateCharacterInput {
   accountId: string;
@@ -6,7 +7,7 @@ export interface CreateCharacterInput {
   publicPseudonym: string;
   originCountryId?: string | null;
   avatarModelKey?: string | null;
-  genderIdentity?: string | null;
+  genderIdentity?: CharacterGender | null;
   predecessorCharacterId?: string | null;
   relationshipToPredecessor?: string | null;
 }
@@ -135,6 +136,10 @@ export async function createCharacter(
     throw new Error("Le compte, le prénom et le pseudonyme sont obligatoires.");
   }
 
+  if (!input.genderIdentity || !["femme", "homme", "agenre"].includes(input.genderIdentity)) {
+    throw new Error("Le genre du personnage doit être femme, homme ou agenre.");
+  }
+
   const client = await pool.connect();
 
   try {
@@ -233,8 +238,8 @@ export async function createCharacter(
     }
 
     const avatarModel = await client.query(
-      "SELECT 1 FROM avatar_models WHERE model_key = $1 AND is_active = TRUE LIMIT 1",
-      [input.avatarModelKey]
+      "SELECT 1 FROM avatar_models WHERE model_key = $1 AND is_active = TRUE AND gender_identity = $2 LIMIT 1",
+      [input.avatarModelKey, input.genderIdentity]
     );
     if (!avatarModel.rowCount) {
       throw new AvatarModelUnavailableError();
