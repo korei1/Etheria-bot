@@ -17,6 +17,7 @@ export interface EtheriaCharacter {
   firstName: string;
   publicPseudonym: string;
   originCountryId: string | null;
+  spawnZoneId: string | null;
   ageYears: number;
   isOrphan: boolean;
   level: number;
@@ -36,6 +37,7 @@ interface CharacterRow {
   first_name: string;
   public_pseudonym: string;
   origin_country_id: string | null;
+  spawn_zone_id: string | null;
   age_years: number;
   is_orphan: boolean;
   level: number;
@@ -77,6 +79,13 @@ export class NoOriginCountryAvailableError extends Error {
   }
 }
 
+export class NoStartingSpawnAvailableError extends Error {
+  constructor() {
+    super("Aucun point de départ naturel, sûr et accessible n'est configuré dans ce pays.");
+    this.name = "NoStartingSpawnAvailableError";
+  }
+}
+
 function mapCharacter(row: CharacterRow): EtheriaCharacter {
   return {
     id: row.id,
@@ -84,6 +93,7 @@ function mapCharacter(row: CharacterRow): EtheriaCharacter {
     firstName: row.first_name,
     publicPseudonym: row.public_pseudonym,
     originCountryId: row.origin_country_id,
+    spawnZoneId: row.spawn_zone_id,
     ageYears: row.age_years,
     isOrphan: row.is_orphan,
     level: row.level,
@@ -177,7 +187,7 @@ export async function createCharacter(
 
     if (!originCountryId) {
       // Verrou global pour que deux créations simultanées ne déséquilibrent
-      // pas la répartition entre pays.
+      // pas la répartition entre pays. Umbrelune est exclue des origines publiques.
       await client.query(
         "SELECT pg_advisory_xact_lock(hashtextextended('etheria:origin-country-allocation', 0))"
       );
@@ -185,10 +195,22 @@ export async function createCharacter(
       const country = await client.query<{ id: string }>(
         `SELECT c.id
          FROM countries c
-         LEFT JOIN characters ch ON ch.origin_country_id = c.id
          WHERE c.is_origin_available = TRUE
-         GROUP BY c.id
-         ORDER BY COUNT(ch.id) ASC, random()
+           AND c.is_secret = FALSE
+           AND EXISTS (
+             SELECT 1
+             FROM starting_spawn_zones z
+             WHERE z.country_id = c.id
+               AND z.is_active = TRUE
+               AND z.is_natural = TRUE
+               AND z.is_safe_for_new_character = TRUE
+               AND z.is_accessible_for_new_character = TRUE
+           )
+         ORDER BY (
+           SELECT COUNT(*)
+           FROM characters ch
+           WHERE ch.origin_country_id = c.id
+         ) ASC, random()
          LIMIT 1`
       );
 
@@ -198,24 +220,47 @@ export async function createCharacter(
       }
     }
 
+    // Le point d'apparition est tiré uniquement parmi les zones naturelles
+    // sûres et accessibles du pays attribué. Le poids permet de régler la
+    // fréquence de chaque zone sans coder de lieu fictif dans l'application.
+    const spawnZone = await client.query<{ id: string }>(
+      `SELECT id
+       FROM starting_spawn_zones
+       WHERE country_id = $1
+         AND is_active = TRUE
+         AND is_natural = TRUE
+         AND is_safe_for_new_character = TRUE
+         AND is_accessible_for_new_character = TRUE
+       ORDER BY -ln(random()) / spawn_weight
+       LIMIT 1`,
+      [originCountryId]
+    );
+
+    const spawnZoneId = spawnZone.rows[0]?.id ?? null;
+    if (!spawnZoneId) {
+      throw new NoStartingSpawnAvailableError();
+    }
+
     const result = await client.query<CharacterRow>(
       `INSERT INTO characters (
          account_id,
          first_name,
          public_pseudonym,
          origin_country_id,
+         spawn_zone_id,
          predecessor_character_id,
          relationship_to_predecessor,
          avatar_model_key,
          gender_identity
        )
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING
          id,
          account_id,
          first_name,
          public_pseudonym,
          origin_country_id,
+         spawn_zone_id,
          age_years,
          is_orphan,
          level,
@@ -232,6 +277,7 @@ export async function createCharacter(
         firstName,
         publicPseudonym,
         originCountryId,
+        spawnZoneId,
         input.predecessorCharacterId ?? null,
         input.relationshipToPredecessor ?? null,
         input.avatarModelKey ?? null,
