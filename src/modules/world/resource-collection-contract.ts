@@ -1,4 +1,5 @@
 import type { Pool, PoolClient } from "pg";
+import { createItemStack } from "../inventory/item-model.js";
 import {
   addCollectedResourceToInventoryInTransaction,
   type AddCollectedResourceResult,
@@ -105,8 +106,7 @@ export async function collectWorldResource(
       await client.query("COMMIT");
       return {
         sourceKey: event.source_key,
-        itemCode: event.item_code,
-        quantity: Number(event.quantity),
+        ...createItemStack(event.item_code, Number(event.quantity)),
         replayed: true,
         slotNumber: Number(event.slot_number)
       };
