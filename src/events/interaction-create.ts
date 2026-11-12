@@ -27,6 +27,12 @@ import {
   saveCharacterDraft
 } from "../modules/characters/character-draft-service.js";
 import { listActiveAvatarModels } from "../modules/characters/avatar-model-service.js";
+import {
+  getInitialExplorationState,
+  performInitialExplorationAction,
+  type InitialExplorationAction,
+  type InitialExplorationScene
+} from "../modules/exploration/initial-exploration-service.js";
 import { getDatabasePool } from "../database/client.js";
 import { logger } from "../core/logger.js";
 
@@ -116,6 +122,49 @@ function draftButtons() {
   );
 }
 
+
+function explorationButton(customId: string, label: string, style = ButtonStyle.Primary) {
+  return new ButtonBuilder().setCustomId(customId).setLabel(label).setStyle(style);
+}
+
+function initialExplorationPayload(scene: InitialExplorationScene, inspectedPath = false) {
+  if (scene === "awakening") {
+    return {
+      content: "**Tu ouvres les yeux.** Tu es seul, au milieu de la nature. Tu ne sais pas où tu te trouves. Une brise passe près de toi. Tu peux prendre le temps de percevoir ce qui t'entoure.",
+      components: [
+        new ActionRowBuilder<ButtonBuilder>().addComponents(
+          explorationButton("etheria:exploration:listen_wind", "Écouter le vent"),
+          explorationButton("etheria:exploration:observe_surroundings", "Observer autour de moi", ButtonStyle.Secondary)
+        )
+      ]
+    };
+  }
+
+  if (scene === "wind_perceived") {
+    return {
+      content: "Tu prends le temps d'écouter. Le souffle du vent devient plus perceptible. En prêtant attention à ses variations et à ce que tu ressens sur ta peau, tu peux en suivre la direction.",
+      components: [
+        new ActionRowBuilder<ButtonBuilder>().addComponents(
+          explorationButton("etheria:exploration:follow_wind", "Suivre le vent"),
+          explorationButton("etheria:exploration:observe_surroundings", "Observer encore", ButtonStyle.Secondary)
+        )
+      ]
+    };
+  }
+
+  return {
+    content: inspectedPath
+      ? "Tu examines le passage. Il descend naturellement le long de la falaise. Tu peux l'emprunter quand tu le souhaites, sans être obligé de te précipiter."
+      : "En suivant le vent, tu arrives au bord d'une falaise. Depuis ce point élevé, tu distingues mieux le paysage alentour. Un passage naturel permet de descendre. Tu ne sais toujours pas où tu te trouves.",
+    components: [
+      new ActionRowBuilder<ButtonBuilder>().addComponents(
+        explorationButton("etheria:exploration:inspect_path", "Examiner le passage"),
+        explorationButton("etheria:exploration:observe_surroundings", "Observer le paysage", ButtonStyle.Secondary)
+      )
+    ]
+  };
+}
+
 function showCharacterModal(
   interaction: ButtonInteraction,
   draft?: { firstName: string; publicPseudonym: string } | null
@@ -180,9 +229,15 @@ export default {
         const activeCharacter = await getActiveCharacter(getDatabase(), account.accountId);
 
         if (activeCharacter) {
-          await interaction.editReply(
-            `Bon retour dans Etheria, **${activeCharacter.publicPseudonym}** ! Ton personnage est au niveau ${activeCharacter.level}.`
+          const exploration = await getInitialExplorationState(
+            getDatabase(),
+            account.accountId,
+            activeCharacter.id
           );
+          await interaction.editReply({
+            content: `Bon retour dans Etheria, **${activeCharacter.publicPseudonym}** ! Ton personnage est au niveau ${activeCharacter.level}.\\n\\n`,
+            ...initialExplorationPayload(exploration.scene)
+          });
           return;
         }
 
@@ -197,6 +252,44 @@ export default {
         logger.error("Impossible de préparer la création du personnage.", error);
         await interaction.editReply(
           "Je n'ai pas pu accéder à ton compte Etheria. Réessaie un peu plus tard."
+        );
+      }
+      return;
+    }
+
+
+    if (interaction.isButton() && interaction.customId.startsWith("etheria:exploration:")) {
+      await interaction.deferReply({ ephemeral: true });
+      try {
+        const account = await getAccount(interaction);
+        const character = await getActiveCharacter(getDatabase(), account.accountId);
+        if (!character) {
+          await interaction.editReply("Aucun personnage actif n'a été trouvé. Commence par créer ton personnage.");
+          return;
+        }
+
+        const action = interaction.customId.slice("etheria:exploration:".length) as InitialExplorationAction;
+        const allowedActions: InitialExplorationAction[] = [
+          "listen_wind", "observe_surroundings", "follow_wind", "inspect_path"
+        ];
+        if (!allowedActions.includes(action)) {
+          await interaction.editReply("Cette action d'exploration n'est pas reconnue.");
+          return;
+        }
+
+        const state = await performInitialExplorationAction(getDatabase(), {
+          interactionId: interaction.id,
+          accountId: account.accountId,
+          characterId: character.id,
+          action
+        });
+        await interaction.editReply(
+          initialExplorationPayload(state.scene, action === "inspect_path")
+        );
+      } catch (error) {
+        logger.error("Impossible d'enregistrer l'action d'exploration.", error);
+        await interaction.editReply(
+          "Je n'ai pas pu enregistrer cette action. Ta progression précédente est conservée."
         );
       }
       return;
@@ -400,9 +493,11 @@ export default {
 
         await deleteCharacterDraft(getDatabase(), account.accountId);
 
-        await interaction.editReply(
-          `Ton personnage **${character.firstName}** est officiellement créé !\nPseudonyme public : **${character.publicPseudonym}**\nÂge : **13 ans**\nNiveau : **1**\nQuête initiale : **Suivre le vent** (commencée)\n\nTon pseudonyme est désormais verrouillé définitivement.\n\n**Tu ouvres les yeux.** Tu es seul, au milieu de la nature. Tu ne sais pas où tu te trouves. Une brise passe près de toi. En tendant l'oreille, tu remarques le souffle du vent autour de toi...`
-        );
+        await interaction.editReply({
+          content:
+            `Ton personnage **${character.firstName}** est officiellement créé !\\nPseudonyme public : **${character.publicPseudonym}**\\nÂge : **13 ans**\\nNiveau : **1**\\nQuête initiale : **Suivre le vent** (commencée)\\n\\nTon pseudonyme est désormais verrouillé définitivement.\\n\\n`,
+          ...initialExplorationPayload("awakening")
+        });
       } catch (error) {
         if (error instanceof PseudonymUnavailableError) {
           await interaction.editReply({
