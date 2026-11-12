@@ -129,7 +129,9 @@ function explorationButton(customId: string, label: string, style = ButtonStyle.
 
 function initialExplorationPayload(
   scene: InitialExplorationScene,
-  lastAction?: InitialExplorationAction
+  lastAction?: InitialExplorationAction,
+  bagCapacity: number | null = null,
+  bagUsedSlots = 0
 ) {
   if (scene === "awakening") {
     return {
@@ -159,6 +161,31 @@ function initialExplorationPayload(
     };
   }
 
+  if (scene === "cliff_foot") {
+    return {
+      content: lastAction === "observe_surroundings"
+        ? "Au pied de la falaise, tu observes les environs. Tu remarques un petit sac tressé abandonné à proximité, ainsi que des baies que tu ne sais pas identifier."
+        : "Tu arrives au pied de la falaise. À proximité, tu découvres un petit sac tressé pouvant contenir **5 emplacements**. Un peu plus loin poussent des baies locales. Tu ne connais ni leur nom ni leurs propriétés.",
+      components: [
+        new ActionRowBuilder<ButtonBuilder>().addComponents(
+          explorationButton("etheria:exploration:collect_local_berries", "Recueillir un premier échantillon"),
+          explorationButton("etheria:exploration:observe_surroundings", "Observer les environs", ButtonStyle.Secondary)
+        )
+      ]
+    };
+  }
+
+  if (scene === "berries_collected") {
+    return {
+      content: `Tu as recueilli un premier échantillon de baies locales inconnues. Tu ne connais pas encore leur nom ni leurs propriétés.\\n\\n**Sac tressé** : ${bagUsedSlots}/${bagCapacity ?? 5} emplacements occupés.\\n**Contenu** : 1 échantillon de baies non identifiées.`,
+      components: [
+        new ActionRowBuilder<ButtonBuilder>().addComponents(
+          explorationButton("etheria:exploration:observe_surroundings", "Observer les environs", ButtonStyle.Secondary)
+        )
+      ]
+    };
+  }
+
   return {
     content: lastAction === "inspect_path"
       ? "Tu examines le passage. Il descend naturellement le long de la falaise. Tu peux l'emprunter quand tu le souhaites, sans être obligé de te précipiter."
@@ -168,6 +195,7 @@ function initialExplorationPayload(
     components: [
       new ActionRowBuilder<ButtonBuilder>().addComponents(
         explorationButton("etheria:exploration:inspect_path", "Examiner le passage"),
+        explorationButton("etheria:exploration:descend_path", "Descendre par le passage"),
         explorationButton("etheria:exploration:observe_surroundings", "Observer le paysage", ButtonStyle.Secondary)
       )
     ]
@@ -246,7 +274,7 @@ export default {
           const explorationPayload = initialExplorationPayload(exploration.scene);
           await interaction.editReply({
             ...explorationPayload,
-            content: `Bon retour dans Etheria, **${activeCharacter.publicPseudonym}** ! Ton personnage est au niveau ${activeCharacter.level}.\\n\\n${explorationPayload.content}`
+            content: `Bon retour dans Etheria, **${activeCharacter.publicPseudonym}** ! Ton personnage est au niveau ${activeCharacter.level}.\\n\\n${initialExplorationPayload(exploration.scene, undefined, exploration.bagCapacity, exploration.bagUsedSlots).content}`
           });
           return;
         }
@@ -280,7 +308,8 @@ export default {
 
         const action = interaction.customId.slice("etheria:exploration:".length) as InitialExplorationAction;
         const allowedActions: InitialExplorationAction[] = [
-          "listen_wind", "observe_surroundings", "follow_wind", "inspect_path"
+          "listen_wind", "observe_surroundings", "follow_wind", "inspect_path",
+          "descend_path", "collect_local_berries"
         ];
         if (!allowedActions.includes(action)) {
           await interaction.editReply("Cette action d'exploration n'est pas reconnue.");
@@ -294,7 +323,7 @@ export default {
           action
         });
         await interaction.editReply(
-          initialExplorationPayload(state.scene, action)
+          initialExplorationPayload(state.scene, action, state.bagCapacity, state.bagUsedSlots)
         );
       } catch (error) {
         logger.error("Impossible d'enregistrer l'action d'exploration.", error);
