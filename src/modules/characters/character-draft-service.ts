@@ -98,6 +98,7 @@ export async function getCharacterDraft(
     accountId: row.account_id,
     firstName: row.first_name,
     publicPseudonym: row.public_pseudonym,
+    avatarModelKey: row.avatar_model_key,
     createdAt: row.created_at,
     updatedAt: row.updated_at
   };
