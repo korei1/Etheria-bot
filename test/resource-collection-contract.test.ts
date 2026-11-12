@@ -111,7 +111,7 @@ test("crédite le sac et consomme la source dans la même transaction", async ()
     async resolveAndLockAvailableSource() {
       return {
         sourceKey: "world-source-42",
-        itemCode: "canonical_resource_code",
+        itemCode: "braiding_plant_fibers",
         quantity: 2,
         async consume() {
           consumed = true;
@@ -124,7 +124,7 @@ test("crédite le sac et consomme la source dans la même transaction", async ()
 
   assert.deepEqual(result, {
     sourceKey: "world-source-42",
-    itemCode: "canonical_resource_code",
+    itemCode: "braiding_plant_fibers",
     quantity: 2,
     replayed: false,
     slotNumber: 1
@@ -142,7 +142,7 @@ test("annule l'ajout au sac si la consommation de la source échoue", async () =
     async resolveAndLockAvailableSource() {
       return {
         sourceKey: "world-source-42",
-        itemCode: "canonical_resource_code",
+        itemCode: "braiding_plant_fibers",
         quantity: 2,
         async consume() {
           throw new Error("Échec simulé de consommation.");
@@ -166,7 +166,7 @@ test("une interaction déjà enregistrée ne consulte pas une seconde fois le mo
     existingEvent: {
       character_id: "character-1",
       source_key: "world-source-42",
-      item_code: "canonical_resource_code",
+      item_code: "braiding_plant_fibers",
       quantity: 2,
       slot_number: 3
     }
@@ -183,7 +183,7 @@ test("une interaction déjà enregistrée ne consulte pas une seconde fois le mo
 
   assert.deepEqual(result, {
     sourceKey: "world-source-42",
-    itemCode: "canonical_resource_code",
+    itemCode: "braiding_plant_fibers",
     quantity: 2,
     replayed: true,
     slotNumber: 3
