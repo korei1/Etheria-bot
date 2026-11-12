@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import {
   ActionRowBuilder,
   ButtonBuilder,
@@ -40,6 +41,12 @@ import {
   listTemporaryCampStorage,
   withdrawFoundItemFromTemporaryCamp
 } from "../modules/exploration/temporary-camp-storage-service.js";
+import {
+  craftItem,
+  CraftingInventoryError,
+  CraftingRequirementError,
+  CraftingRecipeUnavailableError
+} from "../modules/crafting/crafting-service.js";
 import { getDatabasePool } from "../database/client.js";
 import { logger } from "../core/logger.js";
 
@@ -322,7 +329,13 @@ function initialExplorationPayload(
       content: "Tu retrouves la grotte et y installes ton premier camp temporaire. Tu disposes désormais d'un endroit où revenir et conserver tes affaires à l'abri. Le fragment historique trouvé dans les ruines reste dans ton sac. Ce camp n'est pas encore un établissement permanent.",
       components: [
         new ActionRowBuilder<ButtonBuilder>().addComponents(
-          explorationButton("etheria:exploration:observe_surroundings", "Observer le camp", ButtonStyle.Secondary)
+          explorationButton("etheria:camp:craft:grass_bedding_level_1", "Fabriquer un couchage", ButtonStyle.Primary),
+          explorationButton("etheria:camp:craft:woven_rope_level_1", "Fabriquer une corde", ButtonStyle.Secondary),
+          explorationButton("etheria:camp:craft:fragile_wooden_barrier_level_1", "Fabriquer une barrière", ButtonStyle.Secondary)
+        ),
+        new ActionRowBuilder<ButtonBuilder>().addComponents(
+          explorationButton("etheria:exploration:observe_surroundings", "Observer le camp", ButtonStyle.Secondary),
+          explorationButton("etheria:camp:storage", "Gérer le stockage", ButtonStyle.Secondary)
         )
       ]
     };
@@ -444,6 +457,45 @@ export default {
       return;
     }
 
+
+    if (interaction.isButton() && interaction.customId.startsWith("etheria:camp:craft:")) {
+      await interaction.deferReply({ ephemeral: true });
+      try {
+        const account = await getAccount(interaction);
+        const character = await getActiveCharacter(getDatabase(), account.accountId);
+        if (!character) {
+          await interaction.editReply("Aucun personnage actif n'a été trouvé.");
+          return;
+        }
+        const recipeKey = interaction.customId.slice("etheria:camp:craft:".length);
+        const result = await craftItem(getDatabase(), {
+          interactionId: randomUUID(),
+          accountId: account.accountId,
+          characterId: character.id,
+          recipeKey
+        });
+        const outputNames: Record<string, string> = {
+          grass_bedding_level_1: "couchage d'herbe N1",
+          woven_rope_level_1: "corde tissée N1",
+          fragile_wooden_barrier_level_1: "barrière en bois fragile N1"
+        };
+        await interaction.editReply(
+          `Fabrication terminée : **${result.outputQuantity} × ${outputNames[result.outputItemCode] ?? result.outputItemCode}**.`
+        );
+      } catch (error) {
+        if (
+          error instanceof CraftingInventoryError ||
+          error instanceof CraftingRequirementError ||
+          error instanceof CraftingRecipeUnavailableError
+        ) {
+          await interaction.editReply(error.message);
+          return;
+        }
+        logger.error("Impossible de fabriquer cet objet au camp.", error);
+        await interaction.editReply("La fabrication n'a pas pu être effectuée. Aucun ingrédient n'a été consommé.");
+      }
+      return;
+    }
 
     if (interaction.isButton() && interaction.customId === "etheria:camp:storage") {
       await interaction.deferReply({ ephemeral: true });
