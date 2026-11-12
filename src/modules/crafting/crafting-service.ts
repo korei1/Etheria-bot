@@ -1,6 +1,7 @@
 import type { Pool } from "pg";
 import { getCraftingRecipe } from "./crafting-catalog.js";
 import { validateCraftingRecipe, type CraftingRecipe } from "./crafting-types.js";
+import { createItemStack, type ItemStack } from "../inventory/item-model.js";
 
 interface InventorySlotRow {
   id: string;
@@ -21,6 +22,7 @@ export interface CraftItemResult {
   recipeKey: string;
   outputItemCode: string;
   outputQuantity: number;
+  output: ItemStack;
   replayed: boolean;
 }
 
@@ -117,6 +119,7 @@ export async function craftItem(
         recipeKey: prior.recipe_key,
         outputItemCode: prior.output_item_code,
         outputQuantity: prior.output_quantity,
+        output: createItemStack(prior.output_item_code, Number(prior.output_quantity)),
         replayed: true
       };
     }
@@ -213,6 +216,7 @@ export async function craftItem(
           recipeKey: recipe.key,
           outputItemCode: recipe.output.itemCode,
           outputQuantity: recipe.output.quantity,
+          output: createItemStack(recipe.output.itemCode, recipe.output.quantity),
           replayed: true
         };
       }
@@ -278,6 +282,7 @@ export async function craftItem(
       recipeKey: recipe.key,
       outputItemCode: recipe.output.itemCode,
       outputQuantity: recipe.output.quantity,
+      output: createItemStack(recipe.output.itemCode, recipe.output.quantity),
       replayed: false
     };
   } catch (error) {
