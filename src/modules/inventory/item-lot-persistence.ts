@@ -143,3 +143,65 @@ export async function moveCampStorageLotsToInventory(
     [input.campStorageEntryId, input.inventorySlotId, input.itemCode]
   );
 }
+
+/** Retire une quantité précise du stockage et la rattache au sac sans perdre la provenance. */
+export async function movePartialCampStorageLotsToInventory(
+  client: PoolClient,
+  input: { campStorageEntryId: string; inventorySlotId: string; itemCode: string; quantity: number }
+): Promise<void> {
+  const lots = await client.query<{
+    id: string;
+    quantity: number;
+    origin_type: ItemOriginType | null;
+    origin_reference: string | null;
+    origin_occurred_at: Date | null;
+    instance_state: unknown;
+  }>(
+    `SELECT id, quantity, origin_type, origin_reference, origin_occurred_at, instance_state
+     FROM character_item_lots
+     WHERE camp_storage_entry_id = $1 AND item_code = $2
+     ORDER BY created_at ASC, id ASC
+     FOR UPDATE`,
+    [input.campStorageEntryId, input.itemCode]
+  );
+  const total = lots.rows.reduce((sum, lot) => sum + Number(lot.quantity), 0);
+  if (!Number.isSafeInteger(input.quantity) || input.quantity <= 0 || total < input.quantity) {
+    throw new Error("Les lots du camp ne correspondent pas à la quantité à retirer.");
+  }
+
+  let remaining = input.quantity;
+  for (const lot of lots.rows) {
+    if (remaining === 0) break;
+    const lotQuantity = Number(lot.quantity);
+    const moved = Math.min(lotQuantity, remaining);
+    if (moved === lotQuantity) {
+      await client.query(
+        `UPDATE character_item_lots
+         SET camp_storage_entry_id = NULL,
+             inventory_slot_id = $2,
+             container_kind = 'character_bag',
+             updated_at = NOW()
+         WHERE id = $1`,
+        [lot.id, input.inventorySlotId]
+      );
+    } else {
+      await client.query(
+        "UPDATE character_item_lots SET quantity = quantity - $2, updated_at = NOW() WHERE id = $1",
+        [lot.id, moved]
+      );
+      await client.query(
+        `INSERT INTO character_item_lots (
+           item_code, quantity, container_kind, inventory_slot_id,
+           instance_state, origin_type, origin_reference, origin_occurred_at
+         )
+         VALUES ($1, $2, 'character_bag', $3, $4::jsonb, $5, $6, $7)`,
+        [
+          input.itemCode, moved, input.inventorySlotId,
+          lot.instance_state === null ? null : JSON.stringify(lot.instance_state),
+          lot.origin_type, lot.origin_reference, lot.origin_occurred_at
+        ]
+      );
+    }
+    remaining -= moved;
+  }
+}
