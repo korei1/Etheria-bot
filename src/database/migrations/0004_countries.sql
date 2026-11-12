@@ -46,7 +46,7 @@ VALUES
   ('corallune', 'Thalasséa', 'Corallune', 'Corallia', FALSE),
   ('pelagis', 'Thalasséa', 'Pelagis', 'Pélagor', FALSE),
   ('ondelia', 'Thalasséa', 'Ondélia', 'Ondélys', FALSE),
-  ('nere lys', 'Thalasséa', 'Nérélys', 'Néréa', FALSE),
+  ('nerelys', 'Thalasséa', 'Nérélys', 'Néréa', FALSE),
   ('thalor', 'Thalasséa', 'Thalor', 'Thalassar', FALSE),
 
   ('pyrrhane', 'Ignéria', 'Pyrrhane', 'Pyrrhésia', FALSE),
