@@ -268,10 +268,54 @@ function initialExplorationPayload(
 
   if (scene === "berries_roasted") {
     return {
-      content: "Tu fais rôtir les baies près du feu. Leur texture et leur odeur ont changé sous l'effet de la chaleur. Tu as préparé ton premier aliment cuit et découvert les bases de la cuisine. La grotte devient ton premier abri temporaire pour la nuit.",
+      content: "Tu fais rôtir les baies près du feu. Leur texture et leur odeur ont changé sous l'effet de la chaleur. Tu as préparé ton premier aliment cuit et découvert les bases de la cuisine. La grotte devient ton premier abri temporaire pour la nuit. Après cette première nuit, la lumière du matin revient.",
       components: [
         new ActionRowBuilder<ButtonBuilder>().addComponents(
-          explorationButton("etheria:exploration:observe_surroundings", "Observer la grotte", ButtonStyle.Secondary)
+          explorationButton("etheria:exploration:wake_after_first_night", "Se réveiller au matin")
+        )
+      ]
+    };
+  }
+
+  if (scene === "morning_outside_cave") {
+    return {
+      content: "La nuit est passée. Tu sors de la grotte et découvres les environs à la lumière du matin. En observant le paysage proche, tu remarques des formes inhabituelles qui semblent être les vestiges d'anciennes constructions.",
+      components: [
+        new ActionRowBuilder<ButtonBuilder>().addComponents(
+          explorationButton("etheria:exploration:discover_nearby_ruins", "Examiner les vestiges")
+        )
+      ]
+    };
+  }
+
+  if (scene === "ruins_found") {
+    return {
+      content: "Tu t'approches des ruines. Des fragments de structures anciennes sont encore visibles. Tu ne sais pas qui les a bâties, ni à quelle époque. Certains éléments portent des traces qui pourraient conserver des morceaux d'histoire.",
+      components: [
+        new ActionRowBuilder<ButtonBuilder>().addComponents(
+          explorationButton("etheria:exploration:explore_ruins", "Explorer les ruines")
+        )
+      ]
+    };
+  }
+
+  if (scene === "ruins_explored") {
+    return {
+      content: "En explorant les vestiges, tu découvres un fragment ancien qui semble lié à l'histoire de ce monde. Tu ne peux pas encore en comprendre le sens. Tu le ranges dans ton sac pour le préserver. Après cette découverte, tu retournes vers la grotte afin d'y installer ton premier camp temporaire.",
+      components: [
+        new ActionRowBuilder<ButtonBuilder>().addComponents(
+          explorationButton("etheria:exploration:return_to_cave", "Retourner à la grotte")
+        )
+      ]
+    };
+  }
+
+  if (scene === "temporary_camp_established") {
+    return {
+      content: "Tu retrouves la grotte et y installes ton premier camp temporaire. Tu disposes désormais d'un endroit où revenir et conserver tes affaires à l'abri. Le fragment historique trouvé dans les ruines reste dans ton sac. Ce camp n'est pas encore un établissement permanent.",
+      components: [
+        new ActionRowBuilder<ButtonBuilder>().addComponents(
+          explorationButton("etheria:exploration:observe_surroundings", "Observer le camp", ButtonStyle.Secondary)
         )
       ]
     };
@@ -409,7 +453,8 @@ export default {
           "listen_wind", "observe_surroundings", "follow_wind", "inspect_path",
           "descend_path", "collect_local_berries", "discover_water_source",
           "drink_from_hands", "gather_canteen_plants", "craft_initial_canteen",
-          "seek_shelter", "enter_cave", "light_campfire", "roast_local_berries"
+          "seek_shelter", "enter_cave", "light_campfire", "roast_local_berries",
+          "wake_after_first_night", "discover_nearby_ruins", "explore_ruins", "return_to_cave"
         ];
         if (!allowedActions.includes(action)) {
           await interaction.editReply("Cette action d'exploration n'est pas reconnue.");
