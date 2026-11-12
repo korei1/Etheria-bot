@@ -195,19 +195,21 @@ export default {
         const firstName = interaction.fields.getTextInputValue("first_name").trim();
         const publicPseudonym = interaction.fields.getTextInputValue("public_pseudonym").trim();
 
-        if (!(await isPseudonymAvailable(getDatabase(), publicPseudonym))) {
-          await interaction.editReply({
-            content: "Ce pseudonyme est déjà utilisé dans Etheria. Choisis-en un autre avant de continuer.",
-            components: [creationButton()]
-          });
-          return;
-        }
-
+        // Le brouillon est conservé même si le pseudonyme est déjà pris :
+        // le joueur peut le corriger sans perdre son prénom.
         await saveCharacterDraft(getDatabase(), {
           accountId: account.accountId,
           firstName,
           publicPseudonym
         });
+
+        if (!(await isPseudonymAvailable(getDatabase(), publicPseudonym))) {
+          await interaction.editReply({
+            content: "Ce pseudonyme est déjà utilisé dans Etheria. Ton prénom est conservé : modifie le pseudonyme pour continuer.",
+            components: [creationButton()]
+          });
+          return;
+        }
 
         await interaction.editReply({
           content:
