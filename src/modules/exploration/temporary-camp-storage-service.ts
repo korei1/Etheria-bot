@@ -166,9 +166,16 @@ export async function withdrawFoundItemFromTemporaryCamp(
 
     const used = await client.query<{ count: number; next_slot: number }>(
       `SELECT COUNT(*)::integer AS count,
-              COALESCE(MAX(slot_number), 0)::integer + 1 AS next_slot
+              (SELECT candidate
+               FROM generate_series(1, $2::integer) AS candidate
+               WHERE NOT EXISTS (
+                 SELECT 1 FROM character_inventory_slots existing
+                 WHERE existing.bag_id = $1 AND existing.slot_number = candidate
+               )
+               ORDER BY candidate
+               LIMIT 1) AS next_slot
        FROM character_inventory_slots WHERE bag_id = $1`,
-      [equippedBag.id]
+      [equippedBag.id, equippedBag.capacity]
     );
     if (Number(used.rows[0]?.count ?? 0) >= equippedBag.capacity) {
       throw new CampStorageItemError("Ton sac porté est plein.");
@@ -183,7 +190,8 @@ export async function withdrawFoundItemFromTemporaryCamp(
     const entry = stored.rows[0];
     if (!entry) throw new CampStorageItemError("Cet objet n'est pas stocké dans le camp.");
 
-    const slotNumber = Number(used.rows[0]?.next_slot ?? 1);
+    const slotNumber = Number(used.rows[0]?.next_slot ?? 0);
+    if (!slotNumber) throw new CampStorageItemError("Aucun emplacement libre n'est disponible dans ton sac.");
     await client.query(
       `INSERT INTO character_inventory_slots (bag_id, slot_number, item_code, quantity)
        VALUES ($1, $2, $3, 1)`,
