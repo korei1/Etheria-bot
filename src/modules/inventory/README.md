@@ -1,5 +1,14 @@
 # Inventaire et réception des ressources
 
+## Catalogue central des objets
+
+`item-catalog.ts` est la source centrale des identités techniques déjà utilisées dans le parcours initial, le stockage, la collecte et l'artisanat. Chaque objet possède un code stable, un nom d'affichage et une catégorie générale (`resource`, `processed_item`, `crafted_object` ou `discovery`).
+
+Le catalogue ne fixe volontairement ni poids, valeur, empilabilité, durabilité, rareté, capacité, usages, consommation ou présence géographique. Ces règles nécessitent des décisions de conception canoniques distinctes.
+
+Le service de collecte refuse désormais les codes absents du catalogue. Le catalogue des recettes vérifie que chaque ingrédient et chaque résultat y est déclaré. Le stockage du camp lit son autorisation depuis la définition de l'objet ; à ce stade, seul le fragment historique non identifié possède explicitement cette autorisation, conformément à la règle déjà implémentée.
+
+
 ## Service de réception
 
 `addCollectedResourceToInventory` ajoute au sac actuellement équipé une quantité de ressource déjà validée par un système appelant.
