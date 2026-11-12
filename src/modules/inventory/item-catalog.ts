@@ -80,7 +80,7 @@ export const ITEM_CATALOG = [
 
 export type ItemCode = (typeof ITEM_CATALOG)[number]["code"];
 
-const itemsByCode = new Map(ITEM_CATALOG.map((item) => [item.code, item]));
+const itemsByCode = new Map<string, ItemDefinition>(ITEM_CATALOG.map((item) => [item.code, item]));
 
 export function getItemDefinition(itemCode: string): ItemDefinition | undefined {
   return itemsByCode.get(itemCode);
