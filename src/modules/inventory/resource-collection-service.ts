@@ -1,6 +1,7 @@
 import type { Pool, PoolClient } from "pg";
 import { getItemDefinition } from "./item-catalog.js";
 import { createItemStack, type ItemStack } from "./item-model.js";
+import { addInventoryItemLot } from "./item-lot-persistence.js";
 
 export interface AddCollectedResourceInput {
   accountId: string;
@@ -147,6 +148,12 @@ export async function addCollectedResourceToInventoryInTransaction(
       "UPDATE character_inventory_slots SET quantity = quantity + $2 WHERE id = $1",
       [stack.id, input.quantity]
     );
+    await addInventoryItemLot(client, {
+      inventorySlotId: stack.id,
+      itemCode,
+      quantity: input.quantity,
+      origin: { originType: "collection", sourceReference: sourceKey, occurredAt: new Date() }
+    });
     slotNumber = Number(stack.slot_number);
   } else {
     const occupied = await client.query<{ slot_number: number }>(
@@ -158,11 +165,20 @@ export async function addCollectedResourceToInventoryInTransaction(
       .find((candidate) => !used.has(candidate));
     if (!free) throw new ResourceCollectionError("Ton sac est plein.");
     slotNumber = free;
-    await client.query(
+    const insertedSlot = await client.query<{ id: string }>(
       `INSERT INTO character_inventory_slots (bag_id, slot_number, item_code, quantity)
-       VALUES ($1, $2, $3, $4)`,
+       VALUES ($1, $2, $3, $4)
+       RETURNING id`,
       [bag.id, slotNumber, itemCode, input.quantity]
     );
+    const slotId = insertedSlot.rows[0]?.id;
+    if (!slotId) throw new ResourceCollectionError("L'emplacement de collecte n'a pas été créé.");
+    await addInventoryItemLot(client, {
+      inventorySlotId: slotId,
+      itemCode,
+      quantity: input.quantity,
+      origin: { originType: "collection", sourceReference: sourceKey, occurredAt: new Date() }
+    });
   }
 
   await client.query(
