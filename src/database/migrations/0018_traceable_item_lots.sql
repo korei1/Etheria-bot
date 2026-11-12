@@ -10,9 +10,9 @@ CREATE TABLE character_item_lots (
   quantity INTEGER NOT NULL CHECK (quantity > 0),
   container_kind TEXT NOT NULL
     CHECK (container_kind IN ('character_bag', 'temporary_camp_storage')),
-  inventory_slot_id UUID UNIQUE
+  inventory_slot_id UUID
     REFERENCES character_inventory_slots(id) ON DELETE CASCADE,
-  camp_storage_entry_id UUID UNIQUE
+  camp_storage_entry_id UUID
     REFERENCES character_temporary_camp_storage(id) ON DELETE CASCADE,
   instance_state JSONB,
   origin_type TEXT
@@ -39,6 +39,12 @@ CREATE TABLE character_item_lots (
 
 CREATE INDEX character_item_lots_item_code_idx
   ON character_item_lots(item_code);
+CREATE INDEX character_item_lots_inventory_slot_idx
+  ON character_item_lots(inventory_slot_id)
+  WHERE inventory_slot_id IS NOT NULL;
+CREATE INDEX character_item_lots_camp_storage_idx
+  ON character_item_lots(camp_storage_entry_id)
+  WHERE camp_storage_entry_id IS NOT NULL;
 CREATE INDEX character_item_lots_origin_idx
   ON character_item_lots(origin_type, origin_occurred_at DESC)
   WHERE origin_type IS NOT NULL;
