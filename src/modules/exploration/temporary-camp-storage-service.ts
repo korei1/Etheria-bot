@@ -164,20 +164,20 @@ export async function withdrawFoundItemFromTemporaryCamp(
     const equippedBag = bag.rows[0];
     if (!equippedBag) throw new CampStorageItemError("Aucun sac n'est actuellement équipé.");
 
-    const used = await client.query<{ count: number; next_slot: number }>(
-      `SELECT COUNT(*)::integer AS count,
-              (SELECT candidate
-               FROM generate_series(1, $2::integer) AS candidate
-               WHERE NOT EXISTS (
-                 SELECT 1 FROM character_inventory_slots existing
-                 WHERE existing.bag_id = $1 AND existing.slot_number = candidate
-               )
-               ORDER BY candidate
-               LIMIT 1) AS next_slot
-       FROM character_inventory_slots WHERE bag_id = $1`,
-      [equippedBag.id, equippedBag.capacity]
+    const used = await client.query<{ slot_number: number }>(
+      "SELECT slot_number FROM character_inventory_slots WHERE bag_id = $1",
+      [equippedBag.id]
     );
-    if (Number(used.rows[0]?.count ?? 0) >= equippedBag.capacity) {
+    const occupiedSlots = new Set(used.rows.map((row) => Number(row.slot_number)));
+    const existingItem = await client.query<{ id: string }>(
+      "SELECT id FROM character_inventory_slots WHERE bag_id = $1 AND item_code = $2 FOR UPDATE",
+      [equippedBag.id, itemCode]
+    );
+    const freeSlot = Array.from(
+      { length: equippedBag.capacity },
+      (_, index) => index + 1
+    ).find((slotNumber) => !occupiedSlots.has(slotNumber));
+    if (!existingItem.rows[0] && !freeSlot) {
       throw new CampStorageItemError("Ton sac porté est plein.");
     }
 
@@ -190,13 +190,18 @@ export async function withdrawFoundItemFromTemporaryCamp(
     const entry = stored.rows[0];
     if (!entry) throw new CampStorageItemError("Cet objet n'est pas stocké dans le camp.");
 
-    const slotNumber = Number(used.rows[0]?.next_slot ?? 0);
-    if (!slotNumber) throw new CampStorageItemError("Aucun emplacement libre n'est disponible dans ton sac.");
-    await client.query(
-      `INSERT INTO character_inventory_slots (bag_id, slot_number, item_code, quantity)
-       VALUES ($1, $2, $3, 1)`,
-      [equippedBag.id, slotNumber, itemCode]
-    );
+    if (existingItem.rows[0]) {
+      await client.query(
+        "UPDATE character_inventory_slots SET quantity = quantity + 1 WHERE id = $1",
+        [existingItem.rows[0].id]
+      );
+    } else {
+      await client.query(
+        `INSERT INTO character_inventory_slots (bag_id, slot_number, item_code, quantity)
+         VALUES ($1, $2, $3, 1)`,
+        [equippedBag.id, freeSlot, itemCode]
+      );
+    }
     if (entry.quantity === 1) {
       await client.query("DELETE FROM character_temporary_camp_storage WHERE id = $1", [entry.id]);
     } else {
