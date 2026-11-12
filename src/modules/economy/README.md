@@ -63,8 +63,9 @@ Le flow du module doit :
 6. Pour `balance`, lire `wallet` avec le défaut 100.
 7. Pour `credit`, utiliser l'action d'incrément sur `wallet`.
 8. Pour `debit`, utiliser `atomic-increment-if` avec condition GTE et une variation négative, afin qu'un solde insuffisant ne soit jamais débité.
-9. Enregistrer le résultat sous `operationId` dans `etheria-operation-results`, puis marquer le verrou `done`.
-10. Répondre en JSON avec le même `operationId`, le booléen `success`, le solde réel et, si nécessaire, un code d'erreur.
+9. Pour un crédit ou un débit réussi, ajouter une entrée à l'historique individuel `history`, avec le montant signé, le motif, le solde après opération et la date. Cet ajout doit rester dans la branche qui a obtenu le verrou.
+10. Enregistrer le résultat sous `operationId` dans `etheria-operation-results`, puis marquer le verrou `done`.
+11. Répondre en JSON avec le même `operationId`, le booléen `success`, le solde réel et, si nécessaire, un code d'erreur.
 
 **Règle de sécurité en cas d'incident :** si le flow s'arrête après avoir posé le verrou `processing`, une répétition ne doit jamais rejouer automatiquement le débit ou le crédit. L'opération doit être vérifiée et réconciliée manuellement avant de libérer le verrou.
 
