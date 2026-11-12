@@ -49,7 +49,8 @@
 - Les ruines sont découvertes à proximité de l'abri, sans nom de lieu, civilisation ou date inventés.
 - L'exploration ajoute un fragment historique non identifié dans un emplacement du sac. Aucun contenu historique précis n'est révélé ni inventé à ce stade.
 - Le fragment est un objet transportable et reste dans l'inventaire du personnage.
-- Le retour à la grotte enregistre un camp temporaire associé au personnage. Il ne crée pas une propriété permanente ni un service public.
+- Le retour à la grotte enregistre un camp temporaire associé au personnage dans `character_temporary_camps`. Il ne crée pas une propriété permanente ni un service public.
+- La migration `0014_initial_ruins_and_temporary_camp.sql` autorise les scènes du lendemain matin dans la contrainte SQL, ajoute leurs jalons temporels et crée la table de persistance du camp.
 
 ## Persistance et intégrité
 
@@ -62,4 +63,4 @@
 
 ## Limites actuelles
 
-Le système de besoins est un socle persistant : la diminution de la soif et de la faim selon le temps écoulé reste à programmer. La source d'eau, les plantes, la grotte et les ruines sont encore des événements narratifs de cette première séquence, en attente du raccordement au monde géographique et aux catalogues écologiques/historiques. Le remplissage de la gourde et l'usage général des contenants restent à programmer. Le cycle temporel réel, les ressources nécessaires pour allumer le feu et les effets nutritionnels chiffrés de la cuisson restent à définir. Le fragment historique n'a pas encore de contenu déchiffrable défini.
+Le camp est actuellement enregistré comme installation temporaire minimale : son amélioration, son aménagement et ses fonctions de stockage ne sont pas encore simulés. Aucune recette, ressource de construction ou nouvelle plante n'est ajoutée sans définition canonique. Le système de besoins est un socle persistant : la diminution de la soif et de la faim selon le temps écoulé reste à programmer. La source d'eau, les plantes, la grotte et les ruines sont encore des événements narratifs de cette première séquence, en attente du raccordement au monde géographique et aux catalogues écologiques/historiques. Le remplissage de la gourde et l'usage général des contenants restent à programmer. Le cycle temporel réel, les ressources nécessaires pour allumer le feu et les effets nutritionnels chiffrés de la cuisson restent à définir. Le fragment historique n'a pas encore de contenu déchiffrable défini.
