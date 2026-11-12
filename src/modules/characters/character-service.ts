@@ -70,6 +70,13 @@ export class InvalidCharacterLineageError extends Error {
   }
 }
 
+export class NoOriginCountryAvailableError extends Error {
+  constructor() {
+    super("Aucun pays n'est actuellement disponible pour attribuer une origine.");
+    this.name = "NoOriginCountryAvailableError";
+  }
+}
+
 function mapCharacter(row: CharacterRow): EtheriaCharacter {
   return {
     id: row.id,
@@ -140,20 +147,55 @@ export async function createCharacter(
       throw new CharacterAlreadyExistsError();
     }
 
+    let originCountryId = input.originCountryId ?? null;
+
     if (input.predecessorCharacterId) {
-      const predecessor = await client.query(
-        `SELECT 1
+      const predecessor = await client.query<{ origin_country_id: string | null }>(
+        `SELECT origin_country_id
          FROM characters
          WHERE id = $1 AND account_id = $2 AND status = 'deceased'
          LIMIT 1`,
         [input.predecessorCharacterId, accountId]
       );
 
-      if (!predecessor.rowCount) {
+      const predecessorRow = predecessor.rows[0];
+      if (!predecessorRow) {
         throw new InvalidCharacterLineageError();
       }
+
+      // Une nouvelle génération reste rattachée au pays d'origine de sa famille.
+      if (
+        originCountryId !== null &&
+        predecessorRow.origin_country_id !== originCountryId
+      ) {
+        throw new InvalidCharacterLineageError();
+      }
+      originCountryId = predecessorRow.origin_country_id;
     } else if (input.relationshipToPredecessor) {
       throw new InvalidCharacterLineageError();
+    }
+
+    if (!originCountryId) {
+      // Verrou global pour que deux créations simultanées ne déséquilibrent
+      // pas la répartition entre pays.
+      await client.query(
+        "SELECT pg_advisory_xact_lock(hashtextextended('etheria:origin-country-allocation', 0))"
+      );
+
+      const country = await client.query<{ id: string }>(
+        `SELECT c.id
+         FROM countries c
+         LEFT JOIN characters ch ON ch.origin_country_id = c.id
+         WHERE c.is_origin_available = TRUE
+         GROUP BY c.id
+         ORDER BY COUNT(ch.id) ASC, random()
+         LIMIT 1`
+      );
+
+      originCountryId = country.rows[0]?.id ?? null;
+      if (!originCountryId) {
+        throw new NoOriginCountryAvailableError();
+      }
     }
 
     const result = await client.query<CharacterRow>(
@@ -189,7 +231,7 @@ export async function createCharacter(
         accountId,
         firstName,
         publicPseudonym,
-        input.originCountryId ?? null,
+        originCountryId,
         input.predecessorCharacterId ?? null,
         input.relationshipToPredecessor ?? null,
         input.avatarModelKey ?? null,
