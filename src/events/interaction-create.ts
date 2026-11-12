@@ -292,7 +292,8 @@ export default {
             "**Récapitulatif de ton personnage**\n\n" +
             `Prénom : **${draft.firstName}**\n` +
             `Pseudonyme public : **${draft.publicPseudonym}**\n` +
-            `Apparence : **${selectedModel.displayName}**\n\n` +
+            `Genre : **${draft.genderIdentity}**\n` +
+            `Avatar : **${selectedModel.displayName}**\n\n` +
             "Âge initial : **13 ans**\n" +
             "Statut initial : **orphelin**\n\n" +
             "Ton lieu d'apparition reste secret. Tu le découvriras grâce au premier PNJ rencontré. Tu peux encore modifier ton prénom, ton pseudonyme, ton genre et ton avatar avant la confirmation.",
