@@ -46,11 +46,12 @@ export async function addCollectedResourceToInventory(
 
   if (!sourceKey) throw new ResourceCollectionError("La source de collecte est invalide.");
   if (!itemCode) throw new ResourceCollectionError("Le code de ressource est invalide.");
-  if (!Number.isSafeInteger(input.quantity) || input.quantity <= 0) {
-    throw new ResourceCollectionError("La quantité collectée doit être un entier positif.");
+  const postgresIntegerMax = 2_147_483_647;
+  if (!Number.isInteger(input.quantity) || input.quantity <= 0 || input.quantity > postgresIntegerMax) {
+    throw new ResourceCollectionError("La quantité collectée doit être un entier positif pris en charge.");
   }
-  if (!input.interactionId.trim()) {
-    throw new ResourceCollectionError("L'identifiant de l'interaction est obligatoire.");
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(input.interactionId)) {
+    throw new ResourceCollectionError("L'identifiant de l'interaction doit être un UUID valide.");
   }
 
   const client = await pool.connect();
@@ -119,7 +120,7 @@ export async function addCollectedResourceToInventory(
     if (existing.rows[0]) {
       const stack = existing.rows[0];
       const nextQuantity = Number(stack.quantity) + input.quantity;
-      if (!Number.isSafeInteger(nextQuantity)) {
+      if (!Number.isSafeInteger(nextQuantity) || nextQuantity > postgresIntegerMax) {
         throw new ResourceCollectionError("La quantité totale de cette ressource est trop élevée.");
       }
       await client.query(
