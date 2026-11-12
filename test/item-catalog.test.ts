@@ -116,3 +116,33 @@ test("l'état d'une instance peut conserver qualité, état et provenance sans l
   }), []);
   assert.deepEqual(validateItemInstanceState({}), []);
 });
+
+
+test("une vue d'inventaire peut exposer un état validé sans l'imposer aux stocks existants", () => {
+  const state = {
+    conditionKey: "condition-test",
+    provenance: {
+      originType: "discovery" as const,
+      sourceReference: "discovery-event-test",
+      occurredAt: "2026-11-12T20:00:00.000Z"
+    }
+  };
+  const view = createItemStackView("unidentified_history_fragment", 1, {
+    kind: "temporary_camp_storage",
+    containerId: "camp-storage-1"
+  }, state);
+
+  assert.deepEqual(view.state, state);
+  assert.equal(view.properties, undefined);
+  assert.deepEqual(validateItemInstanceState(view.state ?? {}), []);
+});
+
+test("une vue d'inventaire refuse un état incohérent", () => {
+  assert.throws(() => createItemStackView("unidentified_history_fragment", 1, {
+    kind: "character_bag",
+    containerId: "bag-1",
+    slotNumber: 1
+  }, {
+    conditionKey: " "
+  }), InvalidItemStackError);
+});
