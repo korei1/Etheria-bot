@@ -59,7 +59,11 @@ La prochaine évolution de persistance devra introduire un modèle de lots/insta
 - `moveItemLot` déplace un lot entier sans changer son identité ni son historique.
 - `mergeItemLots` refuse volontairement toute fusion tant qu'une règle d'empilement canonique n'existe pas.
 
-Ce domaine n'est pas encore branché aux tables SQL ni aux interactions Discord. Les inventaires et le stockage du camp continuent donc d'utiliser leur stockage historique. Aucun historique n'est rétroactivement inventé pour les quantités existantes. La prochaine étape technique sera une migration additive avec lots de compatibilité sans provenance connue, puis le raccordement transactionnel des services de collecte, artisanat et stockage.
+La migration additive `0018_traceable_item_lots.sql` crée `character_item_lots` et transforme chaque ligne d'inventaire ou de stockage du camp existante en un lot technique lié à sa ligne source. Les lots historiques n'ont aucune provenance renseignée : elle reste inconnue au lieu d'être inventée.
+
+`item-lot-repository.ts` ajoute une lecture des lots persistés d'un personnage, en restreignant l'accès au compte propriétaire et aux personnages actifs. Cette lecture dépend de l'application préalable de la migration 0018.
+
+**Limite de cette étape :** les services d'ajout, de fabrication, de dépôt et de retrait continuent d'écrire dans les tables historiques. Les clés étrangères maintiennent les lots alignés sur la durée de vie de leurs lignes sources, mais elles ne suffisent pas à préserver une identité de lot lors d'un transfert ou d'une fusion. Le raccordement transactionnel complet exige de remplacer progressivement ces opérations agrégées par des opérations sur lots, notamment pour le stockage du camp qui fusionne aujourd'hui les quantités par code.
 
 ## Service de réception
 
