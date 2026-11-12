@@ -131,7 +131,9 @@ function initialExplorationPayload(
   scene: InitialExplorationScene,
   lastAction?: InitialExplorationAction,
   bagCapacity: number | null = null,
-  bagUsedSlots = 0
+  bagUsedSlots = 0,
+  thirstPercent = 100,
+  hungerPercent = 100
 ) {
   if (scene === "awakening") {
     return {
@@ -178,6 +180,51 @@ function initialExplorationPayload(
   if (scene === "berries_collected") {
     return {
       content: `Tu as recueilli un premier échantillon de baies locales inconnues. Tu ne connais pas encore leur nom ni leurs propriétés.\\n\\n**Sac tressé** : ${bagUsedSlots}/${bagCapacity ?? 5} emplacements occupés.\\n**Contenu** : 1 échantillon de baies non identifiées.`,
+      components: [
+        new ActionRowBuilder<ButtonBuilder>().addComponents(
+          explorationButton("etheria:exploration:discover_water_source", "Continuer l'exploration"),
+          explorationButton("etheria:exploration:observe_surroundings", "Observer les environs", ButtonStyle.Secondary)
+        )
+      ]
+    };
+  }
+
+  if (scene === "water_source_found") {
+    return {
+      content: "En poursuivant ton exploration, tu découvres une source d'eau. Un animal qui s'y abreuvait s'éloigne à ton arrivée. Tu peux boire directement en recueillant de l'eau dans tes mains. Tu ne connais toujours pas le nom de cet endroit.\\n\\n**Soif** : " + thirstPercent + "/100\\n**Faim** : " + hungerPercent + "/100.",
+      components: [
+        new ActionRowBuilder<ButtonBuilder>().addComponents(
+          explorationButton("etheria:exploration:drink_from_hands", "Boire avec mes mains")
+        )
+      ]
+    };
+  }
+
+  if (scene === "thirst_restored") {
+    return {
+      content: "Tu bois dans tes mains. Ta soif est entièrement restaurée. Tu réfléchis ensuite à un moyen de transporter de l'eau pour ne plus dépendre uniquement des sources. Des plantes souples à proximité pourraient être tressées.\\n\\n**Soif** : " + thirstPercent + "/100\\n**Faim** : " + hungerPercent + "/100.",
+      components: [
+        new ActionRowBuilder<ButtonBuilder>().addComponents(
+          explorationButton("etheria:exploration:gather_canteen_plants", "Réunir des plantes souples")
+        )
+      ]
+    };
+  }
+
+  if (scene === "plants_gathered") {
+    return {
+      content: "Tu as réuni des plantes souples et compris comment les tresser pour fabriquer un contenant simple. La première recette de gourde est maintenant accessible. Tu peux tenter de la fabriquer.",
+      components: [
+        new ActionRowBuilder<ButtonBuilder>().addComponents(
+          explorationButton("etheria:exploration:craft_initial_canteen", "Fabriquer la gourde de niveau 1")
+        )
+      ]
+    };
+  }
+
+  if (scene === "canteen_crafted") {
+    return {
+      content: "Tu viens de fabriquer ta première gourde de niveau 1 à partir de plantes tressées. Elle contient l'équivalent de deux mains jointes remplies d'eau. Cette quantité suffit à restaurer entièrement ta soif.\\n\\n**Gourde** : niveau 1\\n**Soif** : " + thirstPercent + "/100\\n**Faim** : " + hungerPercent + "/100.",
       components: [
         new ActionRowBuilder<ButtonBuilder>().addComponents(
           explorationButton("etheria:exploration:observe_surroundings", "Observer les environs", ButtonStyle.Secondary)
@@ -274,7 +321,14 @@ export default {
           const explorationPayload = initialExplorationPayload(exploration.scene);
           await interaction.editReply({
             ...explorationPayload,
-            content: `Bon retour dans Etheria, **${activeCharacter.publicPseudonym}** ! Ton personnage est au niveau ${activeCharacter.level}.\\n\\n${initialExplorationPayload(exploration.scene, undefined, exploration.bagCapacity, exploration.bagUsedSlots).content}`
+            content: `Bon retour dans Etheria, **${activeCharacter.publicPseudonym}** ! Ton personnage est au niveau ${activeCharacter.level}.\\n\\n${initialExplorationPayload(
+            exploration.scene,
+            undefined,
+            exploration.bagCapacity,
+            exploration.bagUsedSlots,
+            exploration.thirstPercent,
+            exploration.hungerPercent
+          ).content}`
           });
           return;
         }
@@ -309,7 +363,8 @@ export default {
         const action = interaction.customId.slice("etheria:exploration:".length) as InitialExplorationAction;
         const allowedActions: InitialExplorationAction[] = [
           "listen_wind", "observe_surroundings", "follow_wind", "inspect_path",
-          "descend_path", "collect_local_berries"
+          "descend_path", "collect_local_berries", "discover_water_source",
+          "drink_from_hands", "gather_canteen_plants", "craft_initial_canteen"
         ];
         if (!allowedActions.includes(action)) {
           await interaction.editReply("Cette action d'exploration n'est pas reconnue.");
@@ -323,7 +378,14 @@ export default {
           action
         });
         await interaction.editReply(
-          initialExplorationPayload(state.scene, action, state.bagCapacity, state.bagUsedSlots)
+          initialExplorationPayload(
+            state.scene,
+            action,
+            state.bagCapacity,
+            state.bagUsedSlots,
+            state.thirstPercent,
+            state.hungerPercent
+          )
         );
       } catch (error) {
         logger.error("Impossible d'enregistrer l'action d'exploration.", error);
