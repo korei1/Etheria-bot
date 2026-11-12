@@ -52,6 +52,15 @@
 - Le retour à la grotte enregistre un camp temporaire associé au personnage dans `character_temporary_camps`. Il ne crée pas une propriété permanente ni un service public.
 - La migration `0014_initial_ruins_and_temporary_camp.sql` autorise les scènes du lendemain matin dans la contrainte SQL, ajoute leurs jalons temporels et crée la table de persistance du camp.
 
+## Stockage physique du camp
+
+- Le stockage du camp est distinct du sac porté.
+- Il n'est consultable, modifiable ou accessible que lorsque le personnage se trouve réellement dans la scène du camp temporaire.
+- Les objets déposés sont retirés du sac porté dans la même transaction que leur ajout au stockage.
+- Le retrait vérifie la place disponible dans le sac porté et remet l'objet dans celui-ci.
+- La première intégration accepte le fragment historique non identifié, objet trouvé et non fabriqué. La liste sera étendue avec le catalogue canonique des objets.
+- Aucun sac, coffre ou stockage à distance n'est accessible depuis une autre zone.
+
 ## Persistance et intégrité
 
 - La scène courante est enregistrée dans `character_exploration_progress`.
@@ -63,4 +72,4 @@
 
 ## Limites actuelles
 
-Le camp est actuellement enregistré comme installation temporaire minimale : son amélioration, son aménagement et ses fonctions de stockage ne sont pas encore simulés. Aucune recette, ressource de construction ou nouvelle plante n'est ajoutée sans définition canonique. Le système de besoins est un socle persistant : la diminution de la soif et de la faim selon le temps écoulé reste à programmer. La source d'eau, les plantes, la grotte et les ruines sont encore des événements narratifs de cette première séquence, en attente du raccordement au monde géographique et aux catalogues écologiques/historiques. Le remplissage de la gourde et l'usage général des contenants restent à programmer. Le cycle temporel réel, les ressources nécessaires pour allumer le feu et les effets nutritionnels chiffrés de la cuisson restent à définir. Le fragment historique n'a pas encore de contenu déchiffrable défini.
+Le camp est enregistré comme installation temporaire. Le stockage physique minimal des objets trouvés non fabriqués est maintenant prévu par la migration 0015 et le service dédié ; il n'est accessible que depuis la scène du camp. Les améliorations et aménagements restent à programmer. Aucune recette, ressource de construction ou nouvelle plante n'est ajoutée sans définition canonique. Le système de besoins est un socle persistant : la diminution de la soif et de la faim selon le temps écoulé reste à programmer. La source d'eau, les plantes, la grotte et les ruines sont encore des événements narratifs de cette première séquence, en attente du raccordement au monde géographique et aux catalogues écologiques/historiques. Le remplissage de la gourde et l'usage général des contenants restent à programmer. Le cycle temporel réel, les ressources nécessaires pour allumer le feu et les effets nutritionnels chiffrés de la cuisson restent à définir. Le fragment historique n'a pas encore de contenu déchiffrable défini.
