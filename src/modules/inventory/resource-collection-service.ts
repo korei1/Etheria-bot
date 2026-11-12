@@ -1,4 +1,5 @@
 import type { Pool, PoolClient } from "pg";
+import { getItemDefinition } from "./item-catalog.js";
 
 export interface AddCollectedResourceInput {
   accountId: string;
@@ -70,6 +71,9 @@ export async function addCollectedResourceToInventoryInTransaction(
 
   if (!sourceKey) throw new ResourceCollectionError("La source de collecte est invalide.");
   if (!itemCode) throw new ResourceCollectionError("Le code de ressource est invalide.");
+  if (!getItemDefinition(itemCode)) {
+    throw new ResourceCollectionError("Cette ressource ne figure pas dans le catalogue des objets Etheria.");
+  }
   if (!Number.isInteger(input.quantity) || input.quantity <= 0 || input.quantity > postgresIntegerMax) {
     throw new ResourceCollectionError("La quantité collectée doit être un entier positif pris en charge.");
   }
