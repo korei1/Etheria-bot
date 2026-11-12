@@ -49,6 +49,18 @@ L'état facultatif ne doit être fourni que si le stock représenté est homogè
 
 La prochaine évolution de persistance devra introduire un modèle de lots/instances traçables et migrer les contenants de manière contrôlée. Elle devra préserver les quantités, les emplacements et les transactions actuelles avant de permettre des états distincts par objet.
 
+### Domaine des lots traçables
+
+`item-lots.ts` introduit un premier modèle métier pur, indépendant de PostgreSQL :
+
+- `ItemLot` possède un identifiant stable, un code objet, une quantité, un contenant et un état/provenance facultatifs.
+- `createItemLot` valide l'identité, la quantité, le contenant et l'état.
+- `splitItemLot` sépare une quantité en créant un nouvel identifiant fourni par le service appelant ; les deux lots conservent l'état et la provenance connus.
+- `moveItemLot` déplace un lot entier sans changer son identité ni son historique.
+- `mergeItemLots` refuse volontairement toute fusion tant qu'une règle d'empilement canonique n'existe pas.
+
+Ce domaine n'est pas encore branché aux tables SQL ni aux interactions Discord. Les inventaires et le stockage du camp continuent donc d'utiliser leur stockage historique. Aucun historique n'est rétroactivement inventé pour les quantités existantes. La prochaine étape technique sera une migration additive avec lots de compatibilité sans provenance connue, puis le raccordement transactionnel des services de collecte, artisanat et stockage.
+
 ## Service de réception
 
 `addCollectedResourceToInventory` ajoute au sac actuellement équipé une quantité de ressource déjà validée par un système appelant.
