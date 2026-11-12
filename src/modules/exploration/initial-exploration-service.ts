@@ -8,22 +8,33 @@ import {
 export type InitialExplorationScene =
   | "awakening"
   | "wind_perceived"
-  | "cliff_overlook";
+  | "cliff_overlook"
+  | "cliff_foot"
+  | "berries_collected";
 
 export type InitialExplorationAction =
   | "listen_wind"
   | "observe_surroundings"
   | "follow_wind"
-  | "inspect_path";
+  | "inspect_path"
+  | "descend_path"
+  | "collect_local_berries";
 
 export interface InitialExplorationState {
   scene: InitialExplorationScene;
   updatedAt: Date;
+  bagCapacity: number | null;
+  bagUsedSlots: number;
 }
 
 interface ExplorationRow {
   current_scene_key: InitialExplorationScene;
   updated_at: Date;
+}
+
+interface BagSummaryRow {
+  capacity: number | null;
+  used_slots: number | string;
 }
 
 export class CharacterNotFoundForExplorationError extends Error {
@@ -76,6 +87,27 @@ async function ensureProgress(
   return row;
 }
 
+async function getBagSummary(
+  client: PoolClient,
+  characterId: string
+): Promise<{ capacity: number | null; usedSlots: number }> {
+  const result = await client.query<BagSummaryRow>(
+    `SELECT b.capacity,
+            COUNT(s.id)::integer AS used_slots
+     FROM character_inventory_bags b
+     LEFT JOIN character_inventory_slots s ON s.bag_id = b.id
+     WHERE b.character_id = $1 AND b.is_equipped = TRUE
+     GROUP BY b.id, b.capacity
+     LIMIT 1`,
+    [characterId]
+  );
+
+  const row = result.rows[0];
+  return row
+    ? { capacity: row.capacity, usedSlots: Number(row.used_slots) }
+    : { capacity: null, usedSlots: 0 };
+}
+
 export async function getInitialExplorationState(
   pool: Pool,
   accountId: string,
@@ -94,12 +126,26 @@ export async function getInitialExplorationState(
   const row = result.rows[0];
   if (!row) throw new CharacterNotFoundForExplorationError();
 
-  return { scene: row.current_scene_key, updatedAt: row.updated_at };
+  const bag = await pool.query<BagSummaryRow>(
+    `SELECT b.capacity, COUNT(s.id)::integer AS used_slots
+     FROM character_inventory_bags b
+     LEFT JOIN character_inventory_slots s ON s.bag_id = b.id
+     WHERE b.character_id = $1 AND b.is_equipped = TRUE
+     GROUP BY b.id, b.capacity
+     LIMIT 1`,
+    [characterId]
+  );
+
+  return {
+    scene: row.current_scene_key,
+    updatedAt: row.updated_at,
+    bagCapacity: bag.rows[0]?.capacity ?? null,
+    bagUsedSlots: Number(bag.rows[0]?.used_slots ?? 0)
+  };
 }
 
 /**
- * Applique une action de la première séquence d'exploration.
- * L'identifiant Discord de l'interaction sert de clé d'idempotence.
+ * Applique une action validée de la première séquence d'exploration.
  * Le lieu de départ n'est jamais lu ni retourné par ce module.
  */
 export async function performInitialExplorationAction(
@@ -128,10 +174,8 @@ export async function performInitialExplorationAction(
     );
     if (!character.rowCount) throw new CharacterNotFoundForExplorationError();
 
-    const priorEvent = await client.query<{
-      scene_after: InitialExplorationScene;
-    }>(
-      `SELECT scene_after
+    const priorEvent = await client.query(
+      `SELECT 1
        FROM character_exploration_events
        WHERE event_id = $1 AND character_id = $2`,
       [interactionId, input.characterId]
@@ -139,8 +183,14 @@ export async function performInitialExplorationAction(
 
     if (priorEvent.rows[0]) {
       const current = await ensureProgress(client, input.characterId);
+      const bag = await getBagSummary(client, input.characterId);
       await client.query("COMMIT");
-      return { scene: current.current_scene_key, updatedAt: current.updated_at };
+      return {
+        scene: current.current_scene_key,
+        updatedAt: current.updated_at,
+        bagCapacity: bag.capacity,
+        bagUsedSlots: bag.usedSlots
+      };
     }
 
     const progress = await ensureProgress(client, input.characterId);
@@ -148,12 +198,9 @@ export async function performInitialExplorationAction(
 
     switch (input.action) {
       case "observe_surroundings":
-        // L'observation est libre et n'impose pas de progression.
         break;
       case "listen_wind":
-        if (progress.current_scene_key !== "awakening") {
-          throw new InvalidExplorationActionError();
-        }
+        if (progress.current_scene_key !== "awakening") throw new InvalidExplorationActionError();
         nextScene = "wind_perceived";
         break;
       case "follow_wind":
@@ -163,9 +210,74 @@ export async function performInitialExplorationAction(
         nextScene = "cliff_overlook";
         break;
       case "inspect_path":
+        if (progress.current_scene_key !== "cliff_overlook") throw new InvalidExplorationActionError();
+        break;
+      case "descend_path":
         if (progress.current_scene_key !== "cliff_overlook") {
-          throw new InvalidExplorationActionError();
+          throw new InvalidExplorationActionError("Tu dois d'abord avoir atteint le bord de la falaise.");
         }
+        nextScene = "cliff_foot";
+        await client.query(
+          `INSERT INTO character_inventory_bags (character_id, bag_code, capacity, is_equipped)
+           VALUES ($1, 'initial_woven_bag', 5, TRUE)
+           ON CONFLICT (character_id, bag_code) DO NOTHING`,
+          [input.characterId]
+        );
+        await recordQuestMilestoneInTransaction(client, {
+          eventId: randomUUID(),
+          characterId: input.characterId,
+          questKey: INITIAL_QUEST_KEY,
+          milestoneKey: "sac_initial_trouve",
+          sourceKey: "initial_exploration"
+        });
+        break;
+      case "collect_local_berries":
+        if (progress.current_scene_key !== "cliff_foot") {
+          throw new InvalidExplorationActionError("Tu dois d'abord avoir découvert les baies au pied de la falaise.");
+        }
+        const bagResult = await client.query<{ id: string; capacity: number }>(
+          `SELECT id, capacity
+           FROM character_inventory_bags
+           WHERE character_id = $1 AND is_equipped = TRUE
+           FOR UPDATE`,
+          [input.characterId]
+        );
+        const bag = bagResult.rows[0];
+        if (!bag) throw new InvalidExplorationActionError("Tu n'as pas encore trouvé de sac pour transporter les baies.");
+
+        const existingBerry = await client.query(
+          `SELECT 1 FROM character_inventory_slots
+           WHERE bag_id = $1 AND item_code = 'unidentified_local_berries'`,
+          [bag.id]
+        );
+        if (existingBerry.rowCount) {
+          throw new InvalidExplorationActionError("Tu as déjà recueilli un premier échantillon de ces baies.");
+        }
+
+        const used = await client.query<{ count: number }>(
+          `SELECT COUNT(*)::integer AS count
+           FROM character_inventory_slots
+           WHERE bag_id = $1`,
+          [bag.id]
+        );
+        const usedSlots = Number(used.rows[0]?.count ?? 0);
+        if (usedSlots >= bag.capacity) {
+          throw new InvalidExplorationActionError("Ton sac est plein.");
+        }
+
+        await client.query(
+          `INSERT INTO character_inventory_slots (bag_id, slot_number, item_code, quantity)
+           VALUES ($1, $2, 'unidentified_local_berries', 1)`,
+          [bag.id, usedSlots + 1]
+        );
+        nextScene = "berries_collected";
+        await recordQuestMilestoneInTransaction(client, {
+          eventId: randomUUID(),
+          characterId: input.characterId,
+          questKey: INITIAL_QUEST_KEY,
+          milestoneKey: "premieres_baies_recoltees",
+          sourceKey: "initial_exploration"
+        });
         break;
       default:
         throw new InvalidExplorationActionError();
@@ -186,13 +298,7 @@ export async function performInitialExplorationAction(
          event_id, character_id, action_key, scene_before, scene_after
        )
        VALUES ($1, $2, $3, $4, $5)`,
-      [
-        interactionId,
-        input.characterId,
-        input.action,
-        progress.current_scene_key,
-        nextScene
-      ]
+      [interactionId, input.characterId, input.action, progress.current_scene_key, nextScene]
     );
 
     if (input.action === "listen_wind" && nextScene === "wind_perceived") {
@@ -215,8 +321,14 @@ export async function performInitialExplorationAction(
       });
     }
 
+    const bag = await getBagSummary(client, input.characterId);
     await client.query("COMMIT");
-    return { scene: updatedRow.current_scene_key, updatedAt: updatedRow.updated_at };
+    return {
+      scene: updatedRow.current_scene_key,
+      updatedAt: updatedRow.updated_at,
+      bagCapacity: bag.capacity,
+      bagUsedSlots: bag.usedSlots
+    };
   } catch (error) {
     await client.query("ROLLBACK").catch(() => undefined);
     throw error;
