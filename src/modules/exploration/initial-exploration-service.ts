@@ -40,6 +40,18 @@ export class InvalidExplorationActionError extends Error {
   }
 }
 
+export async function initializeInitialExploration(
+  client: PoolClient,
+  characterId: string
+): Promise<void> {
+  await client.query(
+    `INSERT INTO character_exploration_progress (character_id, current_scene_key)
+     VALUES ($1, 'awakening')
+     ON CONFLICT (character_id) DO NOTHING`,
+    [characterId]
+  );
+}
+
 async function ensureProgress(
   client: PoolClient,
   characterId: string
