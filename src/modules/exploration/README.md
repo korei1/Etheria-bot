@@ -50,7 +50,7 @@
 - L'exploration ajoute un fragment historique non identifié dans un emplacement du sac. Aucun contenu historique précis n'est révélé ni inventé à ce stade.
 - Le fragment est un objet transportable et reste dans l'inventaire du personnage.
 - Le retour à la grotte enregistre un camp temporaire associé au personnage dans `character_temporary_camps`. Il ne crée pas une propriété permanente ni un service public.
-- La migration `0014_initial_ruins_and_temporary_camp.sql` autorise les scènes du lendemain matin dans la contrainte SQL, ajoute leurs jalons temporels et crée la table de persistance du camp.
+- La migration `0014_morning_ruins_and_temporary_camp.sql` autorise les scènes du lendemain matin dans la contrainte SQL, ajoute leurs jalons temporels et crée la table de persistance du camp.
 
 ## Stockage physique du camp
 
