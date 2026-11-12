@@ -11,10 +11,14 @@ export type ItemCategory =
   | "crafted_object"
   | "discovery";
 
+import type { ItemDefinitionProperties } from "./item-properties.js";
+
 export interface ItemDefinition {
   readonly code: string;
   readonly label: string;
   readonly category: ItemCategory;
+  /** Propriétés communes du type ; absentes tant qu’elles ne sont pas définies. */
+  readonly properties?: ItemDefinitionProperties;
   /** Autorisation explicitement déjà définie pour le stockage du camp temporaire. */
   readonly temporaryCampStorage?: true;
 }
