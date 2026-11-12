@@ -67,6 +67,8 @@
 - La scène courante est enregistrée dans `character_exploration_progress`.
 - Chaque action Discord est enregistrée dans `character_exploration_events`.
 - L'identifiant de l'interaction Discord sert de clé d'idempotence.
+- Les collectes initiales, la fabrication de la gourde, la cuisson des baies et la découverte du fragment créent ou consomment des lots traçables dans la même transaction que les lignes de sac.
+- La migration `0018_traceable_item_lots.sql` reprend les stocks existants en lots historiques sans provenance inventée ; elle doit être appliquée avant d'utiliser les services raccordés.
 - Le sac, les objets, les besoins vitaux et les jalons de quête sont enregistrés dans des transactions.
 - Le lieu géographique d'apparition n'est jamais lu ou retourné par ce module.
 - Le module ne contient aucun nom de lieu ou d'espèce botanique inventé.
