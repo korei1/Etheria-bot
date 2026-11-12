@@ -15,7 +15,7 @@ import {
 export interface LockedWorldResourceSource {
   /** Identifiant stable et interne de la source dans le monde. */
   sourceKey: string;
-  /** Code d'objet déjà reconnu par le catalogue d'objets. */
+  /** Code d'objet canonique fourni par le résolveur du monde. */
   itemCode: string;
   /** Quantité déterminée par les règles du monde, jamais par le client Discord. */
   quantity: number;
