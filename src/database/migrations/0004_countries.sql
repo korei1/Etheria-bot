@@ -57,6 +57,8 @@ VALUES
   ('umbrelune-hidden-03', 'Umbrelune', NULL, NULL, TRUE),
   ('umbrelune-hidden-04', 'Umbrelune', NULL, NULL, TRUE);
 
+UPDATE countries SET is_origin_available = FALSE WHERE is_secret = TRUE;
+
 ALTER TABLE characters
   ADD CONSTRAINT characters_origin_country_fk
   FOREIGN KEY (origin_country_id) REFERENCES countries(id)
