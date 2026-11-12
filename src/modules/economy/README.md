@@ -55,7 +55,7 @@ Le webhook doit être créé sur la page Integrations SCNX en mode **Respond**, 
 
 Le flow du module doit :
 
-1. Lire le corps comme `RECORD:etheria-wallet-request`.
+1. Configurer le déclencheur Webhook avec le champ Body shape = `etheria-wallet-request` (identifiant de la forme, sans préfixe `RECORD:`), puis lire la sortie Body.
 2. Vérifier le type d'opération, le UUID, le snowflake Discord et le montant.
 3. Utiliser `atomic-set-if` sur `etheria-operation-locks`, clé = `operationId`, condition ABSENT, valeur `processing`. Si le verrou n'est pas obtenu, ne jamais refaire l'opération : renvoyer le résultat déjà enregistré ou une réponse de conflit si elle est encore en cours.
 4. Vérifier le membre avec son identifiant Discord avant de toucher son portefeuille.
