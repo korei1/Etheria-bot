@@ -191,7 +191,7 @@ function initialExplorationPayload(
 
   if (scene === "water_source_found") {
     return {
-      content: "En poursuivant ton exploration, tu découvres une source d'eau. Un animal qui s'y abreuvait s'éloigne à ton arrivée. Tu peux boire directement en recueillant de l'eau dans tes mains. Tu ne connais toujours pas le nom de cet endroit.\\n\\n**Soif** : " + thirstPercent + "/100\\n**Faim** : " + hungerPercent + "/100.",
+      content: "En poursuivant ton exploration, tu découvres une source d'eau. Un animal qui s'y abreuvait s'éloigne à ton arrivée. Tu peux boire directement en recueillant de l'eau dans tes mains. Tu ne connais toujours pas le nom de cet endroit.",
       components: [
         new ActionRowBuilder<ButtonBuilder>().addComponents(
           explorationButton("etheria:exploration:drink_from_hands", "Boire avec mes mains")
@@ -202,7 +202,7 @@ function initialExplorationPayload(
 
   if (scene === "thirst_restored") {
     return {
-      content: "Tu bois dans tes mains. Ta soif est entièrement restaurée. Tu réfléchis ensuite à un moyen de transporter de l'eau pour ne plus dépendre uniquement des sources. Des plantes souples à proximité pourraient être tressées.\\n\\n**Soif** : " + thirstPercent + "/100\\n**Faim** : " + hungerPercent + "/100.",
+      content: "Tu bois dans tes mains. Ta soif est entièrement restaurée. Tu réfléchis ensuite à un moyen de transporter de l'eau pour ne plus dépendre uniquement des sources. Des plantes souples à proximité pourraient être tressées.",
       components: [
         new ActionRowBuilder<ButtonBuilder>().addComponents(
           explorationButton("etheria:exploration:gather_canteen_plants", "Réunir des plantes souples")
@@ -224,7 +224,7 @@ function initialExplorationPayload(
 
   if (scene === "canteen_crafted") {
     return {
-      content: "Tu viens de fabriquer ta première gourde de niveau 1 à partir de plantes tressées. Elle contient l'équivalent de deux mains jointes remplies d'eau. Cette quantité suffit à restaurer entièrement ta soif.\\n\\n**Gourde** : niveau 1\\n**Soif** : " + thirstPercent + "/100\\n**Faim** : " + hungerPercent + "/100.",
+      content: "Tu viens de fabriquer ta première gourde de niveau 1 à partir de plantes tressées. Sa capacité correspond à l'équivalent de deux mains jointes remplies d'eau. Cette quantité suffit à restaurer entièrement ta soif.\\n\\n**Gourde** : niveau 1.",
       components: [
         new ActionRowBuilder<ButtonBuilder>().addComponents(
           explorationButton("etheria:exploration:observe_surroundings", "Observer les environs", ButtonStyle.Secondary)
