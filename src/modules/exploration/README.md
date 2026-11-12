@@ -60,6 +60,7 @@
 - Le retrait vérifie la place disponible dans le sac porté et remet l'objet dans celui-ci.
 - La première intégration accepte le fragment historique non identifié, objet trouvé et non fabriqué. La liste sera étendue avec le catalogue canonique des objets.
 - Aucun sac, coffre ou stockage à distance n'est accessible depuis une autre zone.
+- Depuis l'interface Discord du camp, le joueur peut ouvrir un panneau privé, déposer le fragment historique non identifié ou le reprendre. Les opérations vérifient le lieu courant et la capacité du sac.
 
 ## Persistance et intégrité
 
@@ -72,4 +73,4 @@
 
 ## Limites actuelles
 
-Le camp est enregistré comme installation temporaire. Le stockage physique minimal des objets trouvés non fabriqués est maintenant prévu par la migration 0015 et le service dédié ; il n'est accessible que depuis la scène du camp. Les améliorations et aménagements restent à programmer. Aucune recette, ressource de construction ou nouvelle plante n'est ajoutée sans définition canonique. Le système de besoins est un socle persistant : la diminution de la soif et de la faim selon le temps écoulé reste à programmer. La source d'eau, les plantes, la grotte et les ruines sont encore des événements narratifs de cette première séquence, en attente du raccordement au monde géographique et aux catalogues écologiques/historiques. Le remplissage de la gourde et l'usage général des contenants restent à programmer. Le cycle temporel réel, les ressources nécessaires pour allumer le feu et les effets nutritionnels chiffrés de la cuisson restent à définir. Le fragment historique n'a pas encore de contenu déchiffrable défini.
+Le camp est enregistré comme installation temporaire. Le stockage physique minimal des objets trouvés non fabriqués est maintenant prévu par la migration 0015, son service et son interface Discord ; il n'est accessible que depuis la scène du camp. Les améliorations et aménagements restent à programmer. Aucune recette, ressource de construction ou nouvelle plante n'est ajoutée sans définition canonique. Le système de besoins est un socle persistant : la diminution de la soif et de la faim selon le temps écoulé reste à programmer. La source d'eau, les plantes, la grotte et les ruines sont encore des événements narratifs de cette première séquence, en attente du raccordement au monde géographique et aux catalogues écologiques/historiques. Le remplissage de la gourde et l'usage général des contenants restent à programmer. Le cycle temporel réel, les ressources nécessaires pour allumer le feu et les effets nutritionnels chiffrés de la cuisson restent à définir. Le fragment historique n'a pas encore de contenu déchiffrable défini.
