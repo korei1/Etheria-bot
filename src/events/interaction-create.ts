@@ -16,6 +16,7 @@ import {
   getActiveCharacter,
   PseudonymUnavailableError,
   AvatarModelUnavailableError,
+  NoOriginCountryAvailableError,
   NoStartingSpawnAvailableError
 } from "../modules/characters/character-service.js";
 import {
@@ -75,6 +76,15 @@ function avatarSelectionPayload(models: Awaited<ReturnType<typeof listActiveAvat
     }
     rows.push(row);
   }
+
+  rows.push(
+    new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder()
+        .setCustomId("etheria:character:edit")
+        .setLabel("Modifier le prénom ou le pseudonyme")
+        .setStyle(ButtonStyle.Secondary)
+    )
+  );
 
   return {
     content: "Choisis l'apparence de départ de ton personnage. Les modèles sont variés et aucun choix de genre n'est obligatoire.",
@@ -362,6 +372,13 @@ export default {
             models.length
               ? avatarSelectionPayload(models)
               : { content: "Le catalogue des avatars n'est pas encore configuré. Ton brouillon est conservé." }
+          );
+          return;
+        }
+
+        if (error instanceof NoOriginCountryAvailableError) {
+          await interaction.editReply(
+            "La création est en attente : aucun pays ne possède encore de zone de départ validée. Ton brouillon est conservé."
           );
           return;
         }
