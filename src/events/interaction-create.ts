@@ -413,28 +413,20 @@ export default {
         }
 
         if (error instanceof AvatarModelUnavailableError) {
-          const latestDraft = await getCharacterDraft(getDatabase(), account.accountId);
-          const models = latestDraft?.genderIdentity
-            ? await listActiveAvatarModels(getDatabase(), latestDraft.genderIdentity)
-            : [];
-          await interaction.editReply(
-            models.length
-              ? avatarSelectionPayload(models)
-              : genderSelectionPayload()
-          );
+          await interaction.editReply(genderSelectionPayload());
           return;
         }
 
         if (error instanceof NoOriginCountryAvailableError) {
           await interaction.editReply(
-            "La création est en attente : aucun pays ne possède encore de zone de départ validée. Ton brouillon est conservé."
+            "La création est temporairement indisponible. Ton brouillon est conservé."
           );
           return;
         }
 
         if (error instanceof NoStartingSpawnAvailableError) {
           await interaction.editReply(
-            "Ton personnage n'a pas encore été créé : aucune zone de départ sûre et accessible n'est configurée pour son pays. Ton brouillon est conservé."
+            "La création est temporairement indisponible. Ton brouillon est conservé."
           );
           return;
         }
