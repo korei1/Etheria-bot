@@ -6,6 +6,7 @@ import {
   ModalBuilder,
   TextInputBuilder,
   TextInputStyle,
+  type ButtonInteraction,
   type Interaction
 } from "discord.js";
 import { getOrCreateAccount } from "../modules/accounts/account-service.js";
@@ -62,7 +63,7 @@ function draftButtons() {
 }
 
 function showCharacterModal(
-  interaction: Extract<Interaction, { isButton: () => boolean }>,
+  interaction: ButtonInteraction,
   draft?: { firstName: string; publicPseudonym: string } | null
 ): Promise<void> {
   const modal = new ModalBuilder()
@@ -208,8 +209,7 @@ export default {
             `Prénom : **${firstName}**\n` +
             `Pseudonyme public : **${publicPseudonym}**\n\n` +
             "Âge initial : **13 ans**\n" +
-            "Statut initial : **orphelin**\n" +
-            "Origine : **attribuée aléatoirement par Etheria**\n\n" +
+            "Statut initial : **orphelin**\n\n" +
             "Tu peux encore modifier le prénom et le pseudonyme. Le pseudonyme ne sera réservé définitivement qu'après confirmation.",
           components: [draftButtons()]
         });
