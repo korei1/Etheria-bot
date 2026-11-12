@@ -1,4 +1,5 @@
 import type { Pool } from "pg";
+import { getItemDefinition, type ItemCode } from "./item-catalog.js";
 import { createItemLot, type ItemLot } from "./item-lots.js";
 import type { ItemInstanceState, ItemOriginType } from "./item-properties.js";
 
@@ -59,6 +60,10 @@ export async function listCharacterItemLots(
   );
 
   return result.rows.map((row) => {
+    if (!getItemDefinition(row.item_code)) {
+      throw new ItemLotRepositoryError("Un lot persisté référence un objet absent du catalogue Etheria.");
+    }
+    const itemCode = row.item_code as ItemCode;
     const state: ItemInstanceState | undefined = row.instance_state
       ? row.instance_state
       : row.origin_type
@@ -79,7 +84,7 @@ export async function listCharacterItemLots(
       }
       return createItemLot({
         lotId: row.id,
-        itemCode: row.item_code,
+        itemCode,
         quantity: Number(row.quantity),
         container: {
           kind: "character_bag",
@@ -95,7 +100,7 @@ export async function listCharacterItemLots(
     }
     return createItemLot({
       lotId: row.id,
-      itemCode: row.item_code,
+      itemCode,
       quantity: Number(row.quantity),
       container: {
         kind: "temporary_camp_storage",
