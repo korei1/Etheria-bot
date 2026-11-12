@@ -18,6 +18,7 @@ export interface EtheriaCharacter {
   publicPseudonym: string;
   originCountryId: string | null;
   ageYears: number;
+  isOrphan: boolean;
   level: number;
   status: "active" | "deceased";
   predecessorCharacterId: string | null;
@@ -36,6 +37,7 @@ interface CharacterRow {
   public_pseudonym: string;
   origin_country_id: string | null;
   age_years: number;
+  is_orphan: boolean;
   level: number;
   status: "active" | "deceased";
   predecessor_character_id: string | null;
@@ -76,6 +78,7 @@ function mapCharacter(row: CharacterRow): EtheriaCharacter {
     publicPseudonym: row.public_pseudonym,
     originCountryId: row.origin_country_id,
     ageYears: row.age_years,
+    isOrphan: row.is_orphan,
     level: row.level,
     status: row.status,
     predecessorCharacterId: row.predecessor_character_id,
@@ -172,6 +175,7 @@ export async function createCharacter(
          public_pseudonym,
          origin_country_id,
          age_years,
+         is_orphan,
          level,
          status,
          predecessor_character_id,
@@ -237,6 +241,7 @@ export async function getActiveCharacter(
        public_pseudonym,
        origin_country_id,
        age_years,
+       is_orphan,
        level,
        status,
        predecessor_character_id,
