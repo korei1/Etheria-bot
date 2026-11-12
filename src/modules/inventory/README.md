@@ -47,7 +47,7 @@ Les validateurs vérifient la cohérence des propriétés lorsqu'elles seront re
 
 L'état facultatif ne doit être fourni que si le stock représenté est homogène. Le stockage SQL actuel agrège encore les quantités par code d'objet : il ne peut pas conserver de façon fiable des états ou provenances différents pour chaque unité d'une même pile. Aucun état n'est donc persisté automatiquement et aucune provenance n'est inventée lors d'une collecte, fabrication, découverte ou manipulation.
 
-La prochaine évolution de persistance devra introduire un modèle de lots/instances traçables et migrer les contenants de manière contrôlée. Elle devra préserver les quantités, les emplacements et les transactions actuelles avant de permettre des états distincts par objet.
+Le modèle de lots est désormais persisté par la migration additive 0018. Les lignes historiques sont reprises comme lots de compatibilité sans provenance connue. Les services raccordés ajoutent, consomment et déplacent ces lots dans la même transaction que les stocks agrégés.
 
 ### Domaine des lots traçables
 
@@ -63,7 +63,7 @@ La migration additive `0018_traceable_item_lots.sql` crée `character_item_lots`
 
 `item-lot-repository.ts` ajoute une lecture des lots persistés d'un personnage, en restreignant l'accès au compte propriétaire et aux personnages actifs. Cette lecture dépend de l'application préalable de la migration 0018.
 
-**Limite de cette étape :** les services d'ajout, de fabrication, de dépôt et de retrait continuent d'écrire dans les tables historiques. Les clés étrangères maintiennent les lots alignés sur la durée de vie de leurs lignes sources, mais elles ne suffisent pas à préserver une identité de lot lors d'un transfert ou d'une fusion. Le raccordement transactionnel complet exige de remplacer progressivement ces opérations agrégées par des opérations sur lots, notamment pour le stockage du camp qui fusionne aujourd'hui les quantités par code.
+**Raccordement transactionnel actuel :** les services de collecte, de fabrication, de collecte scénarisée initiale, de cuisson, de découverte des fragments et de dépôt/retrait au camp synchronisent désormais les lots dans la transaction de mise à jour du stock. La quantité agrégée reste une vue de compatibilité ; les lots conservent séparément les provenances et peuvent cohabiter sous une même ligne de stock. Le retrait partiel du stockage du camp sépare un lot si nécessaire et conserve son état/provenance. La fusion de lots reste interdite dans le domaine pur tant que les règles d'empilement de gameplay ne sont pas définies.
 
 ## Service de réception
 
@@ -81,7 +81,7 @@ La migration additive `0018_traceable_item_lots.sql` crée `character_item_lots`
 
 Ce service est une brique d'inventaire, pas encore un système de récolte du monde. Il ne choisit aucun emplacement, biome, espèce, ressource disponible, quantité récoltable, outil, difficulté, durée, fréquence de renouvellement ou règle écologique. Ces données devront venir du futur résolveur du monde, à partir des règles canoniques d'Etheria.
 
-Le service n'est pas encore appelé par une interaction Discord. La collecte scénarisée déjà présente dans la première quête reste inchangée. La migration `0017_resource_collection_events.sql` doit être revue puis exécutée avant l'utilisation du service ; elle n'a pas été exécutée sur Supabase.
+Le service n'est pas encore appelé par une interaction Discord. La collecte scénarisée déjà présente dans la première quête reste inchangée. Les migrations `0017_resource_collection_events.sql` et `0018_traceable_item_lots.sql` doivent être appliquées avant l'utilisation de ces services raccordés ; aucune de ces migrations n'a été exécutée sur Supabase.
 
 
 ## Raccordement au futur moteur du monde
