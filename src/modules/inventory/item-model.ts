@@ -1,4 +1,9 @@
 import { getItemDefinition, type ItemCode, type ItemDefinition } from "./item-catalog.js";
+import {
+  validateItemInstanceState,
+  type ItemDefinitionProperties,
+  type ItemInstanceState
+} from "./item-properties.js";
 
 /**
  * Quantité agrégée d'un même code d'objet dans un contenant.
@@ -20,6 +25,10 @@ export interface ItemStackView {
   readonly definition: ItemDefinition;
   readonly stack: ItemStack;
   readonly container: ItemContainer;
+  /** Propriétés communes provenant de la définition catalogue. */
+  readonly properties?: ItemDefinitionProperties;
+  /** État propre à ce stock, uniquement lorsqu’il est homogène et explicitement fourni. */
+  readonly state?: ItemInstanceState;
 }
 
 export class InvalidItemStackError extends Error {
@@ -48,7 +57,8 @@ export function createItemStack(itemCode: string, quantity: number): ItemStack {
 export function createItemStackView(
   itemCode: string,
   quantity: number,
-  container: ItemContainer
+  container: ItemContainer,
+  state?: ItemInstanceState
 ): ItemStackView {
   const stack = createItemStack(itemCode, quantity);
   const definition = getItemDefinition(stack.itemCode);
@@ -62,7 +72,19 @@ export function createItemStackView(
   if (container.kind === "temporary_camp_storage" && !container.containerId.trim()) {
     throw new InvalidItemStackError("Le contenant de stockage est invalide.");
   }
-  return { definition, stack, container };
+  if (state) {
+    const stateIssues = validateItemInstanceState(state);
+    if (stateIssues.length > 0) {
+      throw new InvalidItemStackError("État d’objet invalide : " + stateIssues.join(" "));
+    }
+  }
+  return {
+    definition,
+    stack,
+    container,
+    ...(definition.properties ? { properties: definition.properties } : {}),
+    ...(state ? { state } : {})
+  };
 }
 
 export function getItemDisplayName(itemCode: string): string {
