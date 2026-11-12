@@ -17,7 +17,8 @@ ALTER TABLE character_exploration_progress
     'berries_collected',
     'water_source_found',
     'thirst_restored',
-    'canteen_recipe_unlocked'
+    'plants_gathered',
+    'canteen_crafted'
   ));
 
 CREATE TABLE character_needs (
