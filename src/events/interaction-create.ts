@@ -127,10 +127,15 @@ function explorationButton(customId: string, label: string, style = ButtonStyle.
   return new ButtonBuilder().setCustomId(customId).setLabel(label).setStyle(style);
 }
 
-function initialExplorationPayload(scene: InitialExplorationScene, inspectedPath = false) {
+function initialExplorationPayload(
+  scene: InitialExplorationScene,
+  lastAction?: InitialExplorationAction
+) {
   if (scene === "awakening") {
     return {
-      content: "**Tu ouvres les yeux.** Tu es seul, au milieu de la nature. Tu ne sais pas où tu te trouves. Une brise passe près de toi. Tu peux prendre le temps de percevoir ce qui t'entoure.",
+      content: lastAction === "observe_surroundings"
+        ? "Tu prends le temps d'observer autour de toi. Tu découvres les formes, les couleurs et les mouvements de la nature, sans reconnaître cet endroit. Une brise légère passe près de toi."
+        : "**Tu ouvres les yeux.** Tu es seul, au milieu de la nature. Tu ne sais pas où tu te trouves. Une brise passe près de toi. Tu peux prendre le temps de percevoir ce qui t'entoure.",
       components: [
         new ActionRowBuilder<ButtonBuilder>().addComponents(
           explorationButton("etheria:exploration:listen_wind", "Écouter le vent"),
@@ -142,7 +147,9 @@ function initialExplorationPayload(scene: InitialExplorationScene, inspectedPath
 
   if (scene === "wind_perceived") {
     return {
-      content: "Tu prends le temps d'écouter. Le souffle du vent devient plus perceptible. En prêtant attention à ses variations et à ce que tu ressens sur ta peau, tu peux en suivre la direction.",
+      content: lastAction === "observe_surroundings"
+        ? "Tu observes plus attentivement les alentours. Rien ne te permet encore de reconnaître cet endroit. Le vent continue de souffler ; tu peux essayer d'en suivre la direction."
+        : "Tu prends le temps d'écouter. Le souffle du vent devient plus perceptible. En prêtant attention à ses variations et à ce que tu ressens sur ta peau, tu peux en suivre la direction.",
       components: [
         new ActionRowBuilder<ButtonBuilder>().addComponents(
           explorationButton("etheria:exploration:follow_wind", "Suivre le vent"),
@@ -153,9 +160,11 @@ function initialExplorationPayload(scene: InitialExplorationScene, inspectedPath
   }
 
   return {
-    content: inspectedPath
+    content: lastAction === "inspect_path"
       ? "Tu examines le passage. Il descend naturellement le long de la falaise. Tu peux l'emprunter quand tu le souhaites, sans être obligé de te précipiter."
-      : "En suivant le vent, tu arrives au bord d'une falaise. Depuis ce point élevé, tu distingues mieux le paysage alentour. Un passage naturel permet de descendre. Tu ne sais toujours pas où tu te trouves.",
+      : lastAction === "observe_surroundings"
+        ? "Tu prends le temps d'observer le paysage depuis le bord de la falaise. Tu distingues mieux les reliefs et les espaces naturels, mais rien ne t'indique le nom de cet endroit."
+        : "En suivant le vent, tu arrives au bord d'une falaise. Depuis ce point élevé, tu distingues mieux le paysage alentour. Un passage naturel permet de descendre. Tu ne sais toujours pas où tu te trouves.",
     components: [
       new ActionRowBuilder<ButtonBuilder>().addComponents(
         explorationButton("etheria:exploration:inspect_path", "Examiner le passage"),
@@ -285,7 +294,7 @@ export default {
           action
         });
         await interaction.editReply(
-          initialExplorationPayload(state.scene, action === "inspect_path")
+          initialExplorationPayload(state.scene, action)
         );
       } catch (error) {
         logger.error("Impossible d'enregistrer l'action d'exploration.", error);
