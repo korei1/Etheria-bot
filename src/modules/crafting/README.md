@@ -11,6 +11,7 @@ Cette fondation fournit un contrat commun pour décrire les recettes d'artisanat
 - Les quantités doivent être des entiers strictement positifs.
 - Un même ingrédient ne doit pas être déclaré plusieurs fois dans une recette.
 - Les objets sont référencés par leurs codes techniques, jamais par des noms affichés saisis librement.
+- Chaque ingrédient et chaque résultat doit exister dans le catalogue central `inventory/item-catalog.ts` ; la validation du registre de recettes le vérifie.
 - Le registre central est l'unique source de recettes canoniques ; les interfaces ne doivent pas inventer leurs propres recettes.
 - Le moteur verrouille le personnage et le sac, vérifie le compte propriétaire, les prérequis et les stocks, puis consomme les ingrédients, ajoute le résultat et crédite éventuellement l'expérience dans une transaction PostgreSQL unique.
 - Chaque fabrication est protégée par un UUID d'interaction unique pour éviter les doubles exécutions lors des répétitions Discord.
