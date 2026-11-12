@@ -6,7 +6,6 @@ export interface CreateCharacterInput {
   accountId: string;
   firstName: string;
   publicPseudonym: string;
-  originCountryId?: string | null;
   avatarModelKey?: string | null;
   genderIdentity?: CharacterGender | null;
   predecessorCharacterId?: string | null;
@@ -170,7 +169,7 @@ export async function createCharacter(
       throw new CharacterAlreadyExistsError();
     }
 
-    let originCountryId = input.originCountryId ?? null;
+    let originCountryId: string | null = null;
 
     if (input.predecessorCharacterId) {
       const predecessor = await client.query<{ origin_country_id: string | null }>(
