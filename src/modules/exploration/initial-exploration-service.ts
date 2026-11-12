@@ -211,7 +211,6 @@ export async function performInitialExplorationAction(
     if (priorEvent.rows[0]) {
       const current = await ensureProgress(client, input.characterId);
       const bag = await getBagSummary(client, input.characterId);
-      await client.query("COMMIT");
       const needs = await client.query<NeedsRow>(
         `SELECT thirst_percent, hunger_percent FROM character_needs WHERE character_id = $1`,
         [input.characterId]
