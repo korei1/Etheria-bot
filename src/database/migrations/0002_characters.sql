@@ -77,6 +77,7 @@ ALTER TABLE characters
   ADD CONSTRAINT characters_predecessor_same_account_fk
   FOREIGN KEY (account_id, predecessor_character_id)
   REFERENCES characters (account_id, id)
-  ON DELETE SET NULL;
+  ON DELETE NO ACTION
+  DEFERRABLE INITIALLY DEFERRED;
 
 COMMIT;
