@@ -47,6 +47,7 @@ import {
   CraftingRequirementError,
   CraftingRecipeUnavailableError
 } from "../modules/crafting/crafting-service.js";
+import { getItemDefinition } from "../modules/inventory/item-catalog.js";
 import { getDatabasePool } from "../database/client.js";
 import { logger } from "../core/logger.js";
 
@@ -482,13 +483,9 @@ export default {
           characterId: character.id,
           recipeKey
         });
-        const outputNames: Record<string, string> = {
-          grass_bedding_level_1: "couchage d'herbe N1",
-          woven_rope_level_1: "corde tissée N1",
-          fragile_wooden_barrier_level_1: "barrière en bois fragile N1"
-        };
+        const outputName = getItemDefinition(result.outputItemCode)?.label ?? result.outputItemCode;
         await interaction.editReply(
-          `Fabrication terminée : **${result.outputQuantity} × ${outputNames[result.outputItemCode] ?? result.outputItemCode}**.`
+          `Fabrication terminée : **${result.outputQuantity} × ${outputName}**.`
         );
       } catch (error) {
         if (
@@ -534,7 +531,7 @@ export default {
           content:
             "**Stockage du camp temporaire**\\n" +
             (storedFragment
-              ? `Fragment historique non identifié : **${storedFragment.quantity}**`
+              ? `${getItemDefinition(storedFragment.itemCode)?.label ?? storedFragment.itemCode} : **${storedFragment.quantity}**`
               : "Le stockage est actuellement vide.") +
             "\\n\\nCe stockage est uniquement accessible depuis ton camp. Les objets déposés ne sont plus dans ton sac porté.",
           components: [row]
