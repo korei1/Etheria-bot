@@ -10,7 +10,11 @@ export type InitialExplorationScene =
   | "wind_perceived"
   | "cliff_overlook"
   | "cliff_foot"
-  | "berries_collected";
+  | "berries_collected"
+  | "water_source_found"
+  | "thirst_restored"
+  | "plants_gathered"
+  | "canteen_crafted";
 
 export type InitialExplorationAction =
   | "listen_wind"
@@ -18,13 +22,19 @@ export type InitialExplorationAction =
   | "follow_wind"
   | "inspect_path"
   | "descend_path"
-  | "collect_local_berries";
+  | "collect_local_berries"
+  | "discover_water_source"
+  | "drink_from_hands"
+  | "gather_canteen_plants"
+  | "craft_initial_canteen";
 
 export interface InitialExplorationState {
   scene: InitialExplorationScene;
   updatedAt: Date;
   bagCapacity: number | null;
   bagUsedSlots: number;
+  thirstPercent: number;
+  hungerPercent: number;
 }
 
 interface ExplorationRow {
@@ -35,6 +45,11 @@ interface ExplorationRow {
 interface BagSummaryRow {
   capacity: number | null;
   used_slots: number | string;
+}
+
+interface NeedsRow {
+  thirst_percent: number;
+  hunger_percent: number;
 }
 
 export class CharacterNotFoundForExplorationError extends Error {
@@ -58,6 +73,18 @@ export async function initializeInitialExploration(
   await client.query(
     `INSERT INTO character_exploration_progress (character_id, current_scene_key)
      VALUES ($1, 'awakening')
+     ON CONFLICT (character_id) DO NOTHING`,
+    [characterId]
+  );
+  await client.query(
+    `INSERT INTO character_needs (character_id, thirst_percent, hunger_percent)
+     VALUES ($1, 100, 100)
+     ON CONFLICT (character_id) DO NOTHING`,
+    [characterId]
+  );
+  await client.query(
+    `INSERT INTO character_survival_progress (character_id)
+     VALUES ($1)
      ON CONFLICT (character_id) DO NOTHING`,
     [characterId]
   );
@@ -185,11 +212,19 @@ export async function performInitialExplorationAction(
       const current = await ensureProgress(client, input.characterId);
       const bag = await getBagSummary(client, input.characterId);
       await client.query("COMMIT");
+      const needs = await client.query<NeedsRow>(
+        `SELECT thirst_percent, hunger_percent FROM character_needs WHERE character_id = $1`,
+        [input.characterId]
+      );
+      const values = needs.rows[0] ?? { thirst_percent: 100, hunger_percent: 100 };
+      await client.query("COMMIT");
       return {
         scene: current.current_scene_key,
         updatedAt: current.updated_at,
         bagCapacity: bag.capacity,
-        bagUsedSlots: bag.usedSlots
+        bagUsedSlots: bag.usedSlots,
+        thirstPercent: values.thirst_percent,
+        hungerPercent: values.hunger_percent
       };
     }
 
@@ -229,6 +264,123 @@ export async function performInitialExplorationAction(
           questKey: INITIAL_QUEST_KEY,
           milestoneKey: "sac_initial_trouve",
           sourceKey: "initial_exploration"
+        });
+        break;
+      case "discover_water_source":
+        if (progress.current_scene_key !== "berries_collected") {
+          throw new InvalidExplorationActionError("Tu dois d'abord avoir exploré les environs après la découverte des baies.");
+        }
+        nextScene = "water_source_found";
+        await client.query(
+          `INSERT INTO character_survival_progress (character_id, first_water_source_discovered_at)
+           VALUES ($1, NOW())
+           ON CONFLICT (character_id) DO UPDATE
+             SET first_water_source_discovered_at = COALESCE(character_survival_progress.first_water_source_discovered_at, NOW()),
+                 updated_at = NOW()`,
+          [input.characterId]
+        );
+        await recordQuestMilestoneInTransaction(client, {
+          eventId: randomUUID(),
+          characterId: input.characterId,
+          questKey: INITIAL_QUEST_KEY,
+          milestoneKey: "source_eau_decouverte",
+          sourceKey: "initial_survival"
+        });
+        break;
+      case "drink_from_hands":
+        if (progress.current_scene_key !== "water_source_found") {
+          throw new InvalidExplorationActionError("Tu dois d'abord avoir trouvé une source d'eau.");
+        }
+        await client.query(
+          `UPDATE character_needs
+           SET thirst_percent = 100, updated_at = NOW()
+           WHERE character_id = $1`,
+          [input.characterId]
+        );
+        await client.query(
+          `UPDATE character_survival_progress
+           SET first_drink_at = COALESCE(first_drink_at, NOW()), updated_at = NOW()
+           WHERE character_id = $1`,
+          [input.characterId]
+        );
+        nextScene = "thirst_restored";
+        await recordQuestMilestoneInTransaction(client, {
+          eventId: randomUUID(),
+          characterId: input.characterId,
+          questKey: INITIAL_QUEST_KEY,
+          milestoneKey: "premiere_eau_bue",
+          sourceKey: "initial_survival"
+        });
+        break;
+      case "gather_canteen_plants":
+        if (progress.current_scene_key !== "thirst_restored") {
+          throw new InvalidExplorationActionError("Tu dois d'abord avoir bu à la source.");
+        }
+        const plantBagResult = await client.query<{ id: string; capacity: number }>(
+          `SELECT id, capacity FROM character_inventory_bags
+           WHERE character_id = $1 AND is_equipped = TRUE FOR UPDATE`,
+          [input.characterId]
+        );
+        const plantBag = plantBagResult.rows[0];
+        if (!plantBag) throw new InvalidExplorationActionError("Tu n'as pas de sac équipé.");
+        const plantCount = await client.query<{ count: number }>(
+          `SELECT COUNT(*)::integer AS count FROM character_inventory_slots WHERE bag_id = $1`,
+          [plantBag.id]
+        );
+        const plantSlots = Number(plantCount.rows[0]?.count ?? 0);
+        if (plantSlots >= plantBag.capacity) throw new InvalidExplorationActionError("Ton sac est plein.");
+        await client.query(
+          `INSERT INTO character_inventory_slots (bag_id, slot_number, item_code, quantity)
+           VALUES ($1, $2, 'braiding_plant_fibers', 1)`,
+          [plantBag.id, plantSlots + 1]
+        );
+        await client.query(
+          `UPDATE character_survival_progress
+           SET initial_canteen_recipe_unlocked_at = COALESCE(initial_canteen_recipe_unlocked_at, NOW()),
+               updated_at = NOW()
+           WHERE character_id = $1`,
+          [input.characterId]
+        );
+        nextScene = "plants_gathered";
+        break;
+      case "craft_initial_canteen":
+        if (progress.current_scene_key !== "plants_gathered") {
+          throw new InvalidExplorationActionError("Tu dois d'abord rassembler les plantes nécessaires.");
+        }
+        const craftBagResult = await client.query<{ id: string; capacity: number }>(
+          `SELECT id, capacity FROM character_inventory_bags
+           WHERE character_id = $1 AND is_equipped = TRUE FOR UPDATE`,
+          [input.characterId]
+        );
+        const craftBag = craftBagResult.rows[0];
+        if (!craftBag) throw new InvalidExplorationActionError("Tu n'as pas de sac équipé.");
+        const fiberResult = await client.query<{ id: string; slot_number: number }>(
+          `SELECT id, slot_number FROM character_inventory_slots
+           WHERE bag_id = $1 AND item_code = 'braiding_plant_fibers' FOR UPDATE`,
+          [craftBag.id]
+        );
+        const fibers = fiberResult.rows[0];
+        if (!fibers) throw new InvalidExplorationActionError("Il te manque les plantes nécessaires à la fabrication.");
+        await client.query(
+          `UPDATE character_inventory_slots
+           SET item_code = 'woven_canteen_level_1', quantity = 1, created_at = NOW()
+           WHERE id = $1`,
+          [fibers.id]
+        );
+        await client.query(
+          `UPDATE character_survival_progress
+           SET initial_canteen_crafted_at = COALESCE(initial_canteen_crafted_at, NOW()),
+               updated_at = NOW()
+           WHERE character_id = $1`,
+          [input.characterId]
+        );
+        nextScene = "canteen_crafted";
+        await recordQuestMilestoneInTransaction(client, {
+          eventId: randomUUID(),
+          characterId: input.characterId,
+          questKey: INITIAL_QUEST_KEY,
+          milestoneKey: "premiere_gourde_fabriquee",
+          sourceKey: "initial_survival"
         });
         break;
       case "collect_local_berries":
@@ -322,12 +474,19 @@ export async function performInitialExplorationAction(
     }
 
     const bag = await getBagSummary(client, input.characterId);
+    const needs = await client.query<NeedsRow>(
+      `SELECT thirst_percent, hunger_percent FROM character_needs WHERE character_id = $1`,
+      [input.characterId]
+    );
+    const values = needs.rows[0] ?? { thirst_percent: 100, hunger_percent: 100 };
     await client.query("COMMIT");
     return {
       scene: updatedRow.current_scene_key,
       updatedAt: updatedRow.updated_at,
       bagCapacity: bag.capacity,
-      bagUsedSlots: bag.usedSlots
+      bagUsedSlots: bag.usedSlots,
+      thirstPercent: values.thirst_percent,
+      hungerPercent: values.hunger_percent
     };
   } catch (error) {
     await client.query("ROLLBACK").catch(() => undefined);
