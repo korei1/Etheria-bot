@@ -24,6 +24,12 @@ CREATE TABLE character_quest_progress (
     )
 );
 
+INSERT INTO character_quest_progress (character_id, quest_key, current_step_key, status)
+SELECT id, 'suivre_le_vent', 'reveil', 'active'
+FROM characters
+WHERE status = 'active'
+ON CONFLICT (character_id, quest_key) DO NOTHING;
+
 CREATE TABLE character_quest_events (
   event_id UUID PRIMARY KEY,
   character_id UUID NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
