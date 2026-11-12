@@ -1,5 +1,6 @@
 import type { Pool, PoolClient } from "pg";
 import { getItemDefinition } from "./item-catalog.js";
+import { createItemStack, type ItemStack } from "./item-model.js";
 
 export interface AddCollectedResourceInput {
   accountId: string;
@@ -12,9 +13,7 @@ export interface AddCollectedResourceInput {
   quantity: number;
 }
 
-export interface AddCollectedResourceResult {
-  itemCode: string;
-  quantity: number;
+export interface AddCollectedResourceResult extends ItemStack {
   replayed: boolean;
   slotNumber: number;
 }
@@ -114,8 +113,7 @@ export async function addCollectedResourceToInventoryInTransaction(
       throw new ResourceCollectionIdempotencyError();
     }
     return {
-      itemCode: event.item_code,
-      quantity: Number(event.quantity),
+      ...createItemStack(event.item_code, Number(event.quantity)),
       replayed: true,
       slotNumber: Number(event.slot_number)
     };
@@ -175,5 +173,5 @@ export async function addCollectedResourceToInventoryInTransaction(
     [input.interactionId, input.characterId, sourceKey, itemCode, input.quantity, slotNumber]
   );
 
-  return { itemCode, quantity: input.quantity, replayed: false, slotNumber };
+  return { ...createItemStack(itemCode, input.quantity), replayed: false, slotNumber };
 }
