@@ -34,6 +34,7 @@ CREATE TABLE starting_spawn_zones (
   settlement_proximity TEXT NOT NULL
     CHECK (settlement_proximity IN ('nearby', 'moderate', 'remote')),
   is_natural BOOLEAN NOT NULL DEFAULT TRUE,
+  is_wilderness BOOLEAN NOT NULL DEFAULT FALSE,
   is_safe_for_new_character BOOLEAN NOT NULL DEFAULT FALSE,
   is_accessible_for_new_character BOOLEAN NOT NULL DEFAULT FALSE,
   spawn_weight INTEGER NOT NULL DEFAULT 1 CHECK (spawn_weight > 0),
@@ -52,6 +53,7 @@ ALTER TABLE characters
 CREATE INDEX starting_spawn_zones_country_eligible_idx
   ON starting_spawn_zones(country_id, is_active, spawn_weight)
   WHERE is_natural = TRUE
+    AND is_wilderness = TRUE
     AND is_safe_for_new_character = TRUE
     AND is_accessible_for_new_character = TRUE;
 
