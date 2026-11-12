@@ -31,3 +31,6 @@ jobs:
 
       - name: Compiler le projet
         run: npm run build
+
+      - name: Exécuter les tests
+        run: npm test
