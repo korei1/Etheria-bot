@@ -1,4 +1,4 @@
-# Première séquence d'exploration : réveil, falaise et premières ressources
+# Première séquence d'exploration et de survie
 
 ## Parcours jouable
 
@@ -6,28 +6,42 @@
 2. **Percevoir le vent** : il peut écouter le vent ou observer les alentours.
 3. **Suivre le vent** : il atteint un point de vue au bord d'une falaise.
 4. **Examiner ou descendre** : le passage naturel peut être examiné avant que le joueur choisisse de descendre.
-5. **Découvrir le sac** : au pied de la falaise, le personnage trouve son premier sac tressé de niveau initial, d'une capacité de cinq emplacements.
-6. **Découvrir les baies** : des baies locales sont présentes à proximité. Le personnage ne connaît ni leur nom ni leurs propriétés.
-7. **Première collecte** : il peut recueillir un échantillon de baies non identifiées. L'échantillon occupe un emplacement du sac.
+5. **Découvrir le sac** : au pied de la falaise, le personnage trouve un sac tressé de cinq emplacements.
+6. **Découvrir les baies** : des baies locales poussent à proximité. Le personnage ne connaît ni leur nom ni leurs propriétés.
+7. **Première collecte** : il peut recueillir un échantillon non identifié, qui occupe un emplacement du sac.
+8. **Trouver une source d'eau** : en poursuivant l'exploration, il découvre une source. Un animal qui s'y abreuvait s'éloigne à son arrivée.
+9. **Boire** : il recueille de l'eau dans ses mains et boit. La soif est restaurée entièrement.
+10. **Réunir des plantes** : il collecte des plantes souples à proximité pour apprendre à les tresser.
+11. **Fabriquer la gourde** : il transforme les plantes réunies en une gourde tressée de niveau 1.
 
-## Inventaire initial
+## Besoins vitaux
 
-- Aucun objet n'est possédé au réveil.
+- La base stocke séparément la soif et la faim sur une échelle de 0 à 100.
+- La création initialise les deux besoins à 100.
+- Boire à la source restaure la soif à 100.
+- Le moteur qui fait évoluer les besoins avec le temps réel/temps Etheria n'est pas encore raccordé. Aucune vitesse de diminution n'est inventée dans cette tranche.
+- La faim reste suivie, mais aucune consommation ou valeur de nourriture n'est simulée ici.
+
+## Inventaire et gourde
+
 - Le sac est découvert dans l'environnement, au pied de la falaise.
-- Le sac possède cinq emplacements.
-- Le premier échantillon est enregistré sous un code technique neutre, sans attribuer de nom fictif à une espèce végétale.
-- Le personnage ne connaît pas les propriétés des baies.
-- Le sac et son contenu sont persistants et enregistrés en base.
+- Il possède cinq emplacements et est équipé automatiquement.
+- Le premier échantillon de baies utilise un code technique neutre, sans attribuer de nom fictif à une espèce.
+- Les plantes souples occupent un emplacement pendant la fabrication.
+- La fabrication transforme cet emplacement en objet `woven_canteen_level_1`, sans créer artificiellement un emplacement supplémentaire.
+- La capacité de la gourde de niveau 1 correspond à l'équivalent de deux mains jointes remplies d'eau.
+- Cette quantité suffit à restaurer entièrement la soif.
+- Le système de remplissage, de transport et de consommation d'eau depuis l'inventaire reste à raccorder au moteur général des besoins et des objets.
 
 ## Persistance et intégrité
 
 - La scène courante est enregistrée dans `character_exploration_progress`.
 - Chaque action Discord est enregistrée dans `character_exploration_events`.
 - L'identifiant de l'interaction Discord sert de clé d'idempotence.
-- La découverte du sac, son équipement et la validation du jalon de quête ont lieu dans la transaction de descente.
-- La collecte de l'échantillon, la mise à jour de l'inventaire et le jalon de quête sont transactionnels.
+- Le sac, les objets, les besoins vitaux et les jalons de quête sont enregistrés dans des transactions.
 - Le lieu géographique d'apparition n'est jamais lu ou retourné par ce module.
+- Le module ne contient aucun nom de lieu ou d'espèce botanique inventé.
 
 ## Limites actuelles
 
-Le premier échantillon est un objet technique générique en attente du catalogue botanique régional. La collecte répétée, l'identification des espèces, leurs propriétés et les quantités récoltables dépendront du catalogue réel des ressources et du système écologique. Aucune espèce, aucun lieu et aucune propriété botanique ne sont inventés ici.
+Le système de besoins est un socle persistant : la diminution de la soif et de la faim selon le temps écoulé reste à programmer. La source d'eau et les plantes sont encore des événements narratifs de cette première séquence, en attente du raccordement au monde géographique et au catalogue écologique. Le remplissage de la gourde et l'usage général des contenants restent à programmer.
