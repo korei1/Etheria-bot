@@ -106,3 +106,17 @@ Les 28 pays déjà présents dans la migration 0004 sont rattachés à leur cont
 Les frontières politiques historiques, les changements de souveraineté, les régimes, les institutions et les gouvernements restent des domaines séparés. Aucun pays ne reçoit de régime politique ou de dirigeant inventé par ces modèles.
 
 Les migrations 0024 à 0029 sont préparées dans le dépôt mais ne doivent pas être exécutées sur Supabase sans revue et approbation explicites. La migration 0024 rattache les 28 pays existants aux sept continents ; la migration 0025 reprend les capitales publiques déjà enregistrées et crée les tables de territoires et localités ; la migration 0026 persiste les découvertes ; la migration 0027 ajoute les dialogues PNJ ; la migration 0028 ajoute les placements de PNJ dans les localités et le champ de localisation actuelle du personnage ; la migration 0029 ajoute les itinéraires et le journal des déplacements.
+
+
+## Vie locale et identités continentales
+
+- `local-life.ts` définit le modèle éditorial des activités, services, commerces et événements rattachés à une localité.
+- Chaque contenu porte une clé stable, un statut éditorial, une visibilité, des tags culturels et une justification expliquant son lien avec l'identité du continent.
+- La validation vérifie que le continent déclaré correspond à celui de la localité, que les contenus ont une justification culturelle et que les dates d'événements respectent l'année Etheria de 120 jours.
+- Les contenus d'Umbrelune ne peuvent pas être publics. La visibilité des localités découvertes reste contrôlée par les mécanismes de progression existants.
+- Les identités continentales disponibles dans le registre reprennent les éléments établis : Sylvaria et sa mémoire vivante, Nivéria et ses arts et sa chaleur humaine, Arcanthia et le lien entre science et croyances, Solméria et la justice et l'entraide, Thalasséa et la liberté insulaire, Ignéria et la puissance démontrée par les actes, Umbrelune et ses secrets.
+- Les fêtes dont les dates sont établies sont renseignées sans extrapolation : Souvenance du jour 114 au jour 120 ; Ardence les jours 60 et 61 (jours 12 et 13 du cycle III).
+- La migration `0030_world_local_life.sql` crée le catalogue persistant `world_local_content`, sans précharger de contenu concret. Les entrées sont liées à une localité et restent en brouillon jusqu'à approbation.
+- Le déclencheur SQL interdit également la publication publique d'un contenu situé dans une localité d'Umbrelune.
+- Le test `world-local-life.test.ts` couvre les identités et fêtes canoniques, l'ancrage culturel, la cohérence continent/localité, les dates calendaires et la confidentialité d'Umbrelune.
+- La migration 0030 est préparée dans le dépôt mais n'a pas été exécutée sur Supabase.
