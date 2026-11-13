@@ -43,7 +43,7 @@ Les 28 pays déjà présents dans la migration 0004 sont rattachés à leur cont
 
 ## Découverte et carte personnelle
 
-- `discovery.ts` enregistre les découvertes par compte joueur, avec méthode, date et identifiant d'événement.
+- `discovery.ts` enregistre les découvertes par compte joueur, avec méthode, date et identifiant d'événement. Les zones de départ révélées après la première rencontre PNJ disposent du type `spawn_zone`.
 - Les événements sont idempotents ; un même événement ne peut pas créer plusieurs découvertes.
 - Les prérequis sont vérifiés avant d'autoriser une découverte.
 - Les brouillons ne sont jamais découvrables.
