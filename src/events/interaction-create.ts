@@ -463,6 +463,144 @@ export default {
         const database = getDatabase();
         const subcommand = interaction.options.getSubcommand();
 
+
+        if (subcommand === "contenus-locaux") {
+          const result = await database.query<{
+            content_key: string;
+            display_name: string;
+            settlement_key: string;
+            settlement_name: string;
+            content_kind: string;
+            editorial_status: string;
+            visibility: string;
+            revision: number;
+          }>(
+            `SELECT c.content_key, c.display_name, s.settlement_key,
+                    s.display_name AS settlement_name, c.content_kind,
+                    c.editorial_status, c.visibility, c.revision
+             FROM world_local_content c
+             JOIN world_settlements s ON s.id = c.settlement_id
+             ORDER BY s.display_name, c.content_kind, c.display_name
+             LIMIT 25`
+          );
+          const lines = result.rows.map((row) =>
+            `• **${row.display_name}** (${row.content_key}) — ${row.content_kind} · ${row.settlement_name} (${row.settlement_key}) · ${row.editorial_status}/${row.visibility} · révision ${row.revision}`
+          );
+          await interaction.editReply(
+            lines.length ? `**Catalogue de vie locale** (25 maximum)\\n\\n${lines.join("\\n")}` : "Aucun contenu local n'est encore enregistré."
+          );
+          return;
+        }
+
+        if (subcommand === "ajouter-contenu-local") {
+          const key = interaction.options.getString("cle", true).trim().toLowerCase();
+          const name = interaction.options.getString("nom", true).trim();
+          const settlementKey = interaction.options.getString("localite", true).trim().toLowerCase();
+          const kind = interaction.options.getString("type", true);
+          const visibility = interaction.options.getString("visibilite", true);
+          const description = interaction.options.getString("description", true).trim();
+          const tags = interaction.options.getString("tags", true).split(",").map((tag) => tag.trim()).filter(Boolean);
+          const rationale = interaction.options.getString("justification", true).trim();
+          const startDay = interaction.options.getInteger("debut");
+          const endDay = interaction.options.getInteger("fin");
+          if (!/^[a-z][a-z0-9_]{1,79}$/.test(key)) {
+            throw new Error("La clé doit commencer par une lettre minuscule et ne contenir que des lettres, chiffres ou tirets bas.");
+          }
+          if (!name || !description || !rationale || tags.length === 0) {
+            throw new Error("Le nom, la description, les tags culturels et la justification sont obligatoires.");
+          }
+          if (kind === "event") {
+            if ((startDay === null) !== (endDay === null)) {
+              throw new Error("Pour un événement daté, renseigne les deux bornes ou aucune.");
+            }
+            if (startDay !== null && endDay !== null && endDay < startDay) {
+              throw new Error("Le jour de fin doit être égal ou postérieur au jour de début.");
+            }
+          } else if (startDay !== null || endDay !== null) {
+            throw new Error("Les dates calendaires sont réservées aux événements.");
+          }
+          const settlement = await database.query<{ id: string; continent_key: string }>(
+            `SELECT s.id, co.continent_key
+             FROM world_settlements s
+             JOIN countries co ON co.id = s.country_id
+             WHERE s.settlement_key = $1 AND s.editorial_status = 'approved'`,
+            [settlementKey]
+          );
+          const target = settlement.rows[0];
+          if (!target) throw new Error("Localité introuvable ou non approuvée.");
+          if (target.continent_key === "umbrelune" && visibility === "public") {
+            throw new Error("Un contenu d'Umbrelune ne peut jamais être publié en visibilité publique.");
+          }
+          await database.query(
+            `INSERT INTO world_local_content
+             (content_key, display_name, settlement_id, content_kind, visibility,
+              editorial_status, description, cultural_tags, cultural_rationale, start_day, end_day)
+             VALUES ($1, $2, $3, $4, $5, 'draft', $6, $7, $8, $9, $10)`,
+            [key, name, target.id, kind, visibility, description, tags, rationale, startDay, endDay]
+          );
+          await interaction.editReply("Contenu local créé en brouillon. Il reste invisible aux joueurs jusqu'à son approbation.");
+          return;
+        }
+
+        if (subcommand === "modifier-contenu-local") {
+          const key = interaction.options.getString("cle", true).trim().toLowerCase();
+          const expectedRevision = interaction.options.getInteger("revision", true);
+          const name = interaction.options.getString("nom")?.trim() ?? null;
+          const description = interaction.options.getString("description")?.trim() ?? null;
+          const rawTags = interaction.options.getString("tags");
+          const tags = rawTags === null ? null : rawTags.split(",").map((tag) => tag.trim()).filter(Boolean);
+          const rationale = interaction.options.getString("justification")?.trim() ?? null;
+          const visibility = interaction.options.getString("visibilite");
+          if (name === "" || description === "" || rationale === "" || (tags !== null && tags.length === 0)) {
+            throw new Error("Les champs fournis ne peuvent pas être vides.");
+          }
+          if ([name, description, rationale, visibility, rawTags].every((value) => value === null)) {
+            throw new Error("Renseigne au moins un champ à modifier.");
+          }
+          const result = await database.query<{ revision: number }>(
+            `UPDATE world_local_content
+             SET display_name = COALESCE($3, display_name),
+                 description = COALESCE($4, description),
+                 cultural_tags = COALESCE($5::text[], cultural_tags),
+                 cultural_rationale = COALESCE($6, cultural_rationale),
+                 visibility = COALESCE($7, visibility),
+                 editorial_status = 'draft',
+                 revision = revision + 1,
+                 updated_at = NOW()
+             WHERE content_key = $1 AND revision = $2 AND editorial_status <> 'retired'
+             RETURNING revision`,
+            [key, expectedRevision, name, description, tags, rationale, visibility]
+          );
+          if (!result.rows[0]) {
+            throw new Error("Contenu introuvable, retiré ou révision dépassée. Consulte /etheria-admin contenus-locaux avant de réessayer.");
+          }
+          await interaction.editReply(`Contenu modifié et replacé en brouillon pour nouvelle validation (révision ${result.rows[0].revision}).`);
+          return;
+        }
+
+        if (subcommand === "approuver-contenu-local") {
+          const key = interaction.options.getString("cle", true).trim().toLowerCase();
+          const expectedRevision = interaction.options.getInteger("revision", true);
+          const result = await database.query<{ revision: number }>(
+            `UPDATE world_local_content c
+             SET editorial_status = 'approved', revision = revision + 1, updated_at = NOW()
+             WHERE c.content_key = $1
+               AND c.revision = $2
+               AND c.editorial_status = 'draft'
+               AND EXISTS (
+                 SELECT 1 FROM world_settlements s
+                 WHERE s.id = c.settlement_id AND s.editorial_status = 'approved'
+               )
+             RETURNING c.revision`,
+            [key, expectedRevision]
+          );
+          if (!result.rows[0]) {
+            throw new Error("Contenu introuvable, déjà publié, révision dépassée ou localité non approuvée.");
+          }
+          await interaction.editReply(`Contenu local approuvé (révision ${result.rows[0].revision}). Il peut maintenant apparaître selon sa visibilité et les découvertes du joueur.`);
+          return;
+        }
+
         if (subcommand === "zones-depart") {
           const result = await database.query<{
             zone_key: string;
