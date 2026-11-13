@@ -1,9 +1,12 @@
 /**
  * Registre évolutif des espèces et des régions d'Etheria.
  *
- * Le registre est piloté par les données : aucune limite globale d'espèces,
- * de régions ou de formes évolutives n'est codée ici. Les clés sont des
- * identifiants permanents et ne doivent jamais être recyclées.
+ * Les trois axes sont indépendants :
+ * - editorialStatus : validation éditoriale de la fiche ;
+ * - availabilityStatus : état de disponibilité dans le jeu ;
+ * - region.visibility + discoveredRegionKeys : confidentialité géographique.
+ *
+ * Aucune limite globale d'espèces, de régions ou de formes n'est codée ici.
  */
 import {
   validateCompanionSpeciesDefinition,
@@ -13,32 +16,29 @@ import {
 export type CompanionRegionVisibility = "public" | "discovery_locked";
 
 export interface CompanionRegionDefinition {
-  /** Clé stable et permanente de la région. */
   key: string;
   name: string;
   visibility: CompanionRegionVisibility;
 }
 
-export type CompanionSpeciesLifecycleStatus =
-  | "draft"
-  | "approved"
-  | "discovery_locked"
+export type CompanionSpeciesEditorialStatus = "draft" | "approved";
+export type CompanionSpeciesAvailabilityStatus =
+  | "unavailable"
   | "discoverable"
   | "available"
   | "retired";
 
 export interface CompanionEvolutionForm {
-  /** Clé stable de la forme au sein de l'espèce. */
   key: string;
   name: string;
-  /** Rang d'affichage et de progression, sans plafond imposé. */
   order: number;
 }
 
 export interface RegisteredCompanionSpecies {
   definition: CompanionSpeciesDefinition;
   regionKey: string;
-  status: CompanionSpeciesLifecycleStatus;
+  editorialStatus: CompanionSpeciesEditorialStatus;
+  availabilityStatus: CompanionSpeciesAvailabilityStatus;
   evolutionForms: readonly CompanionEvolutionForm[];
 }
 
@@ -54,14 +54,20 @@ export class CompanionSpeciesRegistryError extends Error {
   }
 }
 
-const allowedTransitions: Readonly<Record<
-  CompanionSpeciesLifecycleStatus,
-  readonly CompanionSpeciesLifecycleStatus[]
+const editorialTransitions: Readonly<Record<
+  CompanionSpeciesEditorialStatus,
+  readonly CompanionSpeciesEditorialStatus[]
 >> = {
   draft: ["approved"],
-  approved: ["discovery_locked", "discoverable"],
-  discovery_locked: ["discoverable"],
-  discoverable: ["available"],
+  approved: []
+};
+
+const availabilityTransitions: Readonly<Record<
+  CompanionSpeciesAvailabilityStatus,
+  readonly CompanionSpeciesAvailabilityStatus[]
+>> = {
+  unavailable: ["discoverable", "retired"],
+  discoverable: ["available", "retired"],
   available: ["retired"],
   retired: []
 };
@@ -76,8 +82,11 @@ export function validateRegisteredCompanionSpecies(
   if (!knownRegionKeys.has(entry.regionKey)) {
     issues.push(`[${key}] Région inconnue : ${entry.regionKey}.`);
   }
-  if (!Object.hasOwn(allowedTransitions, entry.status)) {
-    issues.push(`[${key}] Statut de cycle de vie inconnu.`);
+  if (!Object.hasOwn(editorialTransitions, entry.editorialStatus)) {
+    issues.push(`[${key}] Statut éditorial inconnu.`);
+  }
+  if (!Object.hasOwn(availabilityTransitions, entry.availabilityStatus)) {
+    issues.push(`[${key}] Statut de disponibilité inconnu.`);
   }
 
   const formKeys = new Set<string>();
@@ -99,6 +108,9 @@ export function validateRegisteredCompanionSpecies(
     formOrders.add(form.order);
   }
 
+  if (entry.editorialStatus !== "approved" && entry.availabilityStatus !== "unavailable") {
+    issues.push(`[${key}] Une espèce non approuvée doit rester indisponible.`);
+  }
   return issues;
 }
 
@@ -160,30 +172,56 @@ export function addCompanionSpecies(
   return { regions: registry.regions, species };
 }
 
-/** Les transitions sont explicites ; une espèce retirée n'est pas réactivée. */
-export function transitionCompanionSpeciesStatus(
+export function transitionCompanionSpeciesEditorialStatus(
   registry: CompanionSpeciesRegistry,
   speciesKey: string,
-  nextStatus: CompanionSpeciesLifecycleStatus
+  nextStatus: CompanionSpeciesEditorialStatus
 ): CompanionSpeciesRegistry {
   const current = registry.species.get(speciesKey);
   if (!current) {
     throw new CompanionSpeciesRegistryError(`Espèce inconnue : ${speciesKey}.`);
   }
-  if (!allowedTransitions[current.status].includes(nextStatus)) {
+  if (!editorialTransitions[current.editorialStatus].includes(nextStatus)) {
     throw new CompanionSpeciesRegistryError(
-      `Transition de statut interdite : ${current.status} → ${nextStatus} pour ${speciesKey}.`
+      `Transition éditoriale interdite : ${current.editorialStatus} → ${nextStatus} pour ${speciesKey}.`
     );
   }
   const species = new Map(registry.species);
-  species.set(speciesKey, { ...current, status: nextStatus });
+  species.set(speciesKey, {
+    ...current,
+    editorialStatus: nextStatus,
+    availabilityStatus: nextStatus === "draft" ? "unavailable" : current.availabilityStatus
+  });
+  return { regions: registry.regions, species };
+}
+
+export function transitionCompanionSpeciesAvailability(
+  registry: CompanionSpeciesRegistry,
+  speciesKey: string,
+  nextStatus: CompanionSpeciesAvailabilityStatus
+): CompanionSpeciesRegistry {
+  const current = registry.species.get(speciesKey);
+  if (!current) {
+    throw new CompanionSpeciesRegistryError(`Espèce inconnue : ${speciesKey}.`);
+  }
+  if (current.editorialStatus !== "approved") {
+    throw new CompanionSpeciesRegistryError(
+      `Une espèce doit être approuvée avant toute disponibilité : ${speciesKey}.`
+    );
+  }
+  if (!availabilityTransitions[current.availabilityStatus].includes(nextStatus)) {
+    throw new CompanionSpeciesRegistryError(
+      `Transition de disponibilité interdite : ${current.availabilityStatus} → ${nextStatus} pour ${speciesKey}.`
+    );
+  }
+  const species = new Map(registry.species);
+  species.set(speciesKey, { ...current, availabilityStatus: nextStatus });
   return { regions: registry.regions, species };
 }
 
 /**
- * Le catalogue public ne révèle jamais une région secrète non découverte.
- * Une espèce retirée reste dans le registre pour préserver les références
- * des compagnons déjà possédés, mais n'est plus proposée à l'acquisition.
+ * Une espèce n'est visible que si sa fiche est approuvée, sa région révélée
+ * et sa disponibilité permet sa découverte ou son acquisition.
  */
 export function listPublicCompanionSpecies(
   registry: CompanionSpeciesRegistry,
@@ -191,13 +229,12 @@ export function listPublicCompanionSpecies(
 ): readonly RegisteredCompanionSpecies[] {
   return [...registry.species.values()].filter((entry) => {
     const region = registry.regions.get(entry.regionKey);
-    if (!region) return false;
+    if (!region || entry.editorialStatus !== "approved") return false;
     const regionDiscovered =
       region.visibility === "public" || discoveredRegionKeys.has(region.key);
     const statusVisible =
-      entry.status === "discoverable" ||
-      entry.status === "available" ||
-      (entry.status === "discovery_locked" && regionDiscovered);
+      entry.availabilityStatus === "discoverable" ||
+      entry.availabilityStatus === "available";
     return regionDiscovered && statusVisible;
   });
 }
