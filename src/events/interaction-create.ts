@@ -53,7 +53,7 @@ import { getItemDisplayName } from "../modules/inventory/item-model.js";
 import { getDatabasePool } from "../database/client.js";
 import { getPersistedDiscoveryState } from "../modules/world/discovery-repository.js";
 import { getPersonalMapProgress } from "../modules/world/discovery.js";
-import { chooseNpcDialogueOption, listNpcEncountersAtCharacterSpawn, startNpcConversation, type NpcDialogueView } from "../modules/npc/npc-dialogue-service.js";
+import { chooseNpcDialogueOption, listNpcEncountersAtCharacterLocation, startNpcConversation, type NpcDialogueView } from "../modules/npc/npc-dialogue-service.js";
 import { logger } from "../core/logger.js";
 import {
   approvePersistedEditorialSpecies,
@@ -568,7 +568,7 @@ export default {
         if (subcommand === "ajouter-pnj") {
           const npcKey = interaction.options.getString("cle", true).trim().toLowerCase();
           const displayName = interaction.options.getString("nom", true).trim();
-          const zoneKey = interaction.options.getString("zone", true).trim().toLowerCase();
+          const zoneKey = interaction.options.getString("zone")?.trim().toLowerCase() || null;
           const nodeKey = interaction.options.getString("noeud", true).trim().toLowerCase();
           const dialogueText = interaction.options.getString("texte", true).trim();
           const description = interaction.options.getString("description")?.trim() || null;
@@ -578,11 +578,15 @@ export default {
           const client = await database.connect();
           try {
             await client.query("BEGIN");
-            const zone = await client.query<{ id: string }>(
-              "SELECT id FROM starting_spawn_zones WHERE zone_key = $1 AND is_active = TRUE",
-              [zoneKey]
-            );
-            if (!zone.rows[0]) throw new Error("Cette zone de départ n'existe pas ou n'est plus active.");
+            let spawnZoneId: string | null = null;
+            if (zoneKey) {
+              const zone = await client.query<{ id: string }>(
+                "SELECT id FROM starting_spawn_zones WHERE zone_key = $1 AND is_active = TRUE",
+                [zoneKey]
+              );
+              if (!zone.rows[0]) throw new Error("Cette zone de départ n'existe pas ou n'est plus active.");
+              spawnZoneId = zone.rows[0].id;
+            }
             await client.query(
               `INSERT INTO npc_definitions
                (npc_key, display_name, description, start_node_key, editorial_status)
@@ -594,10 +598,12 @@ export default {
                VALUES ($1, $2, $3, FALSE)`,
               [npcKey, nodeKey, dialogueText]
             );
-            await client.query(
-              "INSERT INTO npc_spawn_locations (npc_key, spawn_zone_id) VALUES ($1, $2)",
-              [npcKey, zone.rows[0].id]
-            );
+            if (spawnZoneId) {
+              await client.query(
+                "INSERT INTO npc_spawn_locations (npc_key, spawn_zone_id) VALUES ($1, $2)",
+                [npcKey, spawnZoneId]
+              );
+            }
             await client.query("COMMIT");
           } catch (error) {
             await client.query("ROLLBACK").catch(() => undefined);
@@ -657,10 +663,13 @@ export default {
             );
             if (!npc.rows[0]) throw new Error("PNJ introuvable.");
             const placement = await client.query(
-              "SELECT 1 FROM npc_spawn_locations WHERE npc_key = $1 AND is_active = TRUE LIMIT 1",
+              `SELECT 1 FROM npc_spawn_locations WHERE npc_key = $1 AND is_active = TRUE
+               UNION ALL
+               SELECT 1 FROM npc_settlement_locations WHERE npc_key = $1 AND is_active = TRUE
+               LIMIT 1`,
               [npcKey]
             );
-            if (!placement.rowCount) throw new Error("Le PNJ doit être placé dans au moins une zone active.");
+            if (!placement.rowCount) throw new Error("Le PNJ doit être placé dans au moins une zone de départ ou une localité active.");
             const incomplete = await client.query<{ node_key: string }>(
               `SELECT n.node_key
                FROM npc_dialogue_nodes n
@@ -873,7 +882,7 @@ export default {
             await interaction.editReply("Tu dois d'abord créer un personnage actif pour rencontrer les habitants d'Etheria.");
             return;
           }
-          const npcs = await listNpcEncountersAtCharacterSpawn(getDatabase(), {
+          const npcs = await listNpcEncountersAtCharacterLocation(getDatabase(), {
             accountId: account.accountId
           });
           if (npcs.length === 0) {
