@@ -72,6 +72,20 @@ Les 28 pays déjà présents dans la migration 0004 sont rattachés à leur cont
 - Le service de rencontre PNJ est prêt à être appelé par le futur parcours interactif des PNJ ; aucun parcours de dialogue PNJ n'existe encore dans les interactions Discord actuelles.
 - La migration 0026 n'a pas été exécutée sur Supabase. Les commandes de consultation nécessitent donc que les migrations du monde soient installées avant leur utilisation.
 
+
+## Rencontres et dialogues PNJ
+
+- La migration `0027_npc_dialogue_foundation.sql` crée le catalogue éditorial des PNJ, les nœuds et choix de dialogue, les placements par zone d'apparition et les conversations persistantes.
+- Aucun PNJ, nom, dialogue ou emplacement n'est préchargé : les contenus doivent être validés avant publication. Cela évite d'inventer des personnages ou de révéler des informations géographiques non approuvées.
+- `/etheria rencontrer` liste uniquement les PNJ approuvés, actifs et placés dans la zone de départ du personnage actif.
+- Le joueur choisit un PNJ dans un menu, puis un menu de réponses fait progresser la conversation selon les choix enregistrés dans le catalogue.
+- À la première conversation avec un PNJ, `recordNpcEncounter` enregistre la rencontre et révèle le pays et la zone exacte d'apparition. Les rencontres avec d'autres PNJ ne révèlent pas à nouveau le lieu.
+- Si l'enregistrement du dialogue échoue après la première rencontre, une reprise auprès du même premier PNJ permet de retrouver la révélation sans perdre l'information.
+- Les conversations, choix et événements sont persistants et idempotents. Les tables PNJ sont protégées par RLS ; aucun accès client direct n'est prévu.
+- Le système actuel place les PNJ dans les zones d'apparition initiales. Les placements dans les autres localités seront ajoutés avec le système de déplacement et de localisation des personnages.
+- Le test PostgreSQL `npc-dialogue-postgres.integration.test.ts` couvre le catalogue, la première rencontre, la révélation du lieu, le choix d'une réponse, la fin de conversation et la reprise sans nouvelle révélation.
+- La migration 0027 n'a pas été exécutée sur Supabase. Aucun contenu PNJ réel n'est encore configuré, donc la commande indiquera qu'aucun habitant n'est disponible tant que le catalogue n'aura pas reçu ses premières fiches approuvées.
+
 ## Déplacements
 
 - `travel-network.ts` décrit les connexions entre localités et caractéristiques géographiques.
