@@ -322,7 +322,6 @@ export async function startNpcConversation(
       [`start:${interactionId}`, conversationId, input.characterId, npcKey, npc.start_node_key]
     );
     await client.query("COMMIT");
-    }
   } catch (error) {
     await client.query("ROLLBACK").catch(() => undefined);
     throw error;
@@ -426,6 +425,7 @@ export async function chooseNpcDialogueOption(
       [input.conversationId, nextNodeKey, terminal ? "completed" : "active"]
     );
     await client.query("COMMIT");
+    }
   } catch (error) {
     await client.query("ROLLBACK").catch(() => undefined);
     throw error;
