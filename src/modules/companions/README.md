@@ -149,3 +149,22 @@ Le fichier `companion-species-registry.ts` sépare le cycle éditorial de l'esp�
 - Le catalogue public filtre les régions secrètes non découvertes et les espèces qui ne sont pas encore publiables.
 
 Ce registre est une couche métier en mémoire, sans migration SQL ni intégration Discord à ce stade. La persistance et l'administration du catalogue devront être ajoutées séparément après validation de la structure et des données canoniques du bestiaire.
+
+
+## Catalogue fantastique initial canonique
+
+Le fichier `initial-fantasy-bestiary.ts` contient les 43 espèces fantastiques initiales réparties dans les sept régions :
+
+- Sylvaria : 6 espèces.
+- Nivéria : 6 espèces.
+- Arcanthia : 6 espèces.
+- Solméria : 6 espèces.
+- Thalasséa : 7 espèces.
+- Ignéria : 6 espèces, dont le Phénix de Cendre.
+- Umbrelune : 6 espèces confidentielles.
+
+Chaque fiche conserve le nom, les quatre formes et l'élément fournis dans le catalogue canonique. Umbrelune reste invisible dans le catalogue public tant que sa région n'a pas été découverte.
+
+Ce fichier est un catalogue éditorial initial, distinct des définitions complètes nécessaires au gameplay. Il ne renseigne volontairement pas les raretés, habitats, capacités, conditions de rencontre ou méthodes d'acquisition qui ne sont pas définis dans les données canoniques. Les trois espèces de Sylvaria indiquées comme déjà validées dans le document source ne sont pas confondues avec des paramètres de gameplay.
+
+Le catalogue reste extensible : ces 43 entrées constituent uniquement la collection initiale.
