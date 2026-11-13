@@ -148,14 +148,6 @@ export const bestiaryAdminCommand = new SlashCommandBuilder()
   )
   .addSubcommand((subcommand) =>
     subcommand
-      .setName("programmer-voyage-pnj")
-      .setDescription("Programmer un voyage unique pour un PNJ sur un itinéraire approuvé.")
-      .addStringOption((option) => option.setName("pnj").setDescription("Clé du PNJ approuvé.").setRequired(true))
-      .addStringOption((option) => option.setName("itineraire").setDescription("Clé de l'itinéraire approuvé et chronométré.").setRequired(true))
-      .addIntegerOption((option) => option.setName("depart_dans").setDescription("Départ dans ce nombre de minutes Etheria (0 = maintenant).").setRequired(true).setMinValue(0).setMaxValue(1000000))
-  )
-  .addSubcommand((subcommand) =>
-    subcommand
       .setName("pnjs")
       .setDescription("Afficher les PNJ et leur état éditorial.")
   )
