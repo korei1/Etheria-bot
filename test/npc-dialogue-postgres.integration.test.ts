@@ -104,6 +104,7 @@ test("une première conversation PNJ révèle le lieu et persiste les choix", {
     );
     await setupClient.query(dialogueMigration);
 
+    await setupClient.query("BEGIN");
     await setupClient.query(
       `INSERT INTO npc_definitions
        (npc_key, display_name, start_node_key, editorial_status)
@@ -125,6 +126,7 @@ test("une première conversation PNJ révèle le lieu et persiste les choix", {
        VALUES ('first_resident', $1)`,
       [spawnZoneId]
     );
+    await setupClient.query("COMMIT");
 
     appPool = new Pool({
       connectionString: databaseUrl,
