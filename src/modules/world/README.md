@@ -135,3 +135,12 @@ Les migrations 0024 à 0029 sont préparées dans le dépôt mais ne doivent pas
 
 - Les commandes administratives `/etheria-admin modifier-contenu-local`, `stocks-locaux` et `ajouter-stock-local` permettent de configurer les horaires et les articles sans précharger de données fictives. Les horaires sont fournis en JSON structuré dans la modification de la fiche puis validés ; les articles sont rattachés uniquement à un contenu de type commerce.
 - La liste des stocks affiche le prix, les quantités, la capacité, la politique de réapprovisionnement et la révision. L'ajout d'un stock automatique exige le compteur du dernier jour de réapprovisionnement afin que le calendrier soit déterministe.
+
+
+## Consultation de la vie locale côté joueur
+
+- \`local-life-service.ts\` lit les activités, services, commerces et événements approuvés de la localité où se trouve le personnage actif.
+- La commande \`/etheria localite\` n'affiche que les contenus publics rattachés à la localité déjà découverte par le compte. Les contenus en visibilité \`discovery_locked\` restent masqués : le modèle de découverte actuel ne possède pas encore de cible dédiée aux contenus locaux.
+- Les fiches de commerce affichent les articles, leurs prix en Teas et les quantités disponibles. Les horaires configurés sont présentés tels quels, sans prétendre déterminer si un établissement est actuellement ouvert.
+- Les achats ne sont pas activés à cette étape : le portefeuille partagé Sweet Tea n'a pas encore de pont entrant fonctionnel et testé. Aucun portefeuille secondaire, débit fictif ou décrément de stock n'est créé.
+- La commande est en lecture seule. Elle n'invente ni contenu, ni horaire, ni stock ; elle affiche uniquement les fiches approuvées par l'équipe éditoriale.
