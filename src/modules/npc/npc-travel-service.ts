@@ -189,12 +189,16 @@ export async function planNpcTravel(
       to_settlement_id: string;
       estimated_duration_minutes: number;
     }>(
-      `SELECT from_settlement_id, to_settlement_id, estimated_duration_minutes
-       FROM world_travel_links
-       WHERE link_key = $1 AND editorial_status = 'approved'
-         AND from_settlement_id IS NOT NULL
-         AND cardinality(access_requirements) = 0
-       FOR SHARE`,
+      `SELECT l.from_settlement_id, l.to_settlement_id, l.estimated_duration_minutes
+       FROM world_travel_links l
+       JOIN world_settlements origin
+         ON origin.id = l.from_settlement_id AND origin.editorial_status = 'approved'
+       JOIN world_settlements destination
+         ON destination.id = l.to_settlement_id AND destination.editorial_status = 'approved'
+       WHERE l.link_key = $1 AND l.editorial_status = 'approved'
+         AND l.from_settlement_id IS NOT NULL
+         AND cardinality(l.access_requirements) = 0
+       FOR SHARE OF l`,
       [input.routeKey]
     );
     const selectedRoute = route.rows[0];
@@ -202,14 +206,15 @@ export async function planNpcTravel(
       throw new Error("L'itinéraire doit être approuvé, relier deux localités et posséder une durée validée.");
     }
 
-    const placement = await client.query(
-      `SELECT 1 FROM npc_settlement_locations
-       WHERE npc_key = $1 AND settlement_id = $2 AND is_active = TRUE
-       FOR UPDATE`,
+    const placement = await client.query<{ active_count: number; at_origin: boolean }>(
+      `SELECT COUNT(*)::INTEGER AS active_count,
+              COALESCE(BOOL_OR(settlement_id = $2), FALSE) AS at_origin
+       FROM npc_settlement_locations
+       WHERE npc_key = $1 AND is_active = TRUE`,
       [input.npcKey, selectedRoute.from_settlement_id]
     );
-    if (!placement.rowCount) {
-      throw new Error("Le PNJ ne se trouve pas actuellement à l'origine de cet itinéraire.");
+    if (placement.rows[0]?.active_count !== 1 || !placement.rows[0]?.at_origin) {
+      throw new Error("Le PNJ doit avoir exactement un placement actif, à l'origine de cet itinéraire.");
     }
 
     const activePlan = await client.query(
