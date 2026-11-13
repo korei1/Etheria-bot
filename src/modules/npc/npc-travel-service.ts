@@ -38,7 +38,7 @@ export async function getCurrentNpcWorldMinute(pool: Pool): Promise<number> {
   const result = await pool.query<{ world_minute: string }>(
     `SELECT (
        world_minute +
-       CASE WHEN is_paused THEN 0
+       CASE WHEN is_paused OR NOW() <= anchored_at THEN 0
          ELSE floor(
            extract(epoch FROM (NOW() - anchored_at)) / 60
            * world_minutes_per_real_minute
