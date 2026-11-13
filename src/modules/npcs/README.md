@@ -109,3 +109,12 @@ Le PNJ doit posséder exactement un placement actif, correspondant à l'origine 
 - Les voyages sont globaux : tous les joueurs voient le PNJ au même endroit au même instant, sous réserve des règles de découverte des localités.
 
 Cette première version ne crée aucun itinéraire, horaire, durée ou déplacement par défaut. Elle ne calcule pas automatiquement de chemins alternatifs, ne gère pas encore les trajets aller-retour et n'anime pas de scènes de voyage. Ces comportements nécessitent des données et règles supplémentaires validées.
+
+
+## Base de calcul des routines de voyage hebdomadaires
+
+- `npc-routine-schedule.ts` définit un contrat hebdomadaire neutre : jours locaux Etheria (1 à 7), minute locale de départ et clé d'itinéraire.
+- Le calcul de la prochaine occurrence convertit le créneau local en minute absolue à partir du fuseau approuvé de la localité, sans créer d'horloge parallèle.
+- Les jours dupliqués, minutes hors journée et clés invalides sont refusés.
+- Cette fondation ne persiste pas encore de récurrence, ne crée pas de voyages à elle seule et n'active aucun horaire par défaut. Le raccordement à l'administration et au moteur de synchronisation reste une étape distincte.
+- Les itinéraires doivent toujours exister et être approuvés dans le réseau mondial. Aucun horaire ou trajet concret n'est préchargé.
