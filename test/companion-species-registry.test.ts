@@ -173,3 +173,29 @@ testRunner("une fiche éditoriale peut être ajoutée sans rareté ni méthode d
   const next = addEditorialCompanionSpecies(registry, editorial);
   assert.equal(next.editorialSpecies.size, 44);
 });
+
+testRunner("une fiche éditoriale peut devenir jouable quand ses paramètres sont définis", () => {
+  const registry = createInitialFantasyBestiaryRegistry();
+  const editorial = registry.editorialSpecies.get("cerf_des_racines");
+  assert.ok(editorial);
+  const completed = addCompanionSpecies(registry, {
+    definition: {
+      key: editorial.key,
+      name: editorial.name,
+      origin: "fantasy",
+      category: "fantastic",
+      rarity: "commun",
+      acquisitionMethods: ["wild_encounter"],
+      discordShopElementChoice: false,
+      fixedElement: editorial.element,
+      individualTraits: []
+    },
+    regionKey: editorial.regionKey,
+    editorialStatus: "approved",
+    availabilityStatus: "unavailable",
+    evolutionForms: editorial.forms
+  });
+  assert.equal(completed.editorialSpecies.has(editorial.key), false);
+  assert.equal(completed.species.has(editorial.key), true);
+  assert.equal(registry.editorialSpecies.has(editorial.key), true);
+});
