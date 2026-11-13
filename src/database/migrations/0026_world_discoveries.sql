@@ -23,7 +23,9 @@ CREATE TABLE world_discovery_events (
   occurred_at TIMESTAMPTZ NOT NULL,
   recorded_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CONSTRAINT world_discovery_event_idempotency_unique UNIQUE (account_id, event_id),
-  CONSTRAINT world_discovery_event_account_id_unique UNIQUE (account_id, id)
+  CONSTRAINT world_discovery_event_account_id_unique UNIQUE (account_id, id),
+  CONSTRAINT world_discovery_event_record_unique
+    UNIQUE (account_id, id, target_kind, target_key, discovery_method, occurred_at)
 );
 
 CREATE INDEX world_discovery_events_account_date_idx
@@ -47,8 +49,8 @@ CREATE TABLE world_discoveries (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   PRIMARY KEY (account_id, target_kind, target_key),
   CONSTRAINT world_discoveries_first_event_fk
-    FOREIGN KEY (account_id, first_event_id)
-    REFERENCES world_discovery_events(account_id, id)
+    FOREIGN KEY (account_id, first_event_id, target_kind, target_key, discovery_method, discovered_at)
+    REFERENCES world_discovery_events(account_id, id, target_kind, target_key, discovery_method, occurred_at)
     ON UPDATE RESTRICT ON DELETE RESTRICT
 );
 
