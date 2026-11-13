@@ -43,6 +43,11 @@ test("PostgreSQL conserve compagnons, soins et repos entre connexions", {
       "utf8"
     );
     await client.query(traitsMigration);
+    const variantsMigration = await readFile(
+      new URL("../src/database/migrations/0022_companion_natural_variants.sql", import.meta.url),
+      "utf8"
+    );
+    await client.query(variantsMigration);
     client.release();
     clientReleased = true;
 
@@ -56,6 +61,7 @@ test("PostgreSQL conserve compagnons, soins et repos entre connexions", {
       initialThirstPercent: 70,
       initialEnergy: 20,
       individualTraits: { coat_pattern: "tachete", is_nocturnal: false },
+      naturalVariantKeys: ["silver_coat", "long_fur"],
       now
     };
 
@@ -82,6 +88,7 @@ test("PostgreSQL conserve compagnons, soins et repos entre connexions", {
     assert.equal(initialState.hungerPercent, 40);
     assert.equal(initialState.energy, 20);
     assert.deepEqual(first.individualTraits, { coat_pattern: "tachete", is_nocturnal: false });
+    assert.deepEqual(first.naturalVariantKeys, ["silver_coat", "long_fur"]);
 
     const fed = await claimFreeCompanionRation(pool, {
       accountId,
