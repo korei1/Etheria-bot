@@ -452,6 +452,10 @@ export async function selectCompanion(
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
+    await client.query(
+      "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
+      [`etheria:companion-selection:${input.accountId}`]
+    );
     const target = await lockOwnedCompanion(client, input.accountId, input.companionId);
     const currentResult = await client.query<{ id: string; rest_started_at: Date | null }>(
       `SELECT c.id, s.rest_started_at
