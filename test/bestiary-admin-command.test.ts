@@ -32,7 +32,11 @@ test("les opérations administratives essentielles sont exposées", () => {
     "ajouter-dialogue",
     "ajouter-choix",
     "approuver-pnj",
-    "visibilite-region"
+    "visibilite-region",
+    "contenus-locaux",
+    "ajouter-contenu-local",
+    "modifier-contenu-local",
+    "approuver-contenu-local"
   ]);
 });
 
@@ -47,4 +51,27 @@ test("la disponibilité ne permet pas de réactiver directement une espèce reti
     status.choices?.map((choice) => choice.value),
     ["discoverable", "available", "retired"]
   );
+});
+
+test("la création de contenu local impose un rattachement et un ancrage culturel", () => {
+  const subcommands = bestiaryAdminCommand.toJSON().options ?? [];
+  const create = subcommands.find((option) => option.name === "ajouter-contenu-local");
+  assert.ok(create);
+  const required = create.options?.filter((option) => option.required).map((option) => option.name);
+  assert.deepEqual(required, [
+    "cle", "nom", "localite", "type", "visibilite", "description", "tags", "justification"
+  ]);
+  const kind = create.options?.find((option) => option.name === "type");
+  assert.deepEqual(kind?.choices?.map((choice) => choice.value), [
+    "activity", "service", "shop", "event"
+  ]);
+});
+
+test("la modification et l'approbation des contenus locaux exigent une révision", () => {
+  const subcommands = bestiaryAdminCommand.toJSON().options ?? [];
+  for (const name of ["modifier-contenu-local", "approuver-contenu-local"]) {
+    const command = subcommands.find((option) => option.name === name);
+    assert.ok(command);
+    assert.ok(command.options?.some((option) => option.name === "revision" && option.required));
+  }
 });
