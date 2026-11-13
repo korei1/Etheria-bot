@@ -158,3 +158,13 @@ Les migrations 0024 à 0029 sont préparées dans le dépôt mais ne doivent pas
 - Les horaires d'ouverture et événements locaux devront utiliser l'heure locale calculée depuis la même minute mondiale. Les déplacements changent le fuseau affiché lorsqu'une localité de destination possède une affectation.
 - Les tests `world-clock.test.ts` couvrent les décalages, les passages de minuit et d'année, les cycles, l'estimation par longitude et la projection de l'horloge.
 - La migration 0032 est préparée mais n'a pas été exécutée sur Supabase. Aucun fuseau réel ni rythme de progression n'est configuré.
+
+
+## Calcul de l'heure locale des localités
+
+- `world-clock-service.ts` lit l'horloge mondiale persistée et le fuseau approuvé de la localité dans une même requête.
+- Le service projette la minute mondiale à partir de son ancrage, du rythme configuré et de l'état pause/reprise, puis calcule la date et l'heure locales.
+- Une localité sans fuseau approuvé renvoie explicitement `time_zone_not_configured` : aucune heure locale n'est devinée.
+- Une localité absente ou non approuvée n'expose pas l'horloge.
+- Les tests du moteur et du service utilisent le runner natif `node:test`, cohérent avec la commande `npm test` du projet.
+- Le branchement de cette donnée dans les commandes joueur, les horaires d'ouverture et les comportements des PNJ reste l'étape suivante. Les migrations 0030 à 0032 ne sont pas exécutées sur Supabase.
