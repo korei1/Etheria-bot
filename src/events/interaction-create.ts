@@ -55,7 +55,8 @@ import {
   approvePersistedEditorialSpecies,
   createPersistedCompanionRegion,
   createPersistedEditorialSpecies,
-  setPersistedSpeciesAvailability
+  setPersistedSpeciesAvailability,
+  setPersistedRegionVisibility
 } from "../modules/companions/companion-species-catalog-repository.js";
 
 function discordInteractionUuid(interactionId: string): string {
@@ -473,6 +474,33 @@ export default {
             idempotencyKey: discordInteractionUuid(interaction.id)
           });
           await interaction.editReply("La nouvelle région a été créée et inscrite dans le journal administratif.");
+          return;
+        }
+
+        if (subcommand === "visibilite-region") {
+          const result = await setPersistedRegionVisibility(database, {
+            regionKey: interaction.options.getString("region", true).trim().toLowerCase(),
+            visibility: interaction.options.getString("visibilite", true) as "public" | "discovery_locked",
+            expectedRevision: interaction.options.getInteger("revision", true),
+            actorAccountId: account.accountId,
+            idempotencyKey: discordInteractionUuid(interaction.id)
+          });
+          await interaction.editReply(
+            `Visibilité de la région mise à jour : **${result.visibility}** (révision ${result.revision}).`
+          );
+          return;
+        }
+
+        if (subcommand === "approuver") {
+          const revision = await approvePersistedEditorialSpecies(database, {
+            speciesKey: interaction.options.getString("espece", true).trim().toLowerCase(),
+            expectedRevision: interaction.options.getInteger("revision", true),
+            actorAccountId: account.accountId,
+            idempotencyKey: discordInteractionUuid(interaction.id)
+          });
+          await interaction.editReply(
+            `Fiche approuvée (révision ${revision}). Elle reste indisponible tant que son statut de disponibilité n'est pas modifié.`
+          );
           return;
         }
 
