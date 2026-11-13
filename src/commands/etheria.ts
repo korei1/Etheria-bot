@@ -20,6 +20,11 @@ export const etheriaCommand = new SlashCommandBuilder()
   )
   .addSubcommand((subcommand) =>
     subcommand
+      .setName("localite")
+      .setDescription("Consulter les activités, services et commerces de ta localité actuelle.")
+  )
+  .addSubcommand((subcommand) =>
+    subcommand
       .setName("progression")
       .setDescription("Consulter ta progression de découverte dans Etheria.")
   );
