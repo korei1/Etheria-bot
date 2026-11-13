@@ -94,6 +94,16 @@ const routeSelect = `
         AND (l.from_settlement_id IS NULL OR origin_settlement.id IS NOT NULL))
     )
     AND (
+      dest.id IS NOT NULL
+      OR (
+        c.current_settlement_id IS NOT NULL
+        AND l.bidirectional
+        AND l.to_settlement_id = c.current_settlement_id
+        AND l.from_spawn_zone_id IS NOT NULL
+        AND origin_zone.id IS NOT NULL
+      )
+    )
+    AND (
       l.visibility = 'public'
       OR EXISTS (
         SELECT 1 FROM world_discoveries ld
