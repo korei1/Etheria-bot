@@ -58,6 +58,7 @@ export async function consumeInventoryItemLots(
   client: PoolClient,
   input: { inventorySlotId: string; itemCode: string; quantity: number }
 ): Promise<void> {
+  validateLotInput(input.itemCode, input.quantity, input.inventorySlotId);
   const result = await client.query<{
     id: string;
     quantity: number;
