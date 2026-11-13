@@ -718,6 +718,36 @@ export default {
         }
 
         if (subcommand === "itineraires") {
+          const npcKey = interaction.options.getString("pnj");
+          const routeKey = interaction.options.getString("itineraire");
+          const departureInMinutes = interaction.options.getInteger("depart_dans");
+          const schedulingOptionsProvided = npcKey !== null || routeKey !== null || departureInMinutes !== null;
+
+          if (schedulingOptionsProvided) {
+            if (!npcKey || !routeKey || departureInMinutes === null) {
+              throw new Error("Pour programmer un voyage, renseigne le PNJ, l'itinéraire et le délai de départ.");
+            }
+            const normalizedNpcKey = npcKey.trim().toLowerCase();
+            const normalizedRouteKey = routeKey.trim().toLowerCase();
+            if (!/^[a-z][a-z0-9_]{1,79}$/.test(normalizedNpcKey) || !/^[a-z][a-z0-9_]{1,79}$/.test(normalizedRouteKey)) {
+              throw new Error("Les clés du PNJ et de l'itinéraire sont invalides.");
+            }
+            const currentWorldMinute = await getCurrentNpcWorldMinute(database);
+            const departureWorldMinute = currentWorldMinute + departureInMinutes;
+            if (!Number.isSafeInteger(departureWorldMinute)) {
+              throw new Error("Le départ dépasse la capacité de l'horloge Etheria.");
+            }
+            const plan = await planNpcTravel(database, {
+              npcKey: normalizedNpcKey,
+              routeKey: normalizedRouteKey,
+              departureWorldMinute
+            });
+            await interaction.editReply(
+              `Voyage programmé pour **${normalizedNpcKey}** sur **${normalizedRouteKey}**. Départ : minute monde ${plan.departureWorldMinute} ; arrivée : minute monde ${plan.arrivalWorldMinute}. Le PNJ quittera son lieu au départ et rejoindra la destination à l'arrivée.`
+            );
+            return;
+          }
+
           const result = await database.query<{
             link_key: string;
             display_name: string;
@@ -811,29 +841,6 @@ export default {
             client.release();
           }
           await interaction.editReply("Itinéraire créé en brouillon. Il ne sera visible aux joueurs qu'après son approbation.");
-          return;
-        }
-
-        if (subcommand === "programmer-voyage-pnj") {
-          const npcKey = interaction.options.getString("pnj", true).trim().toLowerCase();
-          const routeKey = interaction.options.getString("itineraire", true).trim().toLowerCase();
-          const departureInMinutes = interaction.options.getInteger("depart_dans", true);
-          if (!/^[a-z][a-z0-9_]{1,79}$/.test(npcKey) || !/^[a-z][a-z0-9_]{1,79}$/.test(routeKey)) {
-            throw new Error("Les clés du PNJ et de l'itinéraire sont invalides.");
-          }
-          const currentWorldMinute = await getCurrentNpcWorldMinute(database);
-          const departureWorldMinute = currentWorldMinute + departureInMinutes;
-          if (!Number.isSafeInteger(departureWorldMinute)) {
-            throw new Error("Le départ dépasse la capacité de l'horloge Etheria.");
-          }
-          const plan = await planNpcTravel(database, {
-            npcKey,
-            routeKey,
-            departureWorldMinute
-          });
-          await interaction.editReply(
-            `Voyage programmé pour **${npcKey}** sur **${routeKey}**. Départ : minute monde ${plan.departureWorldMinute} ; arrivée : minute monde ${plan.arrivalWorldMinute}. Le PNJ quittera son lieu au départ et rejoindra la destination à l'arrivée.`
-          );
           return;
         }
 
