@@ -164,6 +164,18 @@ Le fichier `initial-fantasy-bestiary.ts` contient les 43 espèces fantastiques i
 
 Chaque fiche conserve le nom, les quatre formes et l'élément fournis dans le catalogue canonique. Umbrelune reste invisible dans le catalogue public tant que sa région n'a pas été découverte.
 
-Ce fichier est un catalogue éditorial initial, distinct des définitions complètes nécessaires au gameplay. Il ne renseigne volontairement pas les raretés, habitats, capacités, conditions de rencontre ou méthodes d'acquisition qui ne sont pas définis dans les données canoniques. Les trois espèces de Sylvaria indiquées comme déjà validées dans le document source ne sont pas confondues avec des paramètres de gameplay.
+Les 43 espèces sont toutes officiellement approuvées et constituent le bestiaire canonique initial. La formulation historique mentionnant trois espèces de Sylvaria déjà validées ne représente pas une restriction de validation.
 
-Le catalogue reste extensible : ces 43 entrées constituent uniquement la collection initiale.
+Ce fichier ne renseigne volontairement pas les raretés, habitats, capacités, conditions de rencontre ou méthodes d'acquisition qui ne sont pas définis dans les données canoniques. Le catalogue reste extensible : ces 43 entrées constituent uniquement la collection initiale.
+
+
+### Raccordement au registre extensible
+
+Le registre `companion-species-registry.ts` héberge désormais deux couches complémentaires :
+
+- `editorialSpecies` contient les fiches approuvées du bestiaire, avec leur identifiant stable, leur région, leur élément et leurs formes.
+- `species` contient les définitions complètes nécessaires au gameplay, lorsque rareté, méthodes d'acquisition et autres paramètres sont établis.
+
+La fonction `createInitialFantasyBestiaryRegistry()` charge les 43 espèces et les sept régions dans la couche éditoriale. Elle ne leur attribue aucune rareté, méthode d'acquisition ou habitat par défaut. `listVisibleEditorialCompanionSpecies()` expose les fiches des régions publiques et garde les six fiches d'Umbrelune masquées jusqu'à découverte.
+
+Les fiches éditoriales et les définitions de gameplay restent volontairement séparées : être approuvé et visible dans l'encyclopédie ne rend pas automatiquement une espèce disponible à l'achat ou à la rencontre. Les ajouts futurs utilisent le même registre sans plafond global.
