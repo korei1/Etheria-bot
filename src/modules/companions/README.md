@@ -138,18 +138,17 @@ Ces quatre fiches restent `research_only`.
 
 ## Registre évolutif des espèces et régions
 
-Le fichier `companion-species-registry.ts` sépare le cycle éditorial de l'espèce de sa définition de gameplay :
+Le fichier `companion-species-registry.ts` sépare trois dimensions qui ne doivent pas être confondues :
 
-- Le registre ne fixe aucune limite globale au nombre de régions, d'espèces ou de formes évolutives.
-- Chaque espèce et chaque forme possède une clé stable ; une clé existante ne peut pas être réutilisée.
-- Les formes évolutives sont des données ordonnées et peuvent être ajoutées sans modifier le moteur.
-- Les régions peuvent être publiques ou masquées jusqu'à leur découverte.
-- Le cycle de vie est contrôlé : `draft` → `approved` → (`discovery_locked` ou `discoverable`) → `available` → `retired`.
-- Une espèce retirée reste dans le registre afin que les références des compagnons déjà possédés restent résolubles ; elle n'est plus proposée aux nouvelles acquisitions.
-- Le catalogue public filtre les régions secrètes non découvertes et les espèces qui ne sont pas encore publiables.
+- **Validation éditoriale** : `draft` ou `approved`. Une fiche approuvée reste approuvée même si son territoire est secret ou si l'espèce n'est pas encore accessible en jeu.
+- **Disponibilité en jeu** : `unavailable`, `discoverable`, `available` ou `retired`. Une espèce ne peut pas devenir découvrable ou disponible avant son approbation.
+- **Confidentialité géographique** : une région est `public` ou `discovery_locked`. Les espèces de cette région restent masquées tant que la région n'a pas été découverte, indépendamment de leur approbation éditoriale.
+
+Le registre ne fixe aucune limite globale au nombre de régions, d'espèces ou de formes évolutives. Chaque espèce et chaque forme possède une clé stable ; une clé existante ne peut pas être réutilisée. Les formes évolutives sont des données ordonnées et peuvent être ajoutées sans modifier le moteur.
+
+Une espèce retirée reste dans le registre afin que les références des compagnons déjà possédés restent résolubles ; elle n'est plus proposée aux nouvelles acquisitions. Le catalogue public ne montre que les espèces approuvées, dans les régions visibles, et dont la disponibilité est `discoverable` ou `available`.
 
 Ce registre est une couche métier en mémoire, sans migration SQL ni intégration Discord à ce stade. La persistance et l'administration du catalogue devront être ajoutées séparément après validation de la structure et des données canoniques du bestiaire.
-
 
 ## Catalogue fantastique initial canonique
 
