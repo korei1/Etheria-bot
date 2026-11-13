@@ -104,7 +104,7 @@ Le PNJ doit posséder exactement un placement actif, correspondant à l'origine 
 - À partir de la minute de départ, son placement d'origine est désactivé : il n'est visible dans aucune localité pendant le trajet.
 - À la minute d'arrivée, son placement de destination est activé ou créé.
 - La synchronisation est transactionnelle et protégée contre les traitements concurrents ; les événements de départ et d'arrivée sont conservés.
-- Les transitions sont matérialisées à la prochaine consultation des rencontres PNJ ou au démarrage d'une conversation. L'heure de transition reste celle prévue par l'horloge mondiale, même si la consultation survient plus tard.
+- Un worker autonome lance une synchronisation périodique dès que la connexion PostgreSQL est vérifiée. Les transitions ne dépendent donc plus d'une consultation Discord ; l'heure enregistrée reste celle prévue par l'horloge mondiale, même si le processus redémarre ou si un passage de synchronisation est retardé.
 - Si l'horloge mondiale est en pause, le voyage ne progresse pas.
 - Les voyages sont globaux : tous les joueurs voient le PNJ au même endroit au même instant, sous réserve des règles de découverte des localités.
 
@@ -118,3 +118,15 @@ Cette première version ne crée aucun itinéraire, horaire, durée ou déplacem
 - Les jours dupliqués, minutes hors journée et clés invalides sont refusés.
 - Cette fondation ne persiste pas encore de récurrence, ne crée pas de voyages à elle seule et n'active aucun horaire par défaut. Le raccordement à l'administration et au moteur de synchronisation reste une étape distincte.
 - Les itinéraires doivent toujours exister et être approuvés dans le réseau mondial. Aucun horaire ou trajet concret n'est préchargé.
+
+
+## Synchronisation autonome des voyages
+
+- `npc-travel-worker.ts` démarre après la vérification de la connexion PostgreSQL.
+- Il effectue un premier passage immédiatement, puis relit l'horloge Etheria toutes les 15 secondes.
+- Les passages ne se chevauchent pas ; les erreurs sont journalisées et le worker continue ses tentatives suivantes.
+- Le worker est arrêté avant la fermeture du pool PostgreSQL, y compris lors d'un échec de démarrage du bot.
+- Il réutilise exclusivement `advanceNpcTravelPlans` : aucune deuxième machine d'état ni horloge parallèle n'est créée.
+- L'horloge mondiale en pause bloque naturellement la progression des trajets.
+- La routine hebdomadaire reste, à ce stade, un contrat de calcul pur : elle n'est pas encore persistée ni reliée à une programmation automatique des départs.
+- Aucune activité spécifique n'est inventée pendant les voyages. Le PNJ reste indisponible entre son départ et son arrivée ; une activité de trajet affichable nécessitera un libellé éditorial et une interface dédiés.
