@@ -41,3 +41,41 @@ Le service d'enregistrement de rencontre est implémenté et raccordé au suivi 
 - Si un calendrier est configuré mais qu'aucune heure locale fiable n'est disponible, le PNJ n'est pas proposé. Les zones de départ n'ont pas encore de fuseau attribuable : leurs PNJ sans calendrier restent disponibles, ceux avec calendrier restent masqués jusqu'à prise en charge du fuseau de la zone.
 - Aucun PNJ, horaire ou dialogue n'est préchargé. La migration 0033 ajoute les champs, mais elle n'a pas été exécutée.
 - L'interface d'administration pour modifier ces calendriers reste à ajouter ; pour l'instant, les champs sont prêts côté base et service, sans commande joueur permettant de les modifier.
+
+
+## Activités quotidiennes configurables
+
+La commande administrateur `/etheria-admin programmer-pnj` configure un placement existant :
+- `pnj` : clé du PNJ ;
+- `lieu_type` : `localite` ou `zone_depart` ;
+- `lieu` : clé du lieu ;
+- `horaires_json` : calendrier hebdomadaire JSON, ou le texte `null` pour retirer la restriction ;
+- `activite` : libellé facultatif de l'activité affichée dans le menu de rencontre.
+
+Exemple de calendrier (jours Etheria 1 à 7, heures locales en minutes depuis minuit) :
+
+```json
+{
+  "days": [
+    {
+      "weekday": 1,
+      "intervals": [
+        { "opensAtMinute": 480, "closesAtMinute": 720 },
+        { "opensAtMinute": 840, "closesAtMinute": 1080 }
+      ]
+    },
+    {
+      "weekday": 3,
+      "intervals": [
+        { "opensAtMinute": 540, "closesAtMinute": 1020 }
+      ]
+    }
+  ]
+}
+```
+
+Les intervalles sont validés et les chevauchements ou horaires mal ordonnés sont refusés. Le menu joueur affiche le libellé d'activité à la place de la description courte lorsqu'il existe.
+
+Les zones de départ acceptent pour l'instant un libellé d'activité sans restriction horaire : leur fuseau local n'est pas encore raccordé au service d'horloge. Une programmation horaire dans ces zones est donc refusée plutôt que de masquer silencieusement le PNJ.
+
+Cette étape fournit des routines éditoriales par lieu et des disponibilités fiables. Elle ne déplace pas encore automatiquement un PNJ entre localités : les trajets, les durées et les règles de déplacement des habitants restent à définir avant d'activer une simulation de déplacement.
