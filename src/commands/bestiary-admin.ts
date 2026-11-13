@@ -236,16 +236,9 @@ export const bestiaryAdminCommand = new SlashCommandBuilder()
           { name: "Publique", value: "public" },
           { name: "Verrouillée jusqu'à découverte", value: "discovery_locked" }
         ))
+      .addStringOption((option) => option.setName("horaires_json").setDescription("Horaires JSON facultatifs : {days:[{weekday,intervals:[{opensAtMinute,closesAtMinute}]}]}").setMaxLength(1000).setRequired(false))
   )
 
-  .addSubcommand((subcommand) =>
-    subcommand
-      .setName("definir-horaires-local")
-      .setDescription("Définir les horaires hebdomadaires d'un contenu local.")
-      .addStringOption((option) => option.setName("cle").setDescription("Clé du contenu local.").setRequired(true))
-      .addIntegerOption((option) => option.setName("revision").setDescription("Révision actuelle.").setMinValue(1).setRequired(true))
-      .addStringOption((option) => option.setName("horaires_json").setDescription("JSON : {days:[{weekday,intervals:[{opensAtMinute,closesAtMinute}]}]}").setMaxLength(1000).setRequired(true))
-  )
   .addSubcommand((subcommand) =>
     subcommand
       .setName("stocks-locaux")
