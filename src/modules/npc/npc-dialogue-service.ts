@@ -1,6 +1,6 @@
 import type { Pool } from "pg";
 import { recordNpcEncounter, type RevealedSpawnLocation } from "./npc-encounter-service.js";
-import { isOpenAtLocalMinute, type WeeklyOpeningSchedule } from "../world/local-life-simulation.js";
+import { isOpenAtLocalMinute, validateOpeningSchedule, type WeeklyOpeningSchedule } from "../world/local-life-simulation.js";
 import { getSettlementLocalTime } from "../world/world-clock-service.js";
 
 export interface NpcDialogueChoice {
@@ -48,7 +48,9 @@ export function isNpcWithinPresenceSchedule(
   weekday: number,
   minuteOfDay: number
 ): boolean {
-  return schedule === null || isOpenAtLocalMinute(schedule, weekday, minuteOfDay);
+  if (schedule === null) return true;
+  if (validateOpeningSchedule(schedule).length > 0) return false;
+  return isOpenAtLocalMinute(schedule, weekday, minuteOfDay);
 }
 
 async function isNpcPresentAtLocalTime(
