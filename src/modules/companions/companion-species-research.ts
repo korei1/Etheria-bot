@@ -336,6 +336,134 @@ export const COMPANION_SPECIES_RESEARCH_DOSSIERS: readonly CompanionSpeciesResea
     additionalSources: [],
     gameplayStatus: "research_only"
   }
+  ,{
+    key: "short_beaked_common_dolphin",
+    commonName: "Dauphin commun",
+    scientificName: "Delphinus delphis",
+    category: "aquatic",
+    assessment: {
+      system: "iucn_red_list",
+      scope: "global",
+      category: "least_concern",
+      assessedAt: "2020-10-20",
+      publishedAt: 2021,
+      authority: "IUCN",
+      sourceName: "The IUCN Red List of Threatened Species 2021: Delphinus delphis",
+      sourceUrl: "https://doi.org/10.2305/IUCN.UK.2021-2.RLTS.T134817215A199893039.en"
+    },
+    habitats: ["Eaux marines néritiques", "Eaux océaniques tropicales et tempérées chaudes"],
+    rangeSummary: "Espèce largement répartie dans les eaux tropicales et tempérées chaudes ; présente dans les eaux françaises.",
+    ecologicalNotes: [
+      "L'évaluation mondiale publiée en 2021 classe l'espèce en préoccupation mineure ; la tendance mondiale y est indiquée comme inconnue.",
+      "Elle vit souvent en groupes et se nourrit notamment de petits poissons et de calmars.",
+      "Les captures accidentelles dans les engins de pêche, la pollution et le bruit sous-marin figurent parmi les pressions documentées."
+    ],
+    additionalSources: [
+      {
+        authority: "Convention sur les espèces migratrices (CMS)",
+        title: "Short-Beaked Common Dolphin - Delphinus delphis",
+        url: "https://www.cms.int/species/delphinus-delphis"
+      }
+    ],
+    gameplayStatus: "research_only"
+  },
+  {
+    key: "great_white_shark",
+    commonName: "Grand requin blanc",
+    scientificName: "Carcharodon carcharias",
+    category: "aquatic",
+    assessment: {
+      system: "iucn_red_list",
+      scope: "global",
+      category: "vulnerable",
+      assessedAt: "2018-11-07",
+      publishedAt: 2022,
+      authority: "IUCN SSC Shark Specialist Group",
+      sourceName: "The IUCN Red List of Threatened Species 2022: Carcharodon carcharias (amended version of 2019 assessment)",
+      sourceUrl: "https://doi.org/10.2305/IUCN.UK.2022-1.RLTS.T3855A212629880.en"
+    },
+    habitats: ["Eaux marines néritiques", "Eaux océaniques"],
+    rangeSummary: "Espèce marine à vaste répartition dans les océans du monde, avec des populations réparties entre plusieurs grands bassins océaniques.",
+    ecologicalNotes: [
+      "L'évaluation mondiale publiée en 2022 reprend l'évaluation réalisée en 2018 et classe l'espèce comme vulnérable.",
+      "La tendance de population est indiquée comme décroissante dans l'évaluation du statut vert de 2021 ; ce résultat ne doit pas être confondu avec une nouvelle catégorie de Liste rouge.",
+      "La pêche et les prélèvements constituent des pressions documentées."
+    ],
+    additionalSources: [],
+    gameplayStatus: "research_only"
+  },
+  {
+    key: "common_pipistrelle",
+    commonName: "Pipistrelle commune",
+    scientificName: "Pipistrellus pipistrellus",
+    category: "flying",
+    assessment: {
+      system: "iucn_red_list",
+      scope: "global",
+      category: "least_concern",
+      assessedAt: "2019-05-14",
+      publishedAt: 2020,
+      authority: "IUCN SSC Bat Specialist Group",
+      sourceName: "The IUCN Red List of Threatened Species 2020: Pipistrellus pipistrellus (errata version published in 2021)",
+      sourceUrl: "https://doi.org/10.2305/IUCN.UK.2020-2.RLTS.T85333513A196581936.en"
+    },
+    habitats: ["Forêts", "Fourrés et zones arbustives", "Zones humides intérieures", "Cavités et sites souterrains", "Bâtiments et autres milieux terrestres artificiels"],
+    rangeSummary: "Espèce largement répartie en Europe, en Afrique du Nord-Ouest et dans une partie de l'Asie ; présente en France métropolitaine.",
+    ecologicalNotes: [
+      "L'évaluation mondiale publiée en 2020 classe l'espèce en préoccupation mineure et indique une tendance stable à cette date.",
+      "Elle chasse principalement de petits insectes et utilise des fissures de bâtiments ou des cavités d'arbres comme gîtes.",
+      "Les travaux sur les bâtiments, les traitements du bois et les dérangements peuvent affecter certaines colonies."
+    ],
+    additionalSources: [
+      {
+        authority: "Muséum national d'Histoire naturelle",
+        title: "Pipistrelle commune",
+        url: "https://www.mnhn.fr/fr/pipistrelle-commune"
+      },
+      {
+        authority: "Convention sur les espèces migratrices (CMS)",
+        title: "Pipistrellus pipistrellus",
+        url: "https://www.cms.int/species/pipistrellus-pipistrellus"
+      }
+    ],
+    gameplayStatus: "research_only"
+  },
+  {
+    key: "monarch_butterfly",
+    commonName: "Monarque",
+    scientificName: "Danaus plexippus",
+    category: "insect_arthropod",
+    assessment: {
+      system: "iucn_red_list",
+      scope: "global",
+      category: "least_concern",
+      assessedAt: "2021-08-19",
+      publishedAt: 2022,
+      authority: "IUCN",
+      sourceName: "The IUCN Red List of Threatened Species 2022: Danaus plexippus",
+      sourceUrl: "https://doi.org/10.2305/IUCN.UK.2022-1.RLTS.T159971A219149911.en"
+    },
+    habitats: ["Forêts", "Fourrés et zones arbustives", "Prairies", "Zones humides intérieures", "Paysages terrestres modifiés par l'humain"],
+    rangeSummary: "Espèce originaire des Amériques, avec des populations établies ou des observations dans de nombreuses autres régions.",
+    ecologicalNotes: [
+      "L'évaluation mondiale de l'espèce publiée en 2022 la classe en préoccupation mineure et indique une tendance décroissante.",
+      "Le statut de la sous-espèce migratrice Danaus plexippus plexippus est distinct : son évaluation propre publiée en 2022 la classe en danger. Il ne faut pas transférer automatiquement ce statut à toute l'espèce.",
+      "Les chenilles dépendent des plantes hôtes du genre Asclepias ; la perte d'habitats et les changements climatiques affectent notamment les populations migratrices."
+    ],
+    additionalSources: [
+      {
+        authority: "IUCN",
+        title: "Le papillon monarque migrateur est désormais En danger",
+        url: "https://iucn.org/press-release/202207/migratory-monarch-butterfly-now-endangered-iucn-red-list?language=fr"
+      },
+      {
+        authority: "U.S. Geological Survey",
+        title: "Non-negligible near-term risk to the eastern migratory monarch population",
+        url: "https://pubs.usgs.gov/publication/ofr20231097/full"
+      }
+    ],
+    gameplayStatus: "research_only"
+  }
 ] as const;
 
 export function validateSpeciesResearchDossiers(
