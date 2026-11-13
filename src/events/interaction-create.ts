@@ -58,6 +58,7 @@ import {
   travelCharacter
 } from "../modules/world/travel-service.js";
 import { chooseNpcDialogueOption, listNpcEncountersAtCharacterLocation, startNpcConversation, type NpcDialogueView } from "../modules/npc/npc-dialogue-service.js";
+import { getCurrentNpcWorldMinute, planNpcTravel } from "../modules/npc/npc-travel-service.js";
 import {
   validateOpeningSchedule,
   validateLocalStockItem,
@@ -756,6 +757,7 @@ export default {
           const linkType = interaction.options.getString("type", true);
           const bidirectional = interaction.options.getBoolean("bidirectionnel", true);
           const visibility = interaction.options.getString("visibilite", true);
+          const durationMinutes = interaction.options.getInteger("duree_minutes");
           if (!/^[a-z][a-z0-9_]{1,79}$/.test(linkKey)) {
             throw new Error("La clé de l'itinéraire doit contenir des lettres minuscules, chiffres ou tirets bas.");
           }
@@ -794,10 +796,11 @@ export default {
             await client.query(
               `INSERT INTO world_travel_links
                (link_key, display_name, from_spawn_zone_id, from_settlement_id,
-                to_settlement_id, mode, link_type, bidirectional, visibility, editorial_status)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'draft')`,
+                to_settlement_id, mode, link_type, bidirectional, visibility,
+                estimated_duration_minutes, editorial_status)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'draft')`,
               [linkKey, displayName, spawnZoneId, originSettlementId, destinationId,
-                mode, linkType, bidirectional, visibility]
+                mode, linkType, bidirectional, visibility, durationMinutes]
             );
             await client.query("COMMIT");
           } catch (error) {
@@ -807,6 +810,29 @@ export default {
             client.release();
           }
           await interaction.editReply("Itinéraire créé en brouillon. Il ne sera visible aux joueurs qu'après son approbation.");
+          return;
+        }
+
+        if (subcommand === "programmer-voyage-pnj") {
+          const npcKey = interaction.options.getString("pnj", true).trim().toLowerCase();
+          const routeKey = interaction.options.getString("itineraire", true).trim().toLowerCase();
+          const departureInMinutes = interaction.options.getInteger("depart_dans", true);
+          if (!/^[a-z][a-z0-9_]{1,79}$/.test(npcKey) || !/^[a-z][a-z0-9_]{1,79}$/.test(routeKey)) {
+            throw new Error("Les clés du PNJ et de l'itinéraire sont invalides.");
+          }
+          const currentWorldMinute = await getCurrentNpcWorldMinute(database);
+          const departureWorldMinute = currentWorldMinute + departureInMinutes;
+          if (!Number.isSafeInteger(departureWorldMinute)) {
+            throw new Error("Le départ dépasse la capacité de l'horloge Etheria.");
+          }
+          const plan = await planNpcTravel(database, {
+            npcKey,
+            routeKey,
+            departureWorldMinute
+          });
+          await interaction.editReply(
+            `Voyage programmé pour **${npcKey}** sur **${routeKey}**. Départ : minute monde ${plan.departureWorldMinute} ; arrivée : minute monde ${plan.arrivalWorldMinute}. Le PNJ quittera son lieu au départ et rejoindra la destination à l'arrivée.`
+          );
           return;
         }
 
