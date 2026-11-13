@@ -71,9 +71,7 @@ export const bestiaryAdminCommand = new SlashCommandBuilder()
       .addStringOption((option) => option.setName("formes").setDescription("Au moins deux lignes cle|nom, ordre = ligne.")
         .setRequired(true))
       .addBooleanOption((option) => option.setName("approuvee").setDescription("Approuver immédiatement la fiche.").setRequired(true))
-  );
-
-
+  )
   .addSubcommand((subcommand) =>
     subcommand
       .setName("approuver")
