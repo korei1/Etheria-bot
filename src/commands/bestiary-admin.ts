@@ -237,6 +237,33 @@ export const bestiaryAdminCommand = new SlashCommandBuilder()
           { name: "Verrouillée jusqu'à découverte", value: "discovery_locked" }
         ))
   )
+
+  .addSubcommand((subcommand) =>
+    subcommand
+      .setName("definir-horaires-local")
+      .setDescription("Définir les horaires hebdomadaires d'un contenu local.")
+      .addStringOption((option) => option.setName("cle").setDescription("Clé du contenu local.").setRequired(true))
+      .addIntegerOption((option) => option.setName("revision").setDescription("Révision actuelle.").setMinValue(1).setRequired(true))
+      .addStringOption((option) => option.setName("horaires_json").setDescription("JSON : {days:[{weekday,intervals:[{opensAtMinute,closesAtMinute}]}]}").setMaxLength(1000).setRequired(true))
+  )
+  .addSubcommand((subcommand) =>
+    subcommand
+      .setName("stocks-locaux")
+      .setDescription("Afficher les stocks enregistrés dans les commerces.")
+  )
+  .addSubcommand((subcommand) =>
+    subcommand
+      .setName("ajouter-stock-local")
+      .setDescription("Ajouter un article au stock d'un commerce.")
+      .addStringOption((option) => option.setName("commerce").setDescription("Clé d'un contenu de type commerce.").setRequired(true))
+      .addStringOption((option) => option.setName("cle").setDescription("Clé de l'article.").setRequired(true))
+      .addStringOption((option) => option.setName("nom").setDescription("Nom de l'article.").setRequired(true))
+      .addIntegerOption((option) => option.setName("prix_teas").setDescription("Prix en Teas.").setMinValue(0).setRequired(true))
+      .addIntegerOption((option) => option.setName("quantite").setDescription("Quantité initiale.").setMinValue(0).setRequired(true))
+      .addIntegerOption((option) => option.setName("maximum").setDescription("Capacité maximale du stock.").setMinValue(0).setRequired(true))
+      .addIntegerOption((option) => option.setName("reapprovisionnement_jours").setDescription("Intervalle en jours Etheria, facultatif.").setMinValue(1).setMaxValue(120).setRequired(false))
+      .addIntegerOption((option) => option.setName("dernier_jour_absolu").setDescription("Compteur absolu du dernier réapprovisionnement, facultatif.").setMinValue(1).setRequired(false))
+  )
   .addSubcommand((subcommand) =>
     subcommand
       .setName("approuver-contenu-local")
