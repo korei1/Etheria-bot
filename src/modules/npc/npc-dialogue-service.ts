@@ -259,8 +259,8 @@ export async function chooseNpcDialogueOption(
       [input.conversationId, input.characterId, input.accountId]
     );
     const current = conversation.rows[0];
-    if (!current || current.status !== "active") {
-      throw new NpcDialogueError("Cette conversation n'est plus active.");
+    if (!current) {
+      throw new NpcDialogueError("Cette conversation est introuvable.");
     }
     npcKey = current.npc_key;
 
@@ -271,6 +271,9 @@ export async function chooseNpcDialogueOption(
     if (duplicateEvent.rowCount) {
       await client.query("COMMIT");
     } else {
+      if (current.status !== "active") {
+        throw new NpcDialogueError("Cette conversation n'est plus active.");
+      }
       const choice = await client.query<{ next_node_key: string }>(
       `SELECT next_node_key
        FROM npc_dialogue_choices
