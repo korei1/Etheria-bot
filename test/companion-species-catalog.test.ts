@@ -15,6 +15,7 @@ import {
 const woodlandSpecies: CompanionSpeciesDefinition = {
   key: "woodland_companion",
   name: "Espèce forestière de test",
+  origin: "real_world",
   category: "terrestrial",
   rarity: "commun",
   acquisitionMethods: ["wild_encounter", "adoption"],
@@ -133,4 +134,53 @@ test("le catalogue refuse les règles héréditaires qui référencent une varia
       resultingVariantKey: "silver_long"
     }]
   }).some((issue) => issue.includes("variante inconnue")));
+});
+
+
+test("une évaluation réelle de conservation doit être sourcée et datée", () => {
+  const sourced = {
+    ...woodlandSpecies,
+    realWorldConservation: {
+      system: "iucn_red_list" as const,
+      category: "least_concern" as const,
+      authority: "Autorité de test",
+      sourceName: "Évaluation de test",
+      sourceUrl: "https://example.org/species",
+      assessedAt: "2026-01-15"
+    }
+  };
+  assert.deepEqual(validateCompanionSpeciesDefinition(sourced), []);
+  assert.ok(validateCompanionSpeciesDefinition({
+    ...sourced,
+    realWorldConservation: {
+      ...sourced.realWorldConservation,
+      sourceUrl: "http://example.org/species"
+    }
+  }).some((issue) => issue.includes("source")));
+});
+
+test("une espèce fantastique ne reçoit pas une évaluation IUCN réelle", () => {
+  assert.ok(validateCompanionSpeciesDefinition({
+    ...woodlandSpecies,
+    origin: "fantasy",
+    realWorldConservation: {
+      system: "iucn_red_list",
+      category: "least_concern",
+      authority: "Autorité",
+      sourceName: "Source",
+      sourceUrl: "https://example.org",
+      assessedAt: "2026-01-15"
+    }
+  }).some((issue) => issue.includes("espèce purement fantastique")));
+});
+
+test("les statuts de conservation Etheria sont contrôlés séparément", () => {
+  assert.deepEqual(validateCompanionSpeciesDefinition({
+    ...woodlandSpecies,
+    etheriaConservation: { status: "protected", regionKey: "north" }
+  }), []);
+  assert.ok(validateCompanionSpeciesDefinition({
+    ...woodlandSpecies,
+    etheriaConservation: { status: "unknown_status" as never }
+  }).some((issue) => issue.includes("Statut de conservation Etheria")));
 });
