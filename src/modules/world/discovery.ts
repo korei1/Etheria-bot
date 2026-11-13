@@ -10,6 +10,7 @@ export type DiscoveryTargetKind =
   | "country"
   | "administrative_area"
   | "settlement"
+  | "spawn_zone"
   | "geographic_feature"
   | "travel_link";
 
@@ -159,7 +160,7 @@ export function getPersonalMapProgress(
 ): { discoveredCount: number; byKind: Readonly<Record<DiscoveryTargetKind, number>> } {
   const records = state.records.filter((record) => record.accountId === accountId);
   const kinds: DiscoveryTargetKind[] = [
-    "continent", "country", "administrative_area", "settlement",
+    "continent", "country", "administrative_area", "settlement", "spawn_zone",
     "geographic_feature", "travel_link"
   ];
   const byKind = Object.fromEntries(kinds.map((kind) => [
