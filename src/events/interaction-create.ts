@@ -594,6 +594,7 @@ export default {
                  revision = revision + 1,
                  updated_at = NOW()
              WHERE content_key = $1 AND revision = $2 AND editorial_status <> 'retired'
+               AND ($8::jsonb IS NULL OR content_kind <> 'event')
              RETURNING revision`,
             [key, expectedRevision, name, description, tags, rationale, visibility, scheduleJson]
           );
