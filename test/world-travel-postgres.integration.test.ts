@@ -24,7 +24,6 @@ test("PostgreSQL déplace un personnage sur un itinéraire approuvé et révèle
   const countryId = randomUUID();
   const hiddenSettlementId = randomUUID();
   const nextSettlementId = randomUUID();
-  const discoveredAt = new Date();
 
   try {
     await setup.query(`CREATE SCHEMA "${schema}"`);
