@@ -106,4 +106,11 @@ CREATE TABLE npc_conversation_events (
 CREATE INDEX npc_conversation_events_character_idx
   ON npc_conversation_events(character_id, occurred_at DESC);
 
+ALTER TABLE npc_definitions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE npc_dialogue_nodes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE npc_dialogue_choices ENABLE ROW LEVEL SECURITY;
+ALTER TABLE npc_spawn_locations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE npc_character_conversations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE npc_conversation_events ENABLE ROW LEVEL SECURITY;
+
 COMMIT;
