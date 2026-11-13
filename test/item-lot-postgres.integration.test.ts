@@ -164,7 +164,7 @@ test("PostgreSQL garantit la cohérence réelle des lots du sac et du camp", {
       [newSlot.rows[0]!.id]
     );
     await client.query(
-      "UPDATE character_item_lots SET quantity = 11 WHERE camp_storage_entry_id = $1",
+      "UPDATE character_item_lots SET quantity = quantity - 1 WHERE id = (SELECT id FROM character_item_lots WHERE camp_storage_entry_id = $1 ORDER BY created_at, id LIMIT 1)",
       [fiberStorage.rows[0]!.id]
     );
     await client.query(
