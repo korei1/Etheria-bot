@@ -5,7 +5,7 @@ import {
 
 export const bestiaryAdminCommand = new SlashCommandBuilder()
   .setName("etheria-admin")
-  .setDescription("Administrer le bestiaire d'Etheria.")
+  .setDescription("Administrer le bestiaire et les PNJ d'Etheria.")
   .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
   .setDMPermission(false)
   .addSubcommand((subcommand) =>
@@ -88,7 +88,49 @@ export const bestiaryAdminCommand = new SlashCommandBuilder()
       .addStringOption((option) => option.setName("espece").setDescription("Clé technique de l'espèce.").setRequired(true))
       .addIntegerOption((option) => option.setName("revision").setDescription("Révision courante de la fiche.").setRequired(true).setMinValue(1))
   )
+
   .addSubcommand((subcommand) =>
+    subcommand
+      .setName("pnjs")
+      .setDescription("Afficher les PNJ et leur état éditorial.")
+  )
+  .addSubcommand((subcommand) =>
+    subcommand
+      .setName("ajouter-pnj")
+      .setDescription("Créer un PNJ brouillon et son premier dialogue dans une zone de départ.")
+      .addStringOption((option) => option.setName("cle").setDescription("Identifiant technique du PNJ.").setRequired(true))
+      .addStringOption((option) => option.setName("nom").setDescription("Nom affiché du PNJ.").setRequired(true))
+      .addStringOption((option) => option.setName("zone").setDescription("Clé d'une zone de départ existante.").setRequired(true))
+      .addStringOption((option) => option.setName("noeud").setDescription("Clé du premier nœud de dialogue.").setRequired(true))
+      .addStringOption((option) => option.setName("texte").setDescription("Texte prononcé lors de la première rencontre.").setRequired(true))
+      .addStringOption((option) => option.setName("description").setDescription("Description courte du PNJ.").setRequired(false))
+  )
+  .addSubcommand((subcommand) =>
+    subcommand
+      .setName("ajouter-dialogue")
+      .setDescription("Ajouter un nœud de dialogue à un PNJ.")
+      .addStringOption((option) => option.setName("pnj").setDescription("Clé du PNJ.").setRequired(true))
+      .addStringOption((option) => option.setName("noeud").setDescription("Clé du nouveau nœud.").setRequired(true))
+      .addStringOption((option) => option.setName("texte").setDescription("Texte de dialogue.").setRequired(true))
+      .addBooleanOption((option) => option.setName("terminal").setDescription("Ce nœud termine-t-il la conversation ?").setRequired(true))
+  )
+  .addSubcommand((subcommand) =>
+    subcommand
+      .setName("ajouter-choix")
+      .setDescription("Ajouter une réponse et sa destination dans un dialogue.")
+      .addStringOption((option) => option.setName("pnj").setDescription("Clé du PNJ.").setRequired(true))
+      .addStringOption((option) => option.setName("noeud").setDescription("Clé du nœud actuel.").setRequired(true))
+      .addStringOption((option) => option.setName("cle").setDescription("Clé technique du choix.").setRequired(true))
+      .addStringOption((option) => option.setName("libelle").setDescription("Texte affiché au joueur.").setRequired(true))
+      .addStringOption((option) => option.setName("destination").setDescription("Clé du nœud suivant.").setRequired(true))
+  )
+  .addSubcommand((subcommand) =>
+    subcommand
+      .setName("approuver-pnj")
+      .setDescription("Publier un PNJ après vérification de son dialogue et de son placement.")
+      .addStringOption((option) => option.setName("pnj").setDescription("Clé du PNJ.").setRequired(true))
+  )
+\n  .addSubcommand((subcommand) =>
     subcommand
       .setName("visibilite-region")
       .setDescription("Modifier la visibilité d'une région.")
