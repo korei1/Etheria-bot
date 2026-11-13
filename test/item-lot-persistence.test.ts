@@ -143,10 +143,10 @@ test("un retrait partiel du camp déplace les lots entiers puis scinde le lot tr
     call.sql.includes("WHERE id = $1")
   );
   const reducePartial = db.calls.find((call) =>
-    call.sql.startsWith("update character_item_lots set quantity = quantity -")
+    call.sql.trim().toLowerCase().startsWith("update character_item_lots set quantity = quantity -")
   );
   const createSplit = db.calls.find((call) =>
-    call.sql.startsWith("insert into character_item_lots")
+    call.sql.trim().toLowerCase().startsWith("insert into character_item_lots")
   );
 
   assert.deepEqual(moveWhole?.values, ["lot-oldest", "slot-1"]);
