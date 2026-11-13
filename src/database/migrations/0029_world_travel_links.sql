@@ -62,13 +62,16 @@ CREATE INDEX world_travel_links_to_settlement_idx
 CREATE TABLE world_travel_events (
   event_id TEXT PRIMARY KEY CHECK (length(btrim(event_id)) > 0),
   account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE RESTRICT,
-  character_id UUID NOT NULL REFERENCES characters(id) ON DELETE RESTRICT,
+  character_id UUID NOT NULL,
   link_key TEXT NOT NULL REFERENCES world_travel_links(link_key) ON DELETE RESTRICT,
   from_spawn_zone_id UUID REFERENCES starting_spawn_zones(id) ON DELETE RESTRICT,
   from_settlement_id UUID REFERENCES world_settlements(id) ON DELETE RESTRICT,
   to_spawn_zone_id UUID REFERENCES starting_spawn_zones(id) ON DELETE RESTRICT,
   to_settlement_id UUID REFERENCES world_settlements(id) ON DELETE RESTRICT,
   occurred_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT world_travel_event_character_account_fk
+    FOREIGN KEY (account_id, character_id)
+    REFERENCES characters(account_id, id) ON DELETE RESTRICT,
   CONSTRAINT world_travel_event_one_origin CHECK (
     (from_spawn_zone_id IS NOT NULL)::INTEGER +
     (from_settlement_id IS NOT NULL)::INTEGER = 1
