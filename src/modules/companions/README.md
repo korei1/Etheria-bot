@@ -11,7 +11,7 @@ Ce module contient les règles métier communes des compagnons, indépendantes d
 - Les relations de faiblesse validées sont Eau→Feu, Feu→Terre, Terre→Électrique, Électrique→Eau, Air→Ombre, Magie→Ombre et Psy→Magie. Ombre et Psy restent équilibrés.
 - En reproduction, les compagnons doivent être de la même espèce. La santé, la maturité et les conditions particulières de l'espèce doivent être suffisantes.
 - Les combinaisons élémentaires incompatibles sont refusées sauf lorsque l'exception de rareté importante s'applique.
-- La limite est de quatre compagnons d'une même espèce par joueur, quel que soit le canal d'acquisition : boutique, adoption, reproduction ou échange.
+- La limite est de quatre compagnons d'une même espèce par joueur, quel que soit le canal d'acquisition : boutique, adoption, reproduction ou échange.\n- Le compagnon acheté avant le début de l'aventure observe le personnage sans se montrer ; il le rejoint lors de sa première sortie en pleine nature après l'arrivée au village, à partir du niveau 4.
 
 ## Précaution sur la règle de rareté
 
