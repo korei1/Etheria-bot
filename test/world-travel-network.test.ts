@@ -65,6 +65,14 @@ testCase("les liaisons secrètes restent indisponibles avant découverte des deu
   assert.equal(listAvailableWorldTravelLinks(
     [secret], new Set(["north_pass", "blue_bay"])
   ).length, 1);
+  assert.deepEqual(
+    getWorldTravelNeighbors([secret], secret.from),
+    []
+  );
+  assert.deepEqual(
+    getWorldTravelNeighbors([secret], secret.from, new Set(["north_pass", "blue_bay"])),
+    [secret.to]
+  );
 });
 
 testCase("les voisins respectent le sens et la validation éditoriale", () => {
