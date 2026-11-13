@@ -98,8 +98,8 @@ async function loadDialogueView(
   };
 }
 
-/** Liste les PNJ approuvés et placés dans la zone d'apparition du personnage actif. */
-export async function listNpcEncountersAtCharacterSpawn(
+/** Liste les PNJ approuvés présents dans le lieu actuel du personnage. */
+export async function listNpcEncountersAtCharacterLocation(
   pool: Pool,
   input: { accountId: string }
 ): Promise<Array<{ npcKey: string; displayName: string; description: string | null }>> {
@@ -110,10 +110,30 @@ export async function listNpcEncountersAtCharacterSpawn(
   }>(
     `SELECT DISTINCT n.npc_key, n.display_name, n.description
      FROM characters c
-     JOIN npc_spawn_locations l ON l.spawn_zone_id = c.spawn_zone_id AND l.is_active = TRUE
-     JOIN npc_definitions n ON n.npc_key = l.npc_key
+     JOIN npc_definitions n ON n.editorial_status = 'approved' AND n.is_active = TRUE
+     LEFT JOIN npc_spawn_locations sl
+       ON c.current_settlement_id IS NULL
+      AND sl.spawn_zone_id = c.spawn_zone_id
+      AND sl.npc_key = n.npc_key AND sl.is_active = TRUE
+     LEFT JOIN npc_settlement_locations nl
+       ON c.current_settlement_id IS NOT NULL
+      AND nl.settlement_id = c.current_settlement_id
+      AND nl.npc_key = n.npc_key AND nl.is_active = TRUE
+     LEFT JOIN world_settlements s ON s.id = c.current_settlement_id
+     LEFT JOIN world_discoveries wd
+       ON wd.account_id = c.account_id
+      AND wd.target_kind = 'settlement'
+      AND wd.target_key = s.settlement_key
      WHERE c.account_id = $1 AND c.status = 'active'
-       AND n.editorial_status = 'approved' AND n.is_active = TRUE
+       AND (
+         sl.npc_key IS NOT NULL
+         OR (
+           nl.npc_key IS NOT NULL
+           AND s.editorial_status = 'approved'
+           AND wd.account_id IS NOT NULL
+           AND (s.visibility = 'public' OR wd.account_id IS NOT NULL)
+         )
+       )
      ORDER BY n.display_name`,
     [input.accountId]
   );
@@ -123,6 +143,9 @@ export async function listNpcEncountersAtCharacterSpawn(
     description: row.description
   }));
 }
+
+/** Alias conservé pour les appels historiques : la recherche suit désormais le lieu actuel. */
+export const listNpcEncountersAtCharacterSpawn = listNpcEncountersAtCharacterLocation;
 
 /**
  * Démarre ou reprend une conversation avec un PNJ présent dans la zone de départ.
@@ -146,19 +169,43 @@ export async function startNpcConversation(
   const npcResult = await pool.query<NpcAtSpawnRow>(
     `SELECT n.npc_key, n.display_name, n.start_node_key
      FROM characters c
-     JOIN npc_spawn_locations l
-       ON l.spawn_zone_id = c.spawn_zone_id AND l.npc_key = $3 AND l.is_active = TRUE
-     JOIN npc_definitions n ON n.npc_key = l.npc_key
+     JOIN npc_definitions n
+       ON n.npc_key = $3
+      AND n.editorial_status = 'approved'
+      AND n.is_active = TRUE
+     LEFT JOIN npc_spawn_locations sl
+       ON c.current_settlement_id IS NULL
+      AND sl.spawn_zone_id = c.spawn_zone_id
+      AND sl.npc_key = n.npc_key
+      AND sl.is_active = TRUE
+     LEFT JOIN npc_settlement_locations nl
+       ON c.current_settlement_id IS NOT NULL
+      AND nl.settlement_id = c.current_settlement_id
+      AND nl.npc_key = n.npc_key
+      AND nl.is_active = TRUE
+     LEFT JOIN world_settlements s ON s.id = c.current_settlement_id
+     LEFT JOIN world_discoveries wd
+       ON wd.account_id = c.account_id
+      AND wd.target_kind = 'settlement'
+      AND wd.target_key = s.settlement_key
      JOIN npc_dialogue_nodes d
        ON d.npc_key = n.npc_key AND d.node_key = n.start_node_key
      WHERE c.id = $1 AND c.account_id = $2 AND c.status = 'active'
-       AND n.editorial_status = 'approved' AND n.is_active = TRUE
+       AND (
+         sl.npc_key IS NOT NULL
+         OR (
+           nl.npc_key IS NOT NULL
+           AND s.editorial_status = 'approved'
+           AND wd.account_id IS NOT NULL
+           AND (s.visibility = 'public' OR wd.account_id IS NOT NULL)
+         )
+       )
      LIMIT 1`,
     [input.characterId, input.accountId, npcKey]
   );
   const npc = npcResult.rows[0];
   if (!npc) {
-    throw new NpcDialogueError("Ce personnage n'est pas disponible dans ton lieu actuel.");
+    throw new NpcDialogueError("Ce personnage n'est pas disponible dans ton lieu actuel ou ce lieu n'a pas encore été découvert.");
   }
 
   const encounter = await recordNpcEncounter(pool, {
@@ -178,7 +225,9 @@ export async function startNpcConversation(
        FOR UPDATE`,
       [input.characterId, input.accountId]
     );
-    if (!character.rowCount) throw new NpcDialogueError("Aucun personnage actif ne correspond à cette conversation.");
+    if (!character.rowCount) {
+      throw new NpcDialogueError("Aucun personnage actif ne correspond à cette conversation.");
+    }
 
     const active = await client.query<{ id: string }>(
       `SELECT id FROM npc_character_conversations
@@ -196,7 +245,9 @@ export async function startNpcConversation(
          RETURNING id`,
         [input.characterId, npcKey, npc.start_node_key]
       );
-      if (!created.rows[0]) throw new NpcDialogueError("La conversation n'a pas pu être créée.");
+      if (!created.rows[0]) {
+        throw new NpcDialogueError("La conversation n'a pas pu être créée.");
+      }
       conversationId = created.rows[0].id;
     }
 
@@ -207,8 +258,7 @@ export async function startNpcConversation(
        ON CONFLICT (event_id) DO NOTHING`,
       [`start:${interactionId}`, conversationId, input.characterId, npcKey, npc.start_node_key]
     );
-      await client.query("COMMIT");
-    }
+    await client.query("COMMIT");
   } catch (error) {
     await client.query("ROLLBACK").catch(() => undefined);
     throw error;
