@@ -36,14 +36,31 @@ CREATE TABLE world_local_content (
     OR
     (content_kind <> 'event' AND start_day IS NULL AND end_day IS NULL)
   ),
-  CONSTRAINT world_local_content_umbrelune_private CHECK (
-    visibility <> 'public' OR NOT EXISTS (
-      SELECT 1 FROM world_settlements s
-      JOIN countries c ON c.id = s.country_id
-      WHERE s.id = settlement_id AND c.continent_key = 'umbrelune'
-    )
-  )
 );
+
+CREATE FUNCTION enforce_local_content_continent_visibility()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $
+BEGIN
+  IF NEW.visibility = 'public' AND EXISTS (
+    SELECT 1
+    FROM world_settlements s
+    JOIN countries c ON c.id = s.country_id
+    WHERE s.id = NEW.settlement_id
+      AND c.continent_key = 'umbrelune'
+  ) THEN
+    RAISE EXCEPTION 'Un contenu d''Umbrelune ne peut pas être public';
+  END IF;
+  RETURN NEW;
+END;
+$;
+
+CREATE TRIGGER world_local_content_umbrelune_visibility
+  BEFORE INSERT OR UPDATE OF settlement_id, visibility
+  ON world_local_content
+  FOR EACH ROW
+  EXECUTE FUNCTION enforce_local_content_continent_visibility();
 
 CREATE INDEX world_local_content_settlement_idx
   ON world_local_content(settlement_id, content_kind, editorial_status);
