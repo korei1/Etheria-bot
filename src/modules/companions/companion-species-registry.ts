@@ -260,7 +260,9 @@ export function addCompanionSpecies(
   if (editorial && (
     editorial.name !== entry.definition.name ||
     editorial.regionKey !== entry.regionKey ||
-    editorial.editorialStatus !== entry.editorialStatus
+    editorial.editorialStatus !== entry.editorialStatus ||
+    (!entry.definition.discordShopElementChoice &&
+      editorial.element !== entry.definition.fixedElement)
   )) {
     throw new CompanionSpeciesRegistryError(
       `La définition gameplay ne correspond pas à la fiche éditoriale : ${key}.`
