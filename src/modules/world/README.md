@@ -50,7 +50,7 @@ Les 28 pays déjà présents dans la migration 0004 sont rattachés à leur cont
 - Les découvertes sont conservées même si une fiche géographique est ensuite retirée du catalogue.
 - Les clés découvertes alimentent les filtres de visibilité des continents, pays, localités, caractéristiques et itinéraires.
 - La progression cartographique est calculée séparément pour chaque compte.
-- Ce module définit les règles métier en mémoire ; aucune persistance SQL ni commande Discord n'est encore branchée.
+- `discovery-repository.ts` relie ces règles à la persistance PostgreSQL ; `/etheria carte` et `/etheria progression` exposent la progression au joueur.
 
 
 ## Persistance des découvertes
@@ -69,7 +69,7 @@ Les 28 pays déjà présents dans la migration 0004 sont rattachés à leur cont
 - `/etheria carte` affiche les quinze découvertes les plus récentes du compte Discord ; `/etheria progression` affiche le total et la répartition par type.
 - `npc-encounter-service.ts` est le point d'entrée transactionnel de la première rencontre PNJ : il révèle le pays et la zone de départ seulement à cet instant, puis les inscrit dans la carte du compte. Les rencontres suivantes ne révèlent pas à nouveau le lieu.
 - La table des découvertes utilise aussi le type `spawn_zone` pour distinguer le lieu exact d'apparition du pays d'origine.
-- Le service de rencontre PNJ est prêt à être appelé par le futur parcours interactif des PNJ ; aucun parcours de dialogue PNJ n'existe encore dans les interactions Discord actuelles.
+- Le parcours interactif Discord appelle `npc-dialogue-service.ts` et `npc-encounter-service.ts` pour enregistrer la première rencontre, afficher le dialogue et faire progresser les choix.
 - La migration 0026 n'a pas été exécutée sur Supabase. Les commandes de consultation nécessitent donc que les migrations du monde soient installées avant leur utilisation.
 
 
@@ -101,4 +101,4 @@ Les 28 pays déjà présents dans la migration 0004 sont rattachés à leur cont
 
 Les frontières politiques historiques, les changements de souveraineté, les régimes, les institutions et les gouvernements restent des domaines séparés. Aucun pays ne reçoit de régime politique ou de dirigeant inventé par ces modèles.
 
-Les migrations 0024 et 0025 sont préparées dans le dépôt mais ne doivent pas être exécutées sur Supabase sans revue et approbation explicites. La migration 0024 rattache les 28 pays existants aux sept continents ; la migration 0025 reprend les capitales publiques déjà enregistrées et crée les tables de territoires et localités.
+Les migrations 0024 à 0028 sont préparées dans le dépôt mais ne doivent pas être exécutées sur Supabase sans revue et approbation explicites. La migration 0024 rattache les 28 pays existants aux sept continents ; la migration 0025 reprend les capitales publiques déjà enregistrées et crée les tables de territoires et localités ; la migration 0026 persiste les découvertes ; la migration 0027 ajoute les dialogues PNJ ; la migration 0028 ajoute les placements de PNJ dans les localités et le champ de localisation actuelle du personnage.
