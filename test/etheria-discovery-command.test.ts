@@ -6,5 +6,5 @@ test("/etheria expose la carte personnelle et la progression", () => {
   const definition = etheriaCommand.toJSON();
   assert.equal(definition.name, "etheria");
   const subcommands = definition.options?.map((option) => option.name) ?? [];
-  assert.deepEqual(subcommands, ["rencontrer", "voyager", "carte", "progression"]);
+  assert.deepEqual(subcommands, ["rencontrer", "voyager", "carte", "localite", "progression"]);
 });
