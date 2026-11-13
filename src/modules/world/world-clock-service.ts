@@ -11,7 +11,7 @@ import {
 export type SettlementClockResult =
   | { status: "settlement_not_found" }
   | { status: "time_zone_not_configured" }
-  | { status: "available"; localDate: LocalWorldDate; formatted: string; worldMinute: number };
+  | { status: "available"; localDate: LocalWorldDate; formatted: string; worldMinute: number; timeZoneName: string };
 
 interface SettlementClockRow {
   world_minute: string;
@@ -85,6 +85,7 @@ export async function getSettlementLocalTime(
     status: "available",
     localDate,
     formatted: formatLocalWorldTime(localDate),
-    worldMinute: projectedMinute
+    worldMinute: projectedMinute,
+    timeZoneName: row.zone_name
   };
 }
