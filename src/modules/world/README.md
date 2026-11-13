@@ -76,16 +76,17 @@ Les 28 pays déjà présents dans la migration 0004 sont rattachés à leur cont
 ## Rencontres et dialogues PNJ
 
 - La migration `0027_npc_dialogue_foundation.sql` crée le catalogue éditorial des PNJ, les nœuds et choix de dialogue, les placements par zone d'apparition et les conversations persistantes.
+- La migration `0028_npc_settlement_presence.sql` ajoute la localisation actuelle facultative du personnage et les placements de PNJ dans les localités approuvées.
 - Aucun PNJ, nom, dialogue ou emplacement n'est préchargé : les contenus doivent être créés et validés avant publication. Cela évite d'inventer des personnages ou de révéler des informations géographiques non approuvées.
-- Les administrateurs disposent de `/etheria-admin zones-depart`, `/etheria-admin pnjs`, `/etheria-admin ajouter-pnj`, `/etheria-admin ajouter-dialogue`, `/etheria-admin ajouter-choix` et `/etheria-admin approuver-pnj` pour vérifier les zones, rédiger et publier les dialogues. Un PNJ reste en brouillon jusqu'à son approbation.
-- `/etheria rencontrer` liste uniquement les PNJ approuvés, actifs et placés dans la zone de départ du personnage actif.
+- Les administrateurs disposent de `/etheria-admin zones-depart`, `/etheria-admin localites`, `/etheria-admin pnjs`, `/etheria-admin ajouter-pnj`, `/etheria-admin ajouter-dialogue`, `/etheria-admin ajouter-choix`, `/etheria-admin placer-pnj-localite` et `/etheria-admin approuver-pnj` pour vérifier les lieux, rédiger et publier les dialogues. Le placement initial en zone de départ est facultatif ; un PNJ peut être réservé aux localités. Un PNJ reste en brouillon jusqu'à son approbation.
+- `/etheria rencontrer` liste uniquement les PNJ approuvés et actifs placés dans le lieu actuel du personnage : sa zone de départ tant qu'il n'a pas rejoint de localité, puis les localités qu'il a découvertes.
 - Le joueur choisit un PNJ dans un menu, puis un menu de réponses fait progresser la conversation selon les choix enregistrés dans le catalogue.
 - À la première conversation avec un PNJ, `recordNpcEncounter` enregistre la rencontre et révèle le pays et la zone exacte d'apparition. Les rencontres avec d'autres PNJ ne révèlent pas à nouveau le lieu.
 - Si l'enregistrement du dialogue échoue après la première rencontre, une reprise auprès du même premier PNJ permet de retrouver la révélation sans perdre l'information.
 - Les conversations, choix et événements sont persistants et idempotents. Les tables PNJ sont protégées par RLS ; aucun accès client direct n'est prévu.
-- Le système actuel place les PNJ dans les zones d'apparition initiales. Les placements dans les autres localités seront ajoutés avec le système de déplacement et de localisation des personnages.
+- Les placements dans les localités utilisent `npc_settlement_locations`. Ils ne sont accessibles que si la localité est approuvée et enregistrée dans les découvertes du compte. La colonne `characters.current_settlement_id` prépare le suivi du lieu actuel ; le parcours de déplacement qui la renseignera reste à développer.
 - Le test PostgreSQL `npc-dialogue-postgres.integration.test.ts` couvre le catalogue, la première rencontre, la révélation du lieu, le choix d'une réponse, la fin de conversation et la reprise sans nouvelle révélation.
-- La migration 0027 n'a pas été exécutée sur Supabase. Aucun contenu PNJ réel n'est encore configuré, donc la commande indiquera qu'aucun habitant n'est disponible tant que le catalogue n'aura pas reçu ses premières fiches approuvées.
+- Les migrations 0027 et 0028 n'ont pas été exécutées sur Supabase. Aucun contenu PNJ réel n'est encore configuré, donc la commande indiquera qu'aucun habitant n'est disponible tant que le catalogue n'aura pas reçu ses premières fiches approuvées.
 
 ## Déplacements
 
