@@ -13,6 +13,26 @@ export interface NpcTravelSyncResult {
   arrived: number;
 }
 
+export type NpcTravelPhase = "scheduled" | "in_transit" | "arrived";
+
+export function getNpcTravelPhase(
+  departureWorldMinute: number,
+  arrivalWorldMinute: number,
+  currentWorldMinute: number
+): NpcTravelPhase {
+  if (!Number.isSafeInteger(departureWorldMinute) ||
+      !Number.isSafeInteger(arrivalWorldMinute) ||
+      !Number.isSafeInteger(currentWorldMinute) ||
+      departureWorldMinute < 0 ||
+      arrivalWorldMinute <= departureWorldMinute ||
+      currentWorldMinute < 0) {
+    throw new Error("Bornes temporelles du voyage PNJ invalides.");
+  }
+  if (currentWorldMinute < departureWorldMinute) return "scheduled";
+  if (currentWorldMinute < arrivalWorldMinute) return "in_transit";
+  return "arrived";
+}
+
 /** Lit l'instant courant de l'horloge Etheria sans créer une horloge parallèle. */
 export async function getCurrentNpcWorldMinute(pool: Pool): Promise<number> {
   const result = await pool.query<{ world_minute: string }>(
@@ -76,7 +96,13 @@ export async function advanceNpcTravelPlans(
     );
 
     for (const plan of due.rows) {
-      if (plan.status === "planned") {
+      const phase = getNpcTravelPhase(
+        Number(plan.departure_world_minute),
+        Number(plan.arrival_world_minute),
+        currentMinute
+      );
+
+      if (plan.status === "planned" && phase !== "scheduled") {
         await client.query(
           `UPDATE npc_settlement_locations
            SET is_active = FALSE
@@ -98,7 +124,7 @@ export async function advanceNpcTravelPlans(
         departed += 1;
       }
 
-      if (currentMinute >= Number(plan.arrival_world_minute)) {
+      if (phase === "arrived") {
         await client.query(
           `INSERT INTO npc_settlement_locations (npc_key, settlement_id, is_active)
            VALUES ($1, $2, TRUE)
