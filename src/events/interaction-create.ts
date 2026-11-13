@@ -486,6 +486,133 @@ export default {
           return;
         }
 
+        if (subcommand === "itineraires") {
+          const result = await database.query<{
+            link_key: string;
+            display_name: string;
+            origin_name: string;
+            destination_name: string;
+            mode: string;
+            link_type: string;
+            editorial_status: string;
+            visibility: string;
+            bidirectional: boolean;
+          }>(
+            `SELECT l.link_key, l.display_name,
+                    COALESCE(os.display_name, oz.zone_key) AS origin_name,
+                    ds.display_name AS destination_name,
+                    l.mode, l.link_type, l.editorial_status, l.visibility, l.bidirectional
+             FROM world_travel_links l
+             LEFT JOIN world_settlements os ON os.id = l.from_settlement_id
+             LEFT JOIN starting_spawn_zones oz ON oz.id = l.from_spawn_zone_id
+             JOIN world_settlements ds ON ds.id = l.to_settlement_id
+             ORDER BY l.display_name LIMIT 25`
+          );
+          const lines = result.rows.map((row) =>
+            `• ${row.link_key} — ${row.display_name} : ${row.origin_name} → ${row.destination_name} · ${row.mode}/${row.link_type} · ${row.editorial_status} · ${row.visibility} · ${row.bidirectional ? "aller-retour" : "sens unique"}`
+          );
+          await interaction.editReply(
+            lines.length ? `**Itinéraires Etheria**\\n\\n${lines.join("\\n")}` : "Aucun itinéraire n'est encore enregistré."
+          );
+          return;
+        }
+
+        if (subcommand === "ajouter-itineraire") {
+          const linkKey = interaction.options.getString("cle", true).trim().toLowerCase();
+          const displayName = interaction.options.getString("nom", true).trim();
+          const originType = interaction.options.getString("origine_type", true);
+          const originKey = interaction.options.getString("origine", true).trim().toLowerCase();
+          const destinationKey = interaction.options.getString("destination", true).trim().toLowerCase();
+          const mode = interaction.options.getString("mode", true);
+          const linkType = interaction.options.getString("type", true);
+          const bidirectional = interaction.options.getBoolean("bidirectionnel", true);
+          const visibility = interaction.options.getString("visibilite", true);
+          if (!/^[a-z][a-z0-9_]{1,79}$/.test(linkKey)) {
+            throw new Error("La clé de l'itinéraire doit contenir des lettres minuscules, chiffres ou tirets bas.");
+          }
+          if (!displayName) throw new Error("Le nom de l'itinéraire est obligatoire.");
+          const client = await database.connect();
+          try {
+            await client.query("BEGIN");
+            let spawnZoneId: string | null = null;
+            let originSettlementId: string | null = null;
+            if (originType === "spawn_zone") {
+              const origin = await client.query<{ id: string }>(
+                "SELECT id FROM starting_spawn_zones WHERE zone_key = $1 AND is_active = TRUE",
+                [originKey]
+              );
+              spawnZoneId = origin.rows[0]?.id ?? null;
+              if (!spawnZoneId) throw new Error("La zone de départ est introuvable ou inactive.");
+            } else if (originType === "settlement") {
+              const origin = await client.query<{ id: string }>(
+                "SELECT id FROM world_settlements WHERE settlement_key = $1 AND editorial_status = 'approved'",
+                [originKey]
+              );
+              originSettlementId = origin.rows[0]?.id ?? null;
+              if (!originSettlementId) throw new Error("La localité de départ est introuvable ou non approuvée.");
+            } else {
+              throw new Error("Type de lieu de départ invalide.");
+            }
+            const destination = await client.query<{ id: string }>(
+              "SELECT id FROM world_settlements WHERE settlement_key = $1 AND editorial_status = 'approved'",
+              [destinationKey]
+            );
+            const destinationId = destination.rows[0]?.id;
+            if (!destinationId) throw new Error("La localité de destination est introuvable ou non approuvée.");
+            if (originSettlementId && originSettlementId === destinationId) {
+              throw new Error("L'origine et la destination doivent être différentes.");
+            }
+            await client.query(
+              `INSERT INTO world_travel_links
+               (link_key, display_name, from_spawn_zone_id, from_settlement_id,
+                to_settlement_id, mode, link_type, bidirectional, visibility, editorial_status)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'draft')`,
+              [linkKey, displayName, spawnZoneId, originSettlementId, destinationId,
+                mode, linkType, bidirectional, visibility]
+            );
+            await client.query("COMMIT");
+          } catch (error) {
+            await client.query("ROLLBACK").catch(() => undefined);
+            throw error;
+          } finally {
+            client.release();
+          }
+          await interaction.editReply("Itinéraire créé en brouillon. Il ne sera visible aux joueurs qu'après son approbation.");
+          return;
+        }
+
+        if (subcommand === "approuver-itineraire") {
+          const linkKey = interaction.options.getString("cle", true).trim().toLowerCase();
+          const result = await database.query(
+            `UPDATE world_travel_links l
+             SET editorial_status = 'approved', updated_at = NOW()
+             WHERE l.link_key = $1
+               AND l.editorial_status = 'draft'
+               AND EXISTS (
+                 SELECT 1 FROM world_settlements d
+                 WHERE d.id = l.to_settlement_id AND d.editorial_status = 'approved'
+               )
+               AND (
+                 (l.from_spawn_zone_id IS NOT NULL AND EXISTS (
+                   SELECT 1 FROM starting_spawn_zones z
+                   WHERE z.id = l.from_spawn_zone_id AND z.is_active = TRUE
+                 ))
+                 OR
+                 (l.from_settlement_id IS NOT NULL AND EXISTS (
+                   SELECT 1 FROM world_settlements s
+                   WHERE s.id = l.from_settlement_id AND s.editorial_status = 'approved'
+                 ))
+               )
+             RETURNING l.link_key`,
+            [linkKey]
+          );
+          if (!result.rowCount) {
+            throw new Error("Itinéraire introuvable, déjà publié ou dont une extrémité n'est plus valide.");
+          }
+          await interaction.editReply("Itinéraire approuvé. Il pourra être proposé aux personnages qui atteignent son point de départ.");
+          return;
+        }
+
         if (subcommand === "localites") {
           const result = await database.query<{
             settlement_key: string;
