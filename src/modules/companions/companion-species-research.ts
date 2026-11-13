@@ -21,14 +21,23 @@ export interface CompanionSpeciesResearchDossier {
   category: CompanionSpeciesCategory;
   assessment: {
     system: "iucn_red_list";
-    scope: "global";
+    scope: "global" | "europe" | "eu27" | "national";
     category: IucnConservationCategory;
-    assessedAt: string;
+    assessedAt?: string;
     publishedAt: number;
     authority: string;
     sourceName: string;
     sourceUrl: string;
   };
+  regionalAssessments?: readonly {
+    scope: "europe" | "eu27" | "national";
+    category: IucnConservationCategory;
+    assessedAt?: string;
+    publishedAt: number;
+    authority: string;
+    sourceName: string;
+    sourceUrl: string;
+  }[];
   habitats: readonly string[];
   rangeSummary: string;
   ecologicalNotes: readonly string[];
@@ -177,6 +186,154 @@ export const COMPANION_SPECIES_RESEARCH_DOSSIERS: readonly CompanionSpeciesResea
         url: "https://inpn.mnhn.fr/explorer/especes/chelonia_mydas/77338"
       }
     ],
+    gameplayStatus: "research_only"
+  },
+  {
+    key: "eurasian_otter",
+    commonName: "Loutre d'Europe",
+    scientificName: "Lutra lutra",
+    category: "aquatic",
+    assessment: {
+      system: "iucn_red_list",
+      scope: "global",
+      category: "near_threatened",
+      assessedAt: "2020-01-31",
+      publishedAt: 2022,
+      authority: "IUCN",
+      sourceName: "The IUCN Red List of Threatened Species 2022: Lutra lutra",
+      sourceUrl: "https://doi.org/10.2305/IUCN.UK.2022-2.RLTS.T12419A218069689.en"
+    },
+    habitats: [
+      "Cours d'eau et plans d'eau douce",
+      "Zones humides intérieures",
+      "Littoraux et milieux marins côtiers",
+      "Rives végétalisées et milieux aquatiques artificiels"
+    ],
+    rangeSummary: "Espèce largement répartie en Europe et en Asie, également présente en Afrique du Nord.",
+    ecologicalNotes: [
+      "L'évaluation mondiale de 2020 indique une tendance de population décroissante.",
+      "La dégradation des habitats et la pollution de l'eau figurent parmi les pressions décrites dans l'évaluation.",
+      "La protection et l'état des habitats varient selon les pays."
+    ],
+    additionalSources: [
+      {
+        authority: "IUCN SSC Otter Specialist Group",
+        title: "Lutra lutra",
+        url: "https://www.otterspecialistgroup.org/otter-species/lutra-lutra/"
+      }
+    ],
+    gameplayStatus: "research_only"
+  },
+  {
+    key: "red_deer",
+    commonName: "Cerf élaphe",
+    scientificName: "Cervus elaphus",
+    category: "terrestrial",
+    assessment: {
+      system: "iucn_red_list",
+      scope: "global",
+      category: "least_concern",
+      assessedAt: "2015-10-12",
+      publishedAt: 2018,
+      authority: "IUCN",
+      sourceName: "The IUCN Red List of Threatened Species 2018: Cervus elaphus",
+      sourceUrl: "https://doi.org/10.2305/IUCN.UK.2018-2.RLTS.T55997072A142404453.en"
+    },
+    habitats: [
+      "Forêts",
+      "Fourrés et zones arbustives",
+      "Prairies",
+      "Zones rocheuses et montagnes",
+      "Paysages terrestres modifiés par l'humain"
+    ],
+    rangeSummary: "Espèce présente dans une grande partie de l'Europe et de l'Asie ; présente naturellement en France.",
+    ecologicalNotes: [
+      "L'évaluation mondiale de 2015 classe l'espèce en préoccupation mineure et indique une tendance croissante à cette date.",
+      "Les habitats occupés comprennent des milieux forestiers, ouverts et montagneux.",
+      "La fiche IUCN signale que cette évaluation nécessite une mise à jour."
+    ],
+    additionalSources: [
+      {
+        authority: "Muséum national d'Histoire naturelle",
+        title: "Red deer",
+        url: "https://www.mnhn.fr/en/red-deer"
+      }
+    ],
+    gameplayStatus: "research_only"
+  },
+  {
+    key: "western_european_hedgehog",
+    commonName: "Hérisson d'Europe",
+    scientificName: "Erinaceus europaeus",
+    category: "terrestrial",
+    assessment: {
+      system: "iucn_red_list",
+      scope: "global",
+      category: "near_threatened",
+      publishedAt: 2024,
+      authority: "IUCN",
+      sourceName: "The IUCN Red List 2024-2: Erinaceus europaeus",
+      sourceUrl: "https://nc.iucnredlist.org/redlist/content/attachment_files/2024-2_RL_Table_7.pdf"
+    },
+    habitats: [
+      "Lisières forestières",
+      "Haies et zones arbustives",
+      "Prairies et paysages agricoles",
+      "Jardins, parcs et espaces verts urbains"
+    ],
+    rangeSummary: "Espèce d'Europe occidentale présente notamment en France.",
+    ecologicalNotes: [
+      "L'UICN a fait passer l'espèce de préoccupation mineure à quasi menacée dans la mise à jour mondiale publiée en 2024.",
+      "L'intensification agricole, les routes et le développement urbain contribuent à la dégradation des habitats et au déclin signalé dans plusieurs pays.",
+      "La date exacte de l'évaluation n'est pas renseignée dans cette fiche documentaire ; elle n'est donc pas supposée."
+    ],
+    additionalSources: [
+      {
+        authority: "IUCN",
+        title: "Mise à jour 2024 de la Liste rouge : hérisson d'Europe",
+        url: "https://iucn.org/fr/communique-de-presse/202410/plus-dune-espece-darbre-sur-trois-dans-le-monde-est-menacee-dextinction?language=fr"
+      }
+    ],
+    gameplayStatus: "research_only"
+  },
+  {
+    key: "eurasian_lynx",
+    commonName: "Lynx boréal",
+    scientificName: "Lynx lynx",
+    category: "terrestrial",
+    assessment: {
+      system: "iucn_red_list",
+      scope: "europe",
+      category: "least_concern",
+      assessedAt: "2022-04-03",
+      publishedAt: 2025,
+      authority: "IUCN",
+      sourceName: "The IUCN Red List of Threatened Species 2025: Lynx lynx (Europe assessment)",
+      sourceUrl: "https://doi.org/10.2305/IUCN.UK.2025-1.RLTS.T12519A216872952.en"
+    },
+    regionalAssessments: [
+      {
+        scope: "eu27",
+        category: "near_threatened",
+        assessedAt: "2022-04-03",
+        publishedAt: 2025,
+        authority: "IUCN",
+        sourceName: "Lynx lynx - European Union 27 assessment",
+        sourceUrl: "https://doi.org/10.2305/IUCN.UK.2025-1.RLTS.T12519A216872952.en"
+      }
+    ],
+    habitats: [
+      "Forêts",
+      "Fourrés et zones arbustives",
+      "Prairies"
+    ],
+    rangeSummary: "Espèce eurasiatique ; présente en France métropolitaine dans le cadre de réintroductions.",
+    ecologicalNotes: [
+      "L'évaluation européenne publiée en 2025 classe l'espèce en préoccupation mineure.",
+      "La même fiche indique une catégorie quasi menacée pour l'évaluation de l'Union européenne à 27 pays.",
+      "Ces deux périmètres ne doivent pas être confondus avec une évaluation mondiale."
+    ],
+    additionalSources: [],
     gameplayStatus: "research_only"
   }
 ] as const;
