@@ -220,3 +220,155 @@ export async function setPersistedRegionVisibility(
     client.release();
   }
 }
+
+
+/** Crée une nouvelle région sans plafond global et journalise sa création. */
+export async function createPersistedCompanionRegion(
+  pool: Pool,
+  input: {
+    regionKey: string;
+    name: string;
+    visibility: CompanionRegionVisibility;
+    actorAccountId?: string | null;
+    idempotencyKey?: string;
+  }
+): Promise<void> {
+  if (!/^[a-z][a-z0-9_]*$/.test(input.regionKey) || !input.name.trim()) {
+    throw new CompanionSpeciesCatalogRepositoryError("Clé ou nom de région invalide.");
+  }
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await client.query(
+      "INSERT INTO companion_regions (region_key, display_name, visibility) VALUES ($1, $2, $3)",
+      [input.regionKey, input.name.trim(), input.visibility]
+    );
+    await client.query(
+      `INSERT INTO companion_species_admin_events
+       (actor_account_id, action, entity_type, entity_key, revision, after_state, idempotency_key)
+       VALUES ($1, 'region_created', 'region', $2, 1, $3::jsonb, $4::uuid)`,
+      [input.actorAccountId ?? null, input.regionKey,
+       JSON.stringify({ name: input.name.trim(), visibility: input.visibility }), input.idempotencyKey ?? null]
+    );
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => undefined);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+/** Ajoute une fiche et ses formes sans lui inventer de paramètres de gameplay. */
+export async function createPersistedEditorialSpecies(
+  pool: Pool,
+  input: {
+    speciesKey: string;
+    name: string;
+    regionKey: string;
+    element: string;
+    editorialStatus?: "draft" | "approved";
+    forms: readonly { key: string; name: string; order: number }[];
+    actorAccountId?: string | null;
+    idempotencyKey?: string;
+  }
+): Promise<void> {
+  if (!/^[a-z][a-z0-9_]*$/.test(input.speciesKey) || !input.name.trim() ||
+    !/^[a-z][a-z0-9_]*$/.test(input.regionKey) ||
+    !["eau", "feu", "electrique", "terre", "air", "magie", "psy", "ombre"].includes(input.element) ||
+    input.forms.length < 2) {
+    throw new CompanionSpeciesCatalogRepositoryError("La fiche éditoriale est incomplète ou invalide.");
+  }
+  const formKeys = new Set<string>();
+  const formOrders = new Set<number>();
+  for (const form of input.forms) {
+    if (!/^[a-z][a-z0-9_]*$/.test(form.key) || !form.name.trim() ||
+      !Number.isInteger(form.order) || form.order < 0 ||
+      formKeys.has(form.key) || formOrders.has(form.order)) {
+      throw new CompanionSpeciesCatalogRepositoryError("Une forme de la fiche est invalide ou dupliquée.");
+    }
+    formKeys.add(form.key);
+    formOrders.add(form.order);
+  }
+  const editorialStatus = input.editorialStatus ?? "draft";
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await client.query(
+      `INSERT INTO companion_species_catalog
+       (species_key, display_name, region_key, element, editorial_status, availability_status)
+       VALUES ($1, $2, $3, $4, $5, 'unavailable')`,
+      [input.speciesKey, input.name.trim(), input.regionKey, input.element, editorialStatus]
+    );
+    for (const form of input.forms) {
+      await client.query(
+        `INSERT INTO companion_species_forms (species_key, form_key, display_name, form_order)
+         VALUES ($1, $2, $3, $4)`,
+        [input.speciesKey, form.key, form.name.trim(), form.order]
+      );
+    }
+    await client.query(
+      `INSERT INTO companion_species_admin_events
+       (actor_account_id, action, entity_type, entity_key, revision, after_state, idempotency_key)
+       VALUES ($1, 'species_created', 'species', $2, 1, $3::jsonb, $4::uuid)`,
+      [input.actorAccountId ?? null, input.speciesKey,
+       JSON.stringify({ name: input.name.trim(), regionKey: input.regionKey, element: input.element,
+         editorialStatus, availabilityStatus: "unavailable", forms: input.forms }), input.idempotencyKey ?? null]
+    );
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => undefined);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+/** Valide une fiche brouillon ; la disponibilité reste séparément indisponible. */
+export async function approvePersistedEditorialSpecies(
+  pool: Pool,
+  input: {
+    speciesKey: string;
+    expectedRevision: number;
+    actorAccountId?: string | null;
+    idempotencyKey?: string;
+  }
+): Promise<number> {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const selected = await client.query<{ editorial_status: string; availability_status: string; revision: number }>(
+      "SELECT editorial_status, availability_status, revision FROM companion_species_catalog WHERE species_key = $1 FOR UPDATE",
+      [input.speciesKey]
+    );
+    const current = selected.rows[0];
+    if (!current) throw new CompanionSpeciesCatalogRepositoryError("Espèce inconnue.");
+    if (current.revision !== input.expectedRevision || current.editorial_status !== "draft" ||
+      current.availability_status !== "unavailable") {
+      throw new CompanionSpeciesCatalogRepositoryError("La fiche ne peut pas être approuvée dans son état actuel.");
+    }
+    const updated = await client.query<{ revision: number }>(
+      `UPDATE companion_species_catalog
+       SET editorial_status = 'approved', revision = revision + 1, updated_at = NOW()
+       WHERE species_key = $1 RETURNING revision`,
+      [input.speciesKey]
+    );
+    const revision = updated.rows[0]!.revision;
+    await client.query(
+      `INSERT INTO companion_species_admin_events
+       (actor_account_id, action, entity_type, entity_key, revision, before_state, after_state, idempotency_key)
+       VALUES ($1, 'species_updated', 'species', $2, $3, $4::jsonb, $5::jsonb, $6::uuid)`,
+      [input.actorAccountId ?? null, input.speciesKey, revision,
+       JSON.stringify({ editorialStatus: current.editorial_status, availabilityStatus: current.availability_status }),
+       JSON.stringify({ editorialStatus: "approved", availabilityStatus: "unavailable" }),
+       input.idempotencyKey ?? null]
+    );
+    await client.query("COMMIT");
+    return revision;
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => undefined);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
