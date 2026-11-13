@@ -11,7 +11,7 @@ CREATE TABLE world_discovery_events (
   account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE RESTRICT,
   event_id TEXT NOT NULL CHECK (length(btrim(event_id)) > 0),
   target_kind TEXT NOT NULL CHECK (target_kind IN (
-    'continent', 'country', 'administrative_area', 'settlement',
+    'continent', 'country', 'administrative_area', 'settlement', 'spawn_zone',
     'geographic_feature', 'travel_link'
   )),
   target_key TEXT NOT NULL CHECK (length(btrim(target_key)) > 0),
@@ -36,7 +36,7 @@ CREATE INDEX world_discovery_events_target_idx
 CREATE TABLE world_discoveries (
   account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE RESTRICT,
   target_kind TEXT NOT NULL CHECK (target_kind IN (
-    'continent', 'country', 'administrative_area', 'settlement',
+    'continent', 'country', 'administrative_area', 'settlement', 'spawn_zone',
     'geographic_feature', 'travel_link'
   )),
   target_key TEXT NOT NULL CHECK (length(btrim(target_key)) > 0),
