@@ -870,6 +870,10 @@ export default {
         if (subcommand === "placer-pnj-localite") {
           const npcKey = interaction.options.getString("pnj", true).trim().toLowerCase();
           const settlementKey = interaction.options.getString("localite", true).trim().toLowerCase();
+          if (placeType === "zone_depart" && schedule !== null) {
+            throw new Error("Les horaires des zones de départ attendent la prise en charge de leur fuseau local. Tu peux y définir une activité sans restriction horaire avec le calendrier null.");
+          }
+
           const client = await database.connect();
           try {
             await client.query("BEGIN");
