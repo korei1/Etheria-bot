@@ -358,8 +358,21 @@ export function validateSpeciesResearchDossiers(
     if (!/^https:\/\//.test(dossier.assessment.sourceUrl)) {
       issues.push(`Source IUCN HTTPS manquante pour ${dossier.key}.`);
     }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(dossier.assessment.assessedAt)) {
+    if (dossier.assessment.assessedAt &&
+      (!/^\d{4}-\d{2}-\d{2}$/.test(dossier.assessment.assessedAt) ||
+        !Number.isFinite(Date.parse(dossier.assessment.assessedAt)))) {
       issues.push(`Date d'évaluation invalide pour ${dossier.key}.`);
+    }
+    for (const regional of dossier.regionalAssessments ?? []) {
+      if (!/^https:\/\//.test(regional.sourceUrl) ||
+        !regional.authority.trim() || !regional.sourceName.trim()) {
+        issues.push(`Évaluation régionale invalide pour ${dossier.key}.`);
+      }
+      if (regional.assessedAt &&
+        (!/^\d{4}-\d{2}-\d{2}$/.test(regional.assessedAt) ||
+          !Number.isFinite(Date.parse(regional.assessedAt)))) {
+        issues.push(`Date d'évaluation régionale invalide pour ${dossier.key}.`);
+      }
     }
     if (dossier.habitats.length === 0 || dossier.ecologicalNotes.length === 0) {
       issues.push(`Informations écologiques incomplètes pour ${dossier.key}.`);
