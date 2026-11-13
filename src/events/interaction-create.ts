@@ -606,6 +606,7 @@ export default {
               country: "Pays",
               administrative_area: "Territoires administratifs",
               settlement: "Localités",
+              spawn_zone: "Zones de départ révélées",
               geographic_feature: "Caractéristiques géographiques",
               travel_link: "Liaisons découvertes"
             };
@@ -627,6 +628,7 @@ export default {
             country: "Pays",
             administrative_area: "Territoire",
             settlement: "Localité",
+            spawn_zone: "Zone de départ",
             geographic_feature: "Lieu naturel",
             travel_link: "Liaison"
           };
