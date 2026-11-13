@@ -12,10 +12,10 @@ import {
   validateCompanionSpeciesDefinition,
   type CompanionSpeciesDefinition
 } from "./companion-species-catalog.js";
+import type { CompanionElement } from "./companion-rules.js";
 import {
   INITIAL_FANTASY_BESTIARY,
   INITIAL_FANTASY_BESTIARY_REGIONS,
-  type InitialFantasyBestiaryElement
 } from "./initial-fantasy-bestiary.js";
 
 export type CompanionRegionVisibility = "public" | "discovery_locked";
@@ -43,7 +43,7 @@ export interface RegisteredEditorialCompanionSpecies {
   key: string;
   name: string;
   regionKey: string;
-  element: InitialFantasyBestiaryElement;
+  element: CompanionElement;
   editorialStatus: "approved";
   forms: readonly CompanionEvolutionForm[];
 }
@@ -250,9 +250,20 @@ export function addCompanionSpecies(
   registry: CompanionSpeciesRegistry,
   entry: RegisteredCompanionSpecies
 ): CompanionSpeciesRegistry {
-  if (registry.species.has(entry.definition.key)) {
+  const key = entry.definition.key;
+  if (registry.species.has(key)) {
     throw new CompanionSpeciesRegistryError(
-      `La clé d'espèce existe déjà et ne peut pas être réutilisée : ${entry.definition.key}.`
+      `La clé d'espèce existe déjà dans le registre gameplay : ${key}.`
+    );
+  }
+  const editorial = registry.editorialSpecies.get(key);
+  if (editorial && (
+    editorial.name !== entry.definition.name ||
+    editorial.regionKey !== entry.regionKey ||
+    editorial.editorialStatus !== entry.editorialStatus
+  )) {
+    throw new CompanionSpeciesRegistryError(
+      `La définition gameplay ne correspond pas à la fiche éditoriale : ${key}.`
     );
   }
   const issues = validateRegisteredCompanionSpecies(
@@ -263,8 +274,10 @@ export function addCompanionSpecies(
     throw new CompanionSpeciesRegistryError(issues.join("\n"));
   }
   const species = new Map(registry.species);
-  species.set(entry.definition.key, entry);
-  return { regions: registry.regions, editorialSpecies: registry.editorialSpecies, species };
+  species.set(key, entry);
+  const editorialSpecies = new Map(registry.editorialSpecies);
+  editorialSpecies.delete(key);
+  return { regions: registry.regions, editorialSpecies, species };
 }
 
 export function transitionCompanionSpeciesEditorialStatus(
