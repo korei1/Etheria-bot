@@ -122,3 +122,16 @@ Quatre dossiers supplémentaires complètent le registre à douze espèces réel
 - Monarque (`Danaus plexippus`) : évaluation mondiale préoccupation mineure, évaluée en 2021 et publiée en 2022. La sous-espèce migratrice `Danaus plexippus plexippus` possède une évaluation distincte en danger ; elle n'est pas fusionnée avec le statut de l'espèce entière.
 
 Toutes ces fiches sont documentaires (`research_only`). Elles n'attribuent aucune rareté, élément, capacité, méthode d'acquisition ou fréquence de rencontre dans Etheria.
+
+### Troisième extension des dossiers documentaires
+
+Quatre espèces domestiques supplémentaires complètent le registre à seize dossiers :
+
+- Chien domestique (`Canis familiaris`) : non évalué dans la Liste rouge mondiale selon la base taxonomique consultée ; les chiens féraux peuvent exercer une prédation sur la faune.
+- Chat domestique (`Felis catus`) : non évalué dans la Liste rouge mondiale selon la base taxonomique consultée ; les impacts écologiques de la chasse varient selon les contextes locaux.
+- Cheval domestique (`Equus caballus`) : non évalué dans la Liste rouge mondiale selon la base taxonomique consultée ; les habitats mentionnés décrivent des milieux utilisés sous domestication et par certaines populations féraux.
+- Abeille mellifère (`Apis mellifera`) : la source consultée ne signale pas de statut spécial IUCN. Cette mention ne constitue pas une évaluation récente exhaustive des populations.
+
+**Précaution taxonomique et de conservation :** « non évalué » ne signifie pas « préoccupation mineure ». Les fiches ne convertissent pas l'absence d'évaluation en diagnostic positif. Les informations écologiques sur les animaux domestiques sont également séparées des situations locales des populations féraux.
+
+Ces quatre fiches restent `research_only`.
