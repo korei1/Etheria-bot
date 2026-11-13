@@ -587,6 +587,18 @@ export default {
             if (incomplete.rows[0]) {
               throw new Error(`Le nœud "${incomplete.rows[0].node_key}" n'a aucune réponse et n'est pas terminal.`);
             }
+            const tooManyChoices = await client.query<{ node_key: string; choice_count: number }>(
+              `SELECT node_key, COUNT(*)::integer AS choice_count
+               FROM npc_dialogue_choices
+               WHERE npc_key = $1
+               GROUP BY node_key
+               HAVING COUNT(*) > 5
+               LIMIT 1`,
+              [npcKey]
+            );
+            if (tooManyChoices.rows[0]) {
+              throw new Error(`Le nœud "${tooManyChoices.rows[0].node_key}" possède plus de cinq réponses. Le menu Discord ne peut en afficher que cinq.`);
+            }
             await client.query(
               "UPDATE npc_definitions SET editorial_status = 'approved', is_active = TRUE, updated_at = NOW() WHERE npc_key = $1",
               [npcKey]
