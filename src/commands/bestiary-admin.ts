@@ -177,6 +177,17 @@ export const bestiaryAdminCommand = new SlashCommandBuilder()
   )
   .addSubcommand((subcommand) =>
     subcommand
+      .setName("programmer-pnj")
+      .setDescription("Définir les heures de présence et l'activité d'un PNJ dans un lieu.")
+      .addStringOption((option) => option.setName("pnj").setDescription("Clé technique du PNJ.").setRequired(true))
+      .addStringOption((option) => option.setName("lieu_type").setDescription("Type de lieu concerné.").setRequired(true)
+        .addChoices({ name: "Localité", value: "localite" }, { name: "Zone de départ", value: "zone_depart" }))
+      .addStringOption((option) => option.setName("lieu").setDescription("Clé de la localité ou de la zone de départ.").setRequired(true))
+      .addStringOption((option) => option.setName("horaires_json").setDescription("Calendrier JSON hebdomadaire, ou null pour aucune restriction.").setRequired(true).setMaxLength(1000))
+      .addStringOption((option) => option.setName("activite").setDescription("Activité affichée aux joueurs (120 caractères max).").setRequired(false).setMaxLength(120))
+  )
+  .addSubcommand((subcommand) =>
+    subcommand
       .setName("approuver-pnj")
       .setDescription("Publier un PNJ après vérification de son dialogue et de son placement.")
       .addStringOption((option) => option.setName("pnj").setDescription("Clé du PNJ.").setRequired(true))
