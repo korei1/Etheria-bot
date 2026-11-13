@@ -111,7 +111,7 @@ test("PostgreSQL garantit la cohérence réelle des lots du sac et du camp", {
 
     await client.query("BEGIN");
     await client.query(
-      "UPDATE character_temporary_camp_storage SET quantity = 5 WHERE id = $1",
+      "UPDATE character_temporary_camp_storage SET quantity = 11 WHERE id = $1",
       [storage.rows[0]!.id]
     );
     await assert.rejects(
@@ -132,6 +132,10 @@ test("PostgreSQL garantit la cohérence réelle des lots du sac et du camp", {
     await client.query("COMMIT");
 
     await client.query("BEGIN");
+    await client.query(
+      "UPDATE character_temporary_camp_storage SET quantity = quantity + 6 WHERE id = $1",
+      [fiberStorage.rows[0]!.id]
+    );
     await client.query(
       "UPDATE character_item_lots SET inventory_slot_id = NULL, camp_storage_entry_id = $2, container_kind = 'temporary_camp_storage' WHERE inventory_slot_id = $1",
       [slot.rows[0]!.id, fiberStorage.rows[0]!.id]
@@ -160,7 +164,7 @@ test("PostgreSQL garantit la cohérence réelle des lots du sac et du camp", {
       [newSlot.rows[0]!.id]
     );
     await client.query(
-      "UPDATE character_item_lots SET quantity = 5 WHERE camp_storage_entry_id = $1",
+      "UPDATE character_item_lots SET quantity = 11 WHERE camp_storage_entry_id = $1",
       [fiberStorage.rows[0]!.id]
     );
     await client.query(
@@ -183,8 +187,8 @@ test("PostgreSQL garantit la cohérence réelle des lots du sac et du camp", {
     `, [newSlot.rows[0]!.id, fiberStorage.rows[0]!.id]);
     assert.equal(finalTotals.rows[0]?.bag_quantity, 3);
     assert.equal(finalTotals.rows[0]?.bag_lots, "3");
-    assert.equal(finalTotals.rows[0]?.camp_quantity, 5);
-    assert.equal(finalTotals.rows[0]?.camp_lots, "5");
+    assert.equal(finalTotals.rows[0]?.camp_quantity, 11);
+    assert.equal(finalTotals.rows[0]?.camp_lots, "11");
   } finally {
     try {
       await client.query("ROLLBACK");
