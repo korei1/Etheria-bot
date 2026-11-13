@@ -193,4 +193,55 @@ export const bestiaryAdminCommand = new SlashCommandBuilder()
           { name: "Verrouillée jusqu'à découverte", value: "discovery_locked" }
         ))
       .addIntegerOption((option) => option.setName("revision").setDescription("Révision affichée par /etheria-admin regions.").setRequired(true).setMinValue(1))
+  .addSubcommand((subcommand) =>
+    subcommand
+      .setName("contenus-locaux")
+      .setDescription("Consulter les activités, services, commerces et événements locaux.")
+  )
+  .addSubcommand((subcommand) =>
+    subcommand
+      .setName("ajouter-contenu-local")
+      .setDescription("Créer un contenu local en brouillon, rattaché à une localité approuvée.")
+      .addStringOption((option) => option.setName("cle").setDescription("Clé stable sans espace.").setRequired(true))
+      .addStringOption((option) => option.setName("nom").setDescription("Nom affiché.").setRequired(true))
+      .addStringOption((option) => option.setName("localite").setDescription("Clé d'une localité approuvée.").setRequired(true))
+      .addStringOption((option) => option.setName("type").setDescription("Type de contenu.").setRequired(true)
+        .addChoices(
+          { name: "Activité", value: "activity" }, { name: "Service", value: "service" },
+          { name: "Commerce", value: "shop" }, { name: "Événement", value: "event" }
+        ))
+      .addStringOption((option) => option.setName("visibilite").setDescription("Visibilité du contenu.").setRequired(true)
+        .addChoices(
+          { name: "Publique", value: "public" },
+          { name: "Verrouillée jusqu'à découverte", value: "discovery_locked" }
+        ))
+      .addStringOption((option) => option.setName("description").setDescription("Description du contenu.").setRequired(true))
+      .addStringOption((option) => option.setName("tags").setDescription("Ancrages culturels séparés par des virgules.").setRequired(true))
+      .addStringOption((option) => option.setName("justification").setDescription("Lien explicite avec la culture du continent.").setRequired(true))
+      .addIntegerOption((option) => option.setName("debut").setDescription("Jour de début (événement uniquement, 1 à 120).").setMinValue(1).setMaxValue(120).setRequired(false))
+      .addIntegerOption((option) => option.setName("fin").setDescription("Jour de fin (événement uniquement, 1 à 120).").setMinValue(1).setMaxValue(120).setRequired(false))
+  )
+  .addSubcommand((subcommand) =>
+    subcommand
+      .setName("modifier-contenu-local")
+      .setDescription("Modifier les champs éditoriaux d'un contenu local en brouillon.")
+      .addStringOption((option) => option.setName("cle").setDescription("Clé du contenu.").setRequired(true))
+      .addIntegerOption((option) => option.setName("revision").setDescription("Révision courante affichée dans le catalogue.").setMinValue(1).setRequired(true))
+      .addStringOption((option) => option.setName("nom").setDescription("Nouveau nom.").setRequired(false))
+      .addStringOption((option) => option.setName("description").setDescription("Nouvelle description.").setRequired(false))
+      .addStringOption((option) => option.setName("tags").setDescription("Nouveaux tags séparés par des virgules.").setRequired(false))
+      .addStringOption((option) => option.setName("justification").setDescription("Nouvelle justification culturelle.").setRequired(false))
+      .addStringOption((option) => option.setName("visibilite").setDescription("Nouvelle visibilité.").setRequired(false)
+        .addChoices(
+          { name: "Publique", value: "public" },
+          { name: "Verrouillée jusqu'à découverte", value: "discovery_locked" }
+        ))
+  )
+  .addSubcommand((subcommand) =>
+    subcommand
+      .setName("approuver-contenu-local")
+      .setDescription("Approuver un contenu local après validation éditoriale.")
+      .addStringOption((option) => option.setName("cle").setDescription("Clé du contenu.").setRequired(true))
+      .addIntegerOption((option) => option.setName("revision").setDescription("Révision courante du contenu.").setMinValue(1).setRequired(true))
+  )
   );
