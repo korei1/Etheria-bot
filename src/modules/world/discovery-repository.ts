@@ -128,12 +128,21 @@ export async function recordPersistedWorldDiscovery(
     );
 
     if (existing.rows[0]) {
-      await client.query(
+      const repeated = await client.query<{ id: string }>(
         `INSERT INTO world_discovery_events
          (account_id, event_id, target_kind, target_key, discovery_method, outcome, occurred_at)
-         VALUES ($1, $2, $3, $4, $5, 'already_discovered', $6)`,
+         VALUES ($1, $2, $3, $4, $5, 'already_discovered', $6)
+         ON CONFLICT (account_id, event_id) DO NOTHING
+         RETURNING id`,
         [input.accountId, input.eventId, input.target.kind, input.target.key, input.method, occurredAt]
       );
+      if (!repeated.rows[0]) {
+        await client.query("ROLLBACK");
+        return {
+          status: "duplicate_event",
+          state: await getPersistedDiscoveryState(pool, input.accountId)
+        };
+      }
       await client.query("COMMIT");
       const state = await getPersistedDiscoveryState(pool, input.accountId);
       result = {
