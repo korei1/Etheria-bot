@@ -4,6 +4,8 @@ import {
   assertValidIndividualTraits,
   createCompanionSpeciesCatalog,
   getCompanionSpecies,
+  getCompanionRegionalRarity,
+  resolveInheritedNaturalVariant,
   validateCompanionSpeciesDefinition,
   validateIndividualTraits,
   CompanionSpeciesCatalogError,
@@ -18,6 +20,22 @@ const woodlandSpecies: CompanionSpeciesDefinition = {
   acquisitionMethods: ["wild_encounter", "adoption"],
   discordShopElementChoice: false,
   fixedElement: "terre",
+  regionalOccurrences: [
+    { regionKey: "north", habitatKey: "forest", rarity: "rare" },
+    { regionKey: "south", habitatKey: "forest", rarity: "commun" }
+  ],
+  naturalVariants: [
+    { key: "silver_coat", name: "Pelage argenté", type: "chromatic" },
+    { key: "long_fur", name: "Fourrure longue", type: "climatic" },
+    { key: "silver_long", name: "Pelage argenté long", type: "genetic" }
+  ],
+  variantInheritanceRules: [
+    {
+      firstParentVariantKey: "silver_coat",
+      secondParentVariantKey: "long_fur",
+      resultingVariantKey: "silver_long"
+    }
+  ],
   individualTraits: [
     { key: "coat_pattern", label: "Motif du pelage", type: "choice", values: ["uni", "tachete"] },
     { key: "temperament_note", label: "Tempérament", type: "text" },
@@ -82,4 +100,37 @@ test("les caractéristiques inconnues et les valeurs de mauvais type sont refus�
     () => assertValidIndividualTraits(woodlandSpecies, { coat_pattern: "rayures" }),
     CompanionSpeciesCatalogError
   );
+});
+
+
+test("la rareté régionale dépend de la région et de l'habitat", () => {
+  assert.equal(getCompanionRegionalRarity(woodlandSpecies, "north", "forest"), "rare");
+  assert.equal(getCompanionRegionalRarity(woodlandSpecies, "south", "forest"), "commun");
+  assert.equal(getCompanionRegionalRarity(woodlandSpecies, "north", "mountain"), "commun");
+});
+
+test("les variantes naturelles et leur transmission suivent les règles propres à l'espèce", () => {
+  assert.equal(
+    resolveInheritedNaturalVariant(woodlandSpecies, "silver_coat", "long_fur"),
+    "silver_long"
+  );
+  assert.equal(
+    resolveInheritedNaturalVariant(woodlandSpecies, "long_fur", "silver_coat"),
+    "silver_long"
+  );
+  assert.equal(
+    resolveInheritedNaturalVariant(woodlandSpecies, "silver_coat", "silver_coat"),
+    undefined
+  );
+});
+
+test("le catalogue refuse les règles héréditaires qui référencent une variante inconnue", () => {
+  assert.ok(validateCompanionSpeciesDefinition({
+    ...woodlandSpecies,
+    variantInheritanceRules: [{
+      firstParentVariantKey: "unknown",
+      secondParentVariantKey: "long_fur",
+      resultingVariantKey: "silver_long"
+    }]
+  }).some((issue) => issue.includes("variante inconnue")));
 });
