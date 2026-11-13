@@ -10,6 +10,15 @@ export const bestiaryAdminCommand = new SlashCommandBuilder()
   .setDMPermission(false)
   .addSubcommand((subcommand) =>
     subcommand
+      .setName("historique")
+      .setDescription("Consulter les dernières opérations administratives du bestiaire.")
+      .addIntegerOption((option) =>
+        option.setName("limite").setDescription("Nombre d'événements à afficher (1 à 20).")
+          .setRequired(false).setMinValue(1).setMaxValue(20)
+      )
+  )
+  .addSubcommand((subcommand) =>
+    subcommand
       .setName("regions")
       .setDescription("Afficher les régions du bestiaire.")
   )
