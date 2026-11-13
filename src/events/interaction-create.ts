@@ -486,6 +486,67 @@ export default {
           return;
         }
 
+        if (subcommand === "localites") {
+          const result = await database.query<{
+            settlement_key: string;
+            display_name: string;
+            settlement_type: string;
+            country_name: string;
+            visibility: string;
+          }>(
+            `SELECT s.settlement_key, s.display_name, s.settlement_type,
+                    co.display_name AS country_name, s.visibility
+             FROM world_settlements s
+             JOIN countries co ON co.id = s.country_id
+             WHERE s.editorial_status = 'approved'
+             ORDER BY co.display_name, s.display_name
+             LIMIT 25`
+          );
+          const lines = result.rows.map((row) =>
+            `• ${row.settlement_key} — ${row.display_name} (${row.settlement_type}) · ${row.country_name} · ${row.visibility}`
+          );
+          await interaction.editReply(
+            lines.length ? `**Localités approuvées**\\n\\n${lines.join("\\n")}` : "Aucune localité approuvée n'est encore enregistrée."
+          );
+          return;
+        }
+
+        if (subcommand === "placer-pnj-localite") {
+          const npcKey = interaction.options.getString("pnj", true).trim().toLowerCase();
+          const settlementKey = interaction.options.getString("localite", true).trim().toLowerCase();
+          const client = await database.connect();
+          try {
+            await client.query("BEGIN");
+            const npc = await client.query(
+              "SELECT 1 FROM npc_definitions WHERE npc_key = $1 AND editorial_status <> 'retired'",
+              [npcKey]
+            );
+            if (!npc.rowCount) throw new Error("PNJ introuvable ou retiré.");
+            const settlement = await client.query<{ id: string }>(
+              "SELECT id FROM world_settlements WHERE settlement_key = $1 AND editorial_status = 'approved'",
+              [settlementKey]
+            );
+            if (!settlement.rows[0]) {
+              throw new Error("Cette localité n'existe pas ou n'a pas été approuvée.");
+            }
+            await client.query(
+              `INSERT INTO npc_settlement_locations (npc_key, settlement_id)
+               VALUES ($1, $2)
+               ON CONFLICT (npc_key, settlement_id)
+               DO UPDATE SET is_active = TRUE`,
+              [npcKey, settlement.rows[0].id]
+            );
+            await client.query("COMMIT");
+          } catch (error) {
+            await client.query("ROLLBACK").catch(() => undefined);
+            throw error;
+          } finally {
+            client.release();
+          }
+          await interaction.editReply("Placement du PNJ enregistré. Il apparaîtra aux personnages présents dans cette localité et l'ayant découverte.");
+          return;
+        }
+
         if (subcommand === "pnjs") {
           const result = await database.query<{
             npc_key: string;
