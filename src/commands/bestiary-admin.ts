@@ -205,6 +205,7 @@ export const bestiaryAdminCommand = new SlashCommandBuilder()
           { name: "Verrouillée jusqu'à découverte", value: "discovery_locked" }
         ))
       .addIntegerOption((option) => option.setName("revision").setDescription("Révision affichée par /etheria-admin regions.").setRequired(true).setMinValue(1))
+  )
   .addSubcommand((subcommand) =>
     subcommand
       .setName("contenus-locaux")
