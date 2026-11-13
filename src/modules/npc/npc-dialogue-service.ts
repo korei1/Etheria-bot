@@ -207,7 +207,8 @@ export async function startNpcConversation(
        ON CONFLICT (event_id) DO NOTHING`,
       [`start:${interactionId}`, conversationId, input.characterId, npcKey, npc.start_node_key]
     );
-    await client.query("COMMIT");
+      await client.query("COMMIT");
+    }
   } catch (error) {
     await client.query("ROLLBACK").catch(() => undefined);
     throw error;
@@ -263,7 +264,14 @@ export async function chooseNpcDialogueOption(
     }
     npcKey = current.npc_key;
 
-    const choice = await client.query<{ next_node_key: string }>(
+    const duplicateEvent = await client.query(
+      "SELECT 1 FROM npc_conversation_events WHERE event_id = $1",
+      [interactionId]
+    );
+    if (duplicateEvent.rowCount) {
+      await client.query("COMMIT");
+    } else {
+      const choice = await client.query<{ next_node_key: string }>(
       `SELECT next_node_key
        FROM npc_dialogue_choices
        WHERE npc_key = $1 AND node_key = $2 AND choice_key = $3`,
