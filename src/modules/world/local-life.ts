@@ -27,6 +27,7 @@ export interface ContinentCulturalIdentity {
   festivalName: string;
   festivalDurationDays?: number;
   festivalStartDay?: number;
+  festivalEndDay?: number;
 }
 
 export const CONTINENT_CULTURAL_IDENTITIES: readonly ContinentCulturalIdentity[] = [
@@ -38,7 +39,8 @@ export const CONTINENT_CULTURAL_IDENTITIES: readonly ContinentCulturalIdentity[]
     culturalAnchors: ["mémoire collective", "archives", "récits", "grandes légendes", "histoire étudiée et transmise"],
     festivalName: "Souvenance",
     festivalDurationDays: 7,
-    festivalStartDay: 114
+    festivalStartDay: 114,
+    festivalEndDay: 120
   },
   {
     key: "niveria",
@@ -81,7 +83,8 @@ export const CONTINENT_CULTURAL_IDENTITIES: readonly ContinentCulturalIdentity[]
     culturalAnchors: ["puissance", "courage", "maîtrise", "stratégie", "épreuves encadrées"],
     festivalName: "Ardence",
     festivalDurationDays: 2,
-    festivalStartDay: 60
+    festivalStartDay: 60,
+    festivalEndDay: 61
   },
   {
     key: "umbrelune",
