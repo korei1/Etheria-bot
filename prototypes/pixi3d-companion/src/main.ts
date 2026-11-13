@@ -23,7 +23,7 @@ function setStatus(message: string, state: 'loading' | 'ready' | 'error' = 'load
 }
 
 type Part = {
-  node: Mesh3D;
+  node: Container3D;
   baseRotationX: number;
   baseRotationZ: number;
 };
@@ -90,7 +90,7 @@ function makeLykos() {
       root.addChild(leg);
       part(leg, orange, [0, -0.2, 0], [0.14, 0.34, 0.15]);
       part(leg, cream, [0, -0.42, 0.045], [0.145, 0.11, 0.19]);
-      legs.push({ node: leg as unknown as Mesh3D, baseRotationX: 0, baseRotationZ: 0 });
+      legs.push({ node: leg, baseRotationX: 0, baseRotationZ: 0 });
     }
   }
 
