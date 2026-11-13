@@ -35,13 +35,13 @@ CREATE TABLE world_local_content (
        (start_day BETWEEN 1 AND 120 AND end_day BETWEEN start_day AND 120)))
     OR
     (content_kind <> 'event' AND start_day IS NULL AND end_day IS NULL)
-  ),
+  )
 );
 
 CREATE FUNCTION enforce_local_content_continent_visibility()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-AS $
+AS $local_life$
 BEGIN
   IF NEW.visibility = 'public' AND EXISTS (
     SELECT 1
@@ -54,7 +54,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$;
+$local_life$;
 
 CREATE TRIGGER world_local_content_umbrelune_visibility
   BEFORE INSERT OR UPDATE OF settlement_id, visibility
