@@ -137,8 +137,8 @@ export function createWorldGeographyRegistry(
   if (issues.length > 0) throw new WorldGeographyError(issues.join("\n"));
 
   return {
-    continents: new Map(WORLD_CONTINENTS.map((entry) => [entry.key, entry])),
-    features: new Map(entries.map((entry) => [entry.key, entry]))
+    continents: new Map(WORLD_CONTINENTS.map((entry) => [entry.key, entry] as const)),
+    features: new Map(entries.map((entry) => [entry.key, entry] as const))
   };
 }
 
