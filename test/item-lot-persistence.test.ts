@@ -228,3 +228,37 @@ test("le transfert complet du camp vers le sac conserve les lots et leur identit
   ]);
   assert.match(db.calls[1]?.sql ?? "", /container_kind = 'character_bag'/);
 });
+
+
+test("la consommation refuse une quantité nulle, négative ou non entière avant toute requête", async () => {
+  for (const quantity of [0, -1, 1.5]) {
+    const db = createFakeClient();
+    await assert.rejects(
+      consumeInventoryItemLots(db.client, {
+        inventorySlotId: "slot-1",
+        itemCode: "braiding_plant_fibers",
+        quantity
+      })
+    );
+    assert.equal(db.calls.length, 0);
+  }
+});
+
+test("la création d'un lot refuse un code ou une quantité invalide avant insertion", async () => {
+  const invalidInputs = [
+    { itemCode: "unknown_item", quantity: 1 },
+    { itemCode: "braiding_plant_fibers", quantity: 0 },
+    { itemCode: "braiding_plant_fibers", quantity: -2 }
+  ];
+
+  for (const input of invalidInputs) {
+    const db = createFakeClient();
+    await assert.rejects(
+      addInventoryItemLot(db.client, {
+        inventorySlotId: "slot-1",
+        ...input
+      })
+    );
+    assert.equal(db.calls.length, 0);
+  }
+});
