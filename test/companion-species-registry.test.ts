@@ -5,7 +5,8 @@ import {
   createCompanionSpeciesRegistry,
   getRegisteredCompanionSpecies,
   listPublicCompanionSpecies,
-  transitionCompanionSpeciesStatus,
+  transitionCompanionSpeciesAvailability,
+  transitionCompanionSpeciesEditorialStatus,
   CompanionSpeciesRegistryError,
   type RegisteredCompanionSpecies
 } from "../src/modules/companions/companion-species-registry.js";
@@ -19,7 +20,8 @@ const secretRegion = {
 
 function species(
   key: string,
-  status: RegisteredCompanionSpecies["status"] = "draft",
+  editorialStatus: RegisteredCompanionSpecies["editorialStatus"] = "draft",
+  availabilityStatus: RegisteredCompanionSpecies["availabilityStatus"] = "unavailable",
   regionKey = "sylvaria"
 ): RegisteredCompanionSpecies {
   return {
@@ -35,7 +37,8 @@ function species(
       individualTraits: []
     },
     regionKey,
-    status,
+    editorialStatus,
+    availabilityStatus,
     evolutionForms: [
       { key: "initial", name: "Forme initiale", order: 0 },
       { key: "young", name: "Forme jeune", order: 1 },
@@ -63,10 +66,19 @@ testRunner("les clés d'espèce sont permanentes et ne peuvent pas être réutil
   );
 });
 
-testRunner("les régions secrètes ne révèlent aucune espèce avant leur découverte", () => {
+testRunner("la validation éditoriale est indépendante de la visibilité régionale", () => {
   const registry = createCompanionSpeciesRegistry(
     [region, secretRegion],
-    [species("secret_species", "discovery_locked", "umbrelune")]
+    [species("secret_species", "approved", "unavailable", "umbrelune")]
+  );
+  assert.equal(getRegisteredCompanionSpecies(registry, "secret_species")?.editorialStatus, "approved");
+  assert.deepEqual(listPublicCompanionSpecies(registry, new Set()), []);
+});
+
+testRunner("une espèce approuvée d'Umbrelune reste cachée jusqu'à découverte", () => {
+  let registry = createCompanionSpeciesRegistry(
+    [region, secretRegion],
+    [species("secret_species", "approved", "discoverable", "umbrelune")]
   );
   assert.deepEqual(listPublicCompanionSpecies(registry, new Set()), []);
   assert.equal(
@@ -75,22 +87,35 @@ testRunner("les régions secrètes ne révèlent aucune espèce avant leur déco
   );
 });
 
-testRunner("les statuts suivent un cycle explicite et refusent les transitions invalides", () => {
-  let registry = createCompanionSpeciesRegistry([region], [species("lifecycle_species")]);
-  registry = transitionCompanionSpeciesStatus(registry, "lifecycle_species", "approved");
-  registry = transitionCompanionSpeciesStatus(registry, "lifecycle_species", "discoverable");
-  registry = transitionCompanionSpeciesStatus(registry, "lifecycle_species", "available");
-  assert.equal(getRegisteredCompanionSpecies(registry, "lifecycle_species")?.status, "available");
+testRunner("une espèce non approuvée ne peut pas devenir disponible", () => {
+  const registry = createCompanionSpeciesRegistry([region], [species("draft_species")]);
   assert.throws(
-    () => transitionCompanionSpeciesStatus(registry, "lifecycle_species", "draft"),
+    () => transitionCompanionSpeciesAvailability(registry, "draft_species", "discoverable"),
+    CompanionSpeciesRegistryError
+  );
+});
+
+testRunner("les statuts éditorial et disponibilité suivent des transitions distinctes", () => {
+  let registry = createCompanionSpeciesRegistry([region], [species("lifecycle_species")]);
+  registry = transitionCompanionSpeciesEditorialStatus(registry, "lifecycle_species", "approved");
+  assert.equal(getRegisteredCompanionSpecies(registry, "lifecycle_species")?.editorialStatus, "approved");
+  assert.equal(getRegisteredCompanionSpecies(registry, "lifecycle_species")?.availabilityStatus, "unavailable");
+  registry = transitionCompanionSpeciesAvailability(registry, "lifecycle_species", "discoverable");
+  registry = transitionCompanionSpeciesAvailability(registry, "lifecycle_species", "available");
+  assert.equal(getRegisteredCompanionSpecies(registry, "lifecycle_species")?.availabilityStatus, "available");
+  assert.throws(
+    () => transitionCompanionSpeciesAvailability(registry, "lifecycle_species", "unavailable"),
     CompanionSpeciesRegistryError
   );
 });
 
 testRunner("une espèce retirée reste enregistrée mais sort du catalogue d'acquisition", () => {
-  let registry = createCompanionSpeciesRegistry([region], [species("retired_species", "available")]);
-  registry = transitionCompanionSpeciesStatus(registry, "retired_species", "retired");
-  assert.equal(getRegisteredCompanionSpecies(registry, "retired_species")?.status, "retired");
+  let registry = createCompanionSpeciesRegistry(
+    [region],
+    [species("retired_species", "approved", "available")]
+  );
+  registry = transitionCompanionSpeciesAvailability(registry, "retired_species", "retired");
+  assert.equal(getRegisteredCompanionSpecies(registry, "retired_species")?.availabilityStatus, "retired");
   assert.deepEqual(listPublicCompanionSpecies(registry, new Set()), []);
 });
 
