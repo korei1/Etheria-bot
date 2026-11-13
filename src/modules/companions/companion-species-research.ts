@@ -463,6 +463,79 @@ export const COMPANION_SPECIES_RESEARCH_DOSSIERS: readonly CompanionSpeciesResea
       }
     ],
     gameplayStatus: "research_only"
+  },
+  {
+    key: "domestic_dog",
+    commonName: "Chien domestique",
+    scientificName: "Canis familiaris",
+    category: "terrestrial",
+    assessment: { system: "iucn_red_list", scope: "global", category: "not_evaluated", publishedAt: 2024, authority: "Mammal Diversity Database", sourceName: "Mammal Diversity Database 2024: Canis familiaris", sourceUrl: "https://www.mammaldiversity.org/taxon/1005940/" },
+    habitats: ["Milieux habités", "Zones urbaines", "Forêts et autres milieux fréquentés par les populations féraux"],
+    rangeSummary: "Animal domestique présent dans le monde entier ; des populations retournées à l'état féral existent dans de nombreuses régions.",
+    ecologicalNotes: [
+      "La base taxonomique consultée indique que le chien domestique n'a pas été évalué dans la Liste rouge mondiale de l'IUCN ; aucune catégorie de menace ne doit donc lui être attribuée.",
+      "Les chiens vivant librement peuvent exercer une prédation sur la faune locale et transmettre certaines maladies.",
+      "La taxonomie du chien domestique est parfois présentée sous le nom Canis lupus familiaris ; ce dossier conserve Canis familiaris selon la source taxonomique choisie."
+    ],
+    additionalSources: [
+      { authority: "IUCN SSC Invasive Species Specialist Group", title: "Global Invasive Species Database: Canis lupus / domestic dogs", url: "https://www.iucngisd.org/gisd/speciesname/Canis%2Blupus" },
+      { authority: "Integrated Taxonomic Information System", title: "Canis familiaris", url: "https://www.itis.gov/servlet/SingleRpt/SingleRpt?print_version=PRT&search_topic=TSN&search_value=183815" }
+    ],
+    gameplayStatus: "research_only"
+  },
+  {
+    key: "domestic_cat",
+    commonName: "Chat domestique",
+    scientificName: "Felis catus",
+    category: "terrestrial",
+    assessment: { system: "iucn_red_list", scope: "global", category: "not_evaluated", publishedAt: 2024, authority: "Mammal Diversity Database", sourceName: "Mammal Diversity Database 2024: Felis catus", sourceUrl: "https://www.mammaldiversity.org/taxon/1005985/" },
+    habitats: ["Zones urbaines", "Zones périurbaines", "Paysages agricoles", "Habitats proches des établissements humains"],
+    rangeSummary: "Espèce domestique répandue mondialement ; des populations féraux ou errantes sont présentes dans de nombreuses régions.",
+    ecologicalNotes: [
+      "La base taxonomique consultée indique que le chat domestique n'a pas été évalué dans la Liste rouge mondiale de l'IUCN ; aucune catégorie de menace ne doit donc lui être attribuée.",
+      "Les chats conservent un comportement de chasse ; leurs effets sur la biodiversité varient selon les milieux et les contextes locaux.",
+      "Une étude menée en France métropolitaine a documenté les proies rapportées par des chats suivis entre 2015 et 2022."
+    ],
+    additionalSources: [
+      { authority: "Animal Diversity Web, University of Michigan", title: "Felis catus", url: "https://animaldiversity.org/accounts/Felis_catus/" },
+      { authority: "Animals", title: "Spatiotemporal and Individual Patterns of Domestic Cat Hunting Behaviour in France", url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC10668736/" }
+    ],
+    gameplayStatus: "research_only"
+  },
+  {
+    key: "domestic_horse",
+    commonName: "Cheval domestique",
+    scientificName: "Equus caballus",
+    category: "terrestrial",
+    assessment: { system: "iucn_red_list", scope: "global", category: "not_evaluated", publishedAt: 2024, authority: "Mammal Diversity Database", sourceName: "Mammal Diversity Database 2024: Equus caballus", sourceUrl: "https://www.mammaldiversity.org/taxon/1006122/" },
+    habitats: ["Prairies tempérées", "Steppes", "Savanes", "Semi-déserts", "Marais", "Zones boisées"],
+    rangeSummary: "Animal domestique répandu mondialement ; des populations retournées à l'état féral existent dans plusieurs régions, dont certaines parties de l'Europe.",
+    ecologicalNotes: [
+      "La base taxonomique consultée indique que le cheval domestique n'a pas été évalué dans la Liste rouge mondiale de l'IUCN ; aucune catégorie de menace ne doit donc lui être attribuée.",
+      "Les chevaux domestiques occupent une grande variété de milieux sous gestion humaine ; les populations féraux peuvent pâturer dans des milieux ouverts.",
+      "Le pâturage peut modifier la structure de la végétation et les dynamiques écologiques locales."
+    ],
+    additionalSources: [
+      { authority: "Animal Diversity Web, University of Michigan", title: "Equus caballus", url: "https://animaldiversity.org/accounts/Equus_caballus/" },
+      { authority: "Ministère de la Culture", title: "La domestication du cheval", url: "https://cheval-patrimoine.culture.gouv.fr/fr/la-domestication-du-cheval" }
+    ],
+    gameplayStatus: "research_only"
+  },
+  {
+    key: "honey_bee",
+    commonName: "Abeille mellifère",
+    scientificName: "Apis mellifera",
+    category: "insect_arthropod",
+    assessment: { system: "iucn_red_list", scope: "global", category: "not_evaluated", publishedAt: 2009, authority: "Animal Diversity Web, University of Michigan", sourceName: "Apis mellifera", sourceUrl: "https://animaldiversity.org/accounts/Apis_mellifera/" },
+    habitats: ["Prairies fleuries", "Milieux agricoles", "Jardins", "Lisières et clairières", "Cavités naturelles ou ruches"],
+    rangeSummary: "Espèce originaire de l'Ancien Monde, aujourd'hui élevée et introduite dans de nombreuses régions du monde.",
+    ecologicalNotes: [
+      "La source consultée ne signale pas de statut spécial dans la Liste rouge IUCN pour l'espèce ; cette mention ne doit pas être interprétée comme une évaluation récente de l'état de toutes les populations.",
+      "L'espèce vit en colonies organisées autour d'une reine et de castes spécialisées.",
+      "Elle contribue à la pollinisation de nombreuses plantes sauvages et cultivées ; les pressions sur les colonies peuvent inclure parasites, maladies, pesticides et disponibilité des ressources florales."
+    ],
+    additionalSources: [],
+    gameplayStatus: "research_only"
   }
 ] as const;
 
