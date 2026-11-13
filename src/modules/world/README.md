@@ -90,15 +90,19 @@ Les 28 pays déjà présents dans la migration 0004 sont rattachés à leur cont
 
 ## Déplacements
 
-- `travel-network.ts` décrit les connexions entre localités et caractéristiques géographiques.
-- Les modes pris en charge sont terrestre, maritime et aérien ; les types comprennent sentiers, routes, ponts, tunnels, ferries, voies maritimes et routes aériennes.
-- Le sens unique ou bidirectionnel est explicite.
-- Les itinéraires secrets restent masqués tant que leurs deux extrémités ne sont pas découvertes.
-- Les distances et durées restent facultatives et ne doivent être renseignées qu'à partir de données validées.
+- `travel-network.ts` définit le modèle logique des connexions ; `travel-service.ts` gère leur consultation et les déplacements persistants des personnages.
+- La migration `0029_world_travel_links.sql` crée le catalogue des itinéraires approuvés et le journal idempotent des voyages.
+- Les itinéraires relient une zone de départ à une localité ou deux localités. Les modes pris en charge sont terrestre, maritime et aérien ; les types comprennent sentiers, routes, ponts, tunnels, ferries, voies maritimes et routes aériennes.
+- Le sens unique ou bidirectionnel est explicite. Les itinéraires comportant des conditions d'accès non prises en charge ne sont pas proposés.
+- `/etheria voyager` affiche les itinéraires accessibles depuis la position actuelle ; le choix d'un itinéraire déplace le personnage et enregistre le voyage dans une transaction unique.
+- Une destination verrouillée est présentée comme inconnue avant le voyage. Son nom et sa découverte personnelle ne sont enregistrés qu'à l'arrivée.
+- Les itinéraires de visibilité verrouillée ne sont proposés qu'aux comptes qui les ont déjà découverts.
+- Les administrateurs utilisent `/etheria-admin ajouter-itineraire` pour créer un brouillon, `/etheria-admin itineraires` pour le consulter et `/etheria-admin approuver-itineraire` pour le publier après vérification des extrémités.
+- Les distances et durées restent facultatives et ne sont affichées que lorsqu'elles sont renseignées à partir de données validées.
 - Aucun trajet concret n'est prérempli et aucune durée ou distance n'est inventée.
 
 ## Hors périmètre
 
 Les frontières politiques historiques, les changements de souveraineté, les régimes, les institutions et les gouvernements restent des domaines séparés. Aucun pays ne reçoit de régime politique ou de dirigeant inventé par ces modèles.
 
-Les migrations 0024 à 0028 sont préparées dans le dépôt mais ne doivent pas être exécutées sur Supabase sans revue et approbation explicites. La migration 0024 rattache les 28 pays existants aux sept continents ; la migration 0025 reprend les capitales publiques déjà enregistrées et crée les tables de territoires et localités ; la migration 0026 persiste les découvertes ; la migration 0027 ajoute les dialogues PNJ ; la migration 0028 ajoute les placements de PNJ dans les localités et le champ de localisation actuelle du personnage.
+Les migrations 0024 à 0029 sont préparées dans le dépôt mais ne doivent pas être exécutées sur Supabase sans revue et approbation explicites. La migration 0024 rattache les 28 pays existants aux sept continents ; la migration 0025 reprend les capitales publiques déjà enregistrées et crée les tables de territoires et localités ; la migration 0026 persiste les découvertes ; la migration 0027 ajoute les dialogues PNJ ; la migration 0028 ajoute les placements de PNJ dans les localités et le champ de localisation actuelle du personnage ; la migration 0029 ajoute les itinéraires et le journal des déplacements.
