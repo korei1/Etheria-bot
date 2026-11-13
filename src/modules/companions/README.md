@@ -80,3 +80,19 @@ Pour les espèces fantastiques, le statut de conservation est propre à l'univer
 Le fichier `companion-species-candidates.ts` contient une première liste de pistes (animaux réels et créatures fantastiques). Ce sont uniquement des candidates éditoriales : elles ne sont pas jouables et ne reçoivent aucune rareté, région, habitat, élément, capacité, variante ou protection avant validation de leur fiche.
 
 Les données écologiques réelles doivent être sourcées et datées. Les catégories de rareté Etheria, les éléments, les chances de rencontre et les règles d'acquisition restent des décisions de gameplay, pas des déductions automatiques à partir du statut de conservation réel.
+
+
+## Premières fiches documentaires réelles
+
+Le fichier `companion-species-research.ts` contient quatre dossiers documentaires sourcés :
+
+- Loup gris (`Canis lupus`)
+- Renard roux (`Vulpes vulpes`)
+- Aigle royal (`Aquila chrysaetos`)
+- Tortue verte (`Chelonia mydas`)
+
+Chaque dossier conserve le nom scientifique, les habitats décrits par les sources, un résumé de répartition, des notes écologiques, la catégorie de l'évaluation mondiale IUCN, sa date, son autorité et son URL. Les sources complémentaires de l'OFB et de l'INPN sont également conservées pour la tortue verte.
+
+**Ces dossiers sont exclusivement documentaires** (`research_only`). Ils ne définissent pas encore d'espèces jouables : rareté Etheria, élément, méthodes d'acquisition, capacités, taux de rencontre et rareté régionale restent non renseignés. Une évaluation IUCN mondiale ne doit jamais être présentée comme le statut de toutes les populations locales. Les évaluations territoriales et protections juridiques devront être enregistrées séparément, avec leur juridiction et leurs propres sources.
+
+Les données documentaires sont séparées du catalogue de gameplay afin d'éviter de transformer accidentellement une donnée écologique réelle en règle de jeu.
