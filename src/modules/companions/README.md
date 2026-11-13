@@ -179,3 +179,23 @@ Le registre `companion-species-registry.ts` héberge désormais deux couches com
 La fonction `createInitialFantasyBestiaryRegistry()` charge les 43 espèces et les sept régions dans la couche éditoriale. Elle ne leur attribue aucune rareté, méthode d'acquisition ou habitat par défaut. `listVisibleEditorialCompanionSpecies()` expose les fiches des régions publiques et garde les six fiches d'Umbrelune masquées jusqu'à découverte.
 
 Les fiches éditoriales et les définitions de gameplay restent volontairement séparées : être approuvé et visible dans l'encyclopédie ne rend pas automatiquement une espèce disponible à l'achat ou à la rencontre. Les ajouts futurs utilisent le même registre sans plafond global.
+
+
+### Persistance PostgreSQL et administration du bestiaire
+
+La migration `0023_companion_species_catalog.sql` prépare les tables :
+
+- `companion_regions` : régions, visibilité et révision optimiste ;
+- `companion_species_catalog` : fiches d'espèces, élément, statut éditorial et disponibilité ;
+- `companion_species_forms` : formes ordonnées de chaque espèce ;
+- `companion_species_admin_events` : journal des changements administratifs, états avant/après et clé d'idempotence.
+
+Elle insère les sept régions, les 43 espèces approuvées et leurs 172 formes. Toutes les espèces commencent en disponibilité `unavailable` : leur approbation éditoriale ne les active pas en jeu. Umbrelune est stockée avec visibilité `discovery_locked`.
+
+RLS est activée sans politique d'accès client. Le backend de confiance doit utiliser son accès serveur ; aucun client Discord ou navigateur ne reçoit de droit direct d'administration.
+
+`companion-species-catalog-repository.ts` fournit la lecture du catalogue visible selon les régions découvertes, ainsi que des opérations administratives transactionnelles pour changer la disponibilité d'une espèce ou la visibilité d'une région. Elles utilisent un verrou de ligne, une révision attendue pour éviter les écrasements concurrents et un journal d'audit. L'appelant reste responsable de l'authentification et de l'autorisation du compte administrateur avant d'appeler ces fonctions.
+
+Le test PostgreSQL d'intégration `companion-species-catalog-postgres.integration.test.ts` vérifie le seed (7 régions, 43 espèces, 172 formes), le verrouillage d'Umbrelune et le journal. Il est ignoré si `TEST_DATABASE_URL` n'est pas configurée.
+
+**Important :** la migration 0023 est seulement ajoutée au dépôt. Elle n'a pas été exécutée sur Supabase. Elle doit être relue, testée sur une base isolée, puis approuvée avant toute exécution sur la base du projet.
