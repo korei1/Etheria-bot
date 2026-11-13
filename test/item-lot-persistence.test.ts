@@ -4,7 +4,9 @@ import type { PoolClient } from "pg";
 import {
   addInventoryItemLot,
   consumeInventoryItemLots,
-  movePartialCampStorageLotsToInventory
+  movePartialCampStorageLotsToInventory,
+  moveInventoryLotsToCampStorage,
+  moveCampStorageLotsToInventory
 } from "../src/modules/inventory/item-lot-persistence.js";
 
 interface QueryCall {
@@ -160,4 +162,69 @@ test("un retrait partiel du camp déplace les lots entiers puis scinde le lot tr
     "source-2",
     new Date("2026-11-12T09:00:00.000Z")
   ]);
+});
+
+
+test("le dépôt au camp déplace tous les lots seulement si leur quantité correspond au stock", async () => {
+  const db = createFakeClient((sql) =>
+    sql.startsWith("select coalesce(sum(quantity), 0)::text as total")
+      ? [{ total: "3" }]
+      : []
+  );
+
+  await moveInventoryLotsToCampStorage(db.client, {
+    inventorySlotId: "slot-1",
+    campStorageEntryId: "camp-entry-1",
+    itemCode: "unidentified_history_fragment",
+    quantity: 3
+  });
+
+  assert.equal(db.calls.length, 2);
+  assert.deepEqual(db.calls[1]?.values, [
+    "slot-1",
+    "camp-entry-1",
+    "unidentified_history_fragment"
+  ]);
+  assert.match(db.calls[1]?.sql ?? "", /container_kind = 'temporary_camp_storage'/);
+});
+
+test("le dépôt au camp refuse un décalage entre les lots et le stock agrégé", async () => {
+  const db = createFakeClient((sql) =>
+    sql.startsWith("select coalesce(sum(quantity), 0)::text as total")
+      ? [{ total: "2" }]
+      : []
+  );
+
+  await assert.rejects(
+    moveInventoryLotsToCampStorage(db.client, {
+      inventorySlotId: "slot-1",
+      campStorageEntryId: "camp-entry-1",
+      itemCode: "unidentified_history_fragment",
+      quantity: 3
+    }),
+    /ne correspondent pas exactement/
+  );
+  assert.equal(db.calls.length, 1);
+});
+
+test("le transfert complet du camp vers le sac conserve les lots et leur identité", async () => {
+  const db = createFakeClient((sql) =>
+    sql.startsWith("select coalesce(sum(quantity), 0)::text as total")
+      ? [{ total: "4" }]
+      : []
+  );
+
+  await moveCampStorageLotsToInventory(db.client, {
+    campStorageEntryId: "camp-entry-1",
+    inventorySlotId: "slot-2",
+    itemCode: "unidentified_history_fragment"
+  });
+
+  assert.equal(db.calls.length, 2);
+  assert.deepEqual(db.calls[1]?.values, [
+    "camp-entry-1",
+    "slot-2",
+    "unidentified_history_fragment"
+  ]);
+  assert.match(db.calls[1]?.sql ?? "", /container_kind = 'character_bag'/);
 });
