@@ -958,6 +958,8 @@ export default {
           const nodeKey = interaction.options.getString("noeud", true).trim().toLowerCase();
           const dialogueText = interaction.options.getString("texte", true).trim();
           const description = interaction.options.getString("description")?.trim() || null;
+          const activityLabel = interaction.options.getString("activite")?.trim() || null;
+          if (activityLabel && activityLabel.length > 120) throw new Error("L'activité ne peut pas dépasser 120 caractères.");
           if (!/^[a-z0-9_-]{1,80}$/.test(npcKey) || !/^[a-z0-9_-]{1,80}$/.test(nodeKey)) {
             throw new Error("Les clés du PNJ et du dialogue doivent utiliser uniquement lettres minuscules, chiffres, tirets ou tirets bas.");
           }
@@ -986,8 +988,8 @@ export default {
             );
             if (spawnZoneId) {
               await client.query(
-                "INSERT INTO npc_spawn_locations (npc_key, spawn_zone_id) VALUES ($1, $2)",
-                [npcKey, spawnZoneId]
+                "INSERT INTO npc_spawn_locations (npc_key, spawn_zone_id, activity_label) VALUES ($1, $2, $3)",
+                [npcKey, spawnZoneId, activityLabel]
               );
             }
             await client.query("COMMIT");
