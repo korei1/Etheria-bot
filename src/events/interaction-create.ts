@@ -886,7 +886,7 @@ export default {
             accountId: account.accountId
           });
           if (npcs.length === 0) {
-            await interaction.editReply("Aucun habitant n'est actuellement configuré dans ton lieu. Les rencontres apparaîtront ici lorsque les premiers PNJ de cette zone auront été ajoutés.");
+            await interaction.editReply("Aucun habitant n'est actuellement configuré dans ce lieu. Les rencontres apparaîtront ici lorsque des PNJ auront été placés dans cette zone de départ ou cette localité.");
             return;
           }
           const menu = new StringSelectMenuBuilder()
