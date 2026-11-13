@@ -120,3 +120,15 @@ Les migrations 0024 à 0029 sont préparées dans le dépôt mais ne doivent pas
 - Le déclencheur SQL interdit également la publication publique d'un contenu situé dans une localité d'Umbrelune.
 - Le test `world-local-life.test.ts` couvre les identités et fêtes canoniques, l'ancrage culturel, la cohérence continent/localité, les dates calendaires et la confidentialité d'Umbrelune.
 - La migration 0030 est préparée dans le dépôt mais n'a pas été exécutée sur Supabase.
+
+
+## Simulation quotidienne des localités
+
+- `local-life.ts` porte le catalogue éditorial, les identités culturelles continentales et les filtres de visibilité.
+- `local-life-simulation.ts` définit les horaires hebdomadaires, leur validation, l'ouverture à une minute donnée, le calendrier absolu Etheria de 120 jours et les règles déterministes de stock.
+- Les horaires utilisent les jours de semaine Etheria 1 à 7 et des minutes locales de 0 à 1440. Aucun fuseau horaire terrestre ni horaire concret n'est présumé.
+- Un commerce peut posséder plusieurs articles de stock, chacun avec prix en Teas, quantité, capacité maximale et politique optionnelle de réapprovisionnement. Aucun prix ou article n'est prérempli.
+- Le réapprovisionnement est calculé à partir d'un compteur absolu de jours Etheria, ce qui permet de franchir proprement la fin d'une année de 120 jours.
+- La consommation de stock refuse les quantités invalides et les ruptures de stock. Les fonctions métier sont pures ; le branchement transactionnel aux achats et au portefeuille partagé Sweet Tea reste une étape séparée.
+- La migration `0031_world_local_life_simulation.sql` ajoute les horaires et le stock des commerces, avec contraintes de quantité et garde-fous empêchant un contenu doté de stock de cesser d'être un commerce.
+- Les tests unitaires couvrent horaires, calendrier, réapprovisionnement, consommation et validations. Les migrations 0030 et 0031 ne sont pas exécutées sur Supabase.
