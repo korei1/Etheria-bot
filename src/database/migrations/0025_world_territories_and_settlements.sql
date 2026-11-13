@@ -14,8 +14,7 @@ CREATE TABLE world_administrative_areas (
   area_type TEXT NOT NULL CHECK (area_type IN (
     'region', 'province', 'department', 'district', 'county', 'municipality', 'territory'
   )),
-  parent_area_id UUID REFERENCES world_administrative_areas(id)
-    ON UPDATE RESTRICT ON DELETE RESTRICT,
+  parent_area_id UUID,
   visibility TEXT NOT NULL DEFAULT 'public'
     CHECK (visibility IN ('public', 'discovery_locked')),
   editorial_status TEXT NOT NULL DEFAULT 'draft'
@@ -24,7 +23,12 @@ CREATE TABLE world_administrative_areas (
   revision INTEGER NOT NULL DEFAULT 1 CHECK (revision > 0),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  CONSTRAINT world_area_not_own_parent CHECK (parent_area_id IS NULL OR parent_area_id <> id)
+  CONSTRAINT world_area_not_own_parent CHECK (parent_area_id IS NULL OR parent_area_id <> id),
+  CONSTRAINT world_area_id_country_unique UNIQUE (id, country_id),
+  CONSTRAINT world_area_parent_same_country_fk
+    FOREIGN KEY (parent_area_id, country_id)
+    REFERENCES world_administrative_areas(id, country_id)
+    ON UPDATE RESTRICT ON DELETE RESTRICT
 );
 
 CREATE INDEX world_administrative_areas_country_idx
@@ -40,10 +44,8 @@ CREATE TABLE world_settlements (
   settlement_type TEXT NOT NULL CHECK (settlement_type IN (
     'capital', 'city', 'town', 'village', 'hamlet', 'isolated_site'
   )),
-  administrative_area_id UUID REFERENCES world_administrative_areas(id)
-    ON UPDATE RESTRICT ON DELETE RESTRICT,
-  parent_settlement_id UUID REFERENCES world_settlements(id)
-    ON UPDATE RESTRICT ON DELETE RESTRICT,
+  administrative_area_id UUID,
+  parent_settlement_id UUID,
   is_capital BOOLEAN NOT NULL DEFAULT FALSE,
   visibility TEXT NOT NULL DEFAULT 'public'
     CHECK (visibility IN ('public', 'discovery_locked')),
@@ -55,6 +57,15 @@ CREATE TABLE world_settlements (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CONSTRAINT world_settlement_not_own_parent
     CHECK (parent_settlement_id IS NULL OR parent_settlement_id <> id),
+  CONSTRAINT world_settlement_id_country_unique UNIQUE (id, country_id),
+  CONSTRAINT world_settlement_area_same_country_fk
+    FOREIGN KEY (administrative_area_id, country_id)
+    REFERENCES world_administrative_areas(id, country_id)
+    ON UPDATE RESTRICT ON DELETE RESTRICT,
+  CONSTRAINT world_settlement_parent_same_country_fk
+    FOREIGN KEY (parent_settlement_id, country_id)
+    REFERENCES world_settlements(id, country_id)
+    ON UPDATE RESTRICT ON DELETE RESTRICT,
   CONSTRAINT world_capital_type_consistent
     CHECK ((is_capital AND settlement_type = 'capital') OR (NOT is_capital AND settlement_type <> 'capital'))
 );
