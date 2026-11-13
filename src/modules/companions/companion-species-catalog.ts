@@ -44,6 +44,47 @@ export const COMPANION_ACQUISITION_METHODS = [
 export type CompanionSpeciesAcquisitionMethod =
   (typeof COMPANION_ACQUISITION_METHODS)[number];
 
+/** Variantes naturelles acceptées pour les espèces qui les possèdent. */
+export const COMPANION_NATURAL_VARIANT_TYPES = [
+  "chromatic",
+  "morphological",
+  "regional",
+  "climatic",
+  "genetic"
+] as const;
+
+export type CompanionNaturalVariantType =
+  (typeof COMPANION_NATURAL_VARIANT_TYPES)[number];
+
+/**
+ * La rareté d'une espèce peut varier selon la région et l'habitat.
+ * Une entrée décrit une présence connue dans un contexte précis.
+ */
+export interface CompanionRegionalOccurrence {
+  regionKey: string;
+  habitatKey: string;
+  rarity: CompanionRarity;
+}
+
+/** Variante naturelle documentée pour une espèce donnée. */
+export interface CompanionNaturalVariantDefinition {
+  key: string;
+  name: string;
+  type: CompanionNaturalVariantType;
+  description?: string;
+}
+
+/**
+ * Transmission explicite d'une combinaison de variantes parentales.
+ * Les règles sont propres à l'espèce. Aucun taux, dominant/récessif ou
+ * résultat n'est déduit automatiquement par le moteur.
+ */
+export interface CompanionVariantInheritanceRule {
+  firstParentVariantKey: string;
+  secondParentVariantKey: string;
+  resultingVariantKey: string;
+}
+
 export type IndividualTraitDefinition =
   | {
       key: string;
@@ -77,6 +118,14 @@ export interface CompanionSpeciesDefinition {
   discordShopElementChoice: boolean;
   /** Obligatoire pour une espèce dont l'élément n'est pas choisi en boutique. */
   fixedElement?: CompanionElement;
+  /** Rareté générale de référence, utilisée hors occurrence régionale précise. */
+  rarity: CompanionRarity;
+  /** Répartition connue ; la rareté régionale prévaut en cas de correspondance. */
+  regionalOccurrences?: readonly CompanionRegionalOccurrence[];
+  /** Variantes naturelles propres à cette espèce. */
+  naturalVariants?: readonly CompanionNaturalVariantDefinition[];
+  /** Règles de transmission explicites, propres à cette espèce. */
+  variantInheritanceRules?: readonly CompanionVariantInheritanceRule[];
   /** Liste des caractéristiques descriptives pouvant varier entre individus. */
   individualTraits: readonly IndividualTraitDefinition[];
 }
@@ -98,6 +147,7 @@ const categorySet = new Set<string>(COMPANION_SPECIES_CATEGORIES);
 const raritySet = new Set<string>(COMPANION_RARITIES);
 const elementSet = new Set<string>(COMPANION_ELEMENTS);
 const acquisitionSet = new Set<string>(COMPANION_ACQUISITION_METHODS);
+const naturalVariantTypeSet = new Set<string>(COMPANION_NATURAL_VARIANT_TYPES);
 
 export function validateCompanionSpeciesDefinition(
   definition: CompanionSpeciesDefinition
@@ -137,6 +187,51 @@ export function validateCompanionSpeciesDefinition(
     if (!definition.fixedElement || !elementSet.has(definition.fixedElement)) {
       issues.push(`[${prefix}] Un élément fixe valide est obligatoire hors boutique Discord.`);
     }
+  }
+
+  const occurrenceKeys = new Set<string>();
+  for (const occurrence of definition.regionalOccurrences ?? []) {
+    const key = `${occurrence.regionKey}:${occurrence.habitatKey}`;
+    if (!/^[a-z][a-z0-9_]*$/.test(occurrence.regionKey) ||
+      !/^[a-z][a-z0-9_]*$/.test(occurrence.habitatKey)) {
+      issues.push(`[${prefix}] Région ou habitat invalide : ${key}.`);
+    }
+    if (!raritySet.has(occurrence.rarity)) {
+      issues.push(`[${prefix}] Rareté régionale inconnue pour ${key}.`);
+    }
+    if (occurrenceKeys.has(key)) {
+      issues.push(`[${prefix}] Occurrence région/habitat dupliquée : ${key}.`);
+    }
+    occurrenceKeys.add(key);
+  }
+
+  const variantKeys = new Set<string>();
+  for (const variant of definition.naturalVariants ?? []) {
+    if (!/^[a-z][a-z0-9_]*$/.test(variant.key) || !variant.name.trim()) {
+      issues.push(`[${prefix}] Définition de variante invalide : ${variant.key}.`);
+    }
+    if (!naturalVariantTypeSet.has(variant.type)) {
+      issues.push(`[${prefix}] Type de variante inconnu : ${variant.type}.`);
+    }
+    if (variantKeys.has(variant.key)) {
+      issues.push(`[${prefix}] Variante dupliquée : ${variant.key}.`);
+    }
+    variantKeys.add(variant.key);
+  }
+
+  const inheritanceRules = definition.variantInheritanceRules ?? [];
+  const inheritanceRuleKeys = new Set<string>();
+  for (const rule of inheritanceRules) {
+    const key = [rule.firstParentVariantKey, rule.secondParentVariantKey].sort().join(":");
+    if (!variantKeys.has(rule.firstParentVariantKey) ||
+      !variantKeys.has(rule.secondParentVariantKey) ||
+      !variantKeys.has(rule.resultingVariantKey)) {
+      issues.push(`[${prefix}] Une règle héréditaire référence une variante inconnue : ${key}.`);
+    }
+    if (inheritanceRuleKeys.has(key)) {
+      issues.push(`[${prefix}] Règle héréditaire parentale dupliquée : ${key}.`);
+    }
+    inheritanceRuleKeys.add(key);
   }
 
   const traitKeys = new Set<string>();
@@ -191,6 +286,34 @@ export function getCompanionSpecies(
   speciesKey: string
 ): CompanionSpeciesDefinition | undefined {
   return catalog.species.get(speciesKey);
+}
+
+/**
+ * Retourne la rareté déclarée pour une région et un habitat précis.
+ * Sans correspondance exacte, la rareté générale de l'espèce est conservée.
+ */
+export function getCompanionRegionalRarity(
+  definition: CompanionSpeciesDefinition,
+  regionKey: string,
+  habitatKey: string
+): CompanionRarity {
+  return definition.regionalOccurrences?.find(
+    (occurrence) =>
+      occurrence.regionKey === regionKey && occurrence.habitatKey === habitatKey
+  )?.rarity ?? definition.rarity;
+}
+
+/** Résout uniquement les combinaisons héréditaires définies par l'espèce. */
+export function resolveInheritedNaturalVariant(
+  definition: CompanionSpeciesDefinition,
+  firstParentVariantKey: string,
+  secondParentVariantKey: string
+): string | undefined {
+  const parentKeys = [firstParentVariantKey, secondParentVariantKey].sort();
+  return definition.variantInheritanceRules?.find((rule) => {
+    const ruleKeys = [rule.firstParentVariantKey, rule.secondParentVariantKey].sort();
+    return ruleKeys[0] === parentKeys[0] && ruleKeys[1] === parentKeys[1];
+  })?.resultingVariantKey;
 }
 
 /**
