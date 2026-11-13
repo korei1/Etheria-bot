@@ -38,6 +38,11 @@ test("PostgreSQL conserve compagnons, soins et repos entre connexions", {
       "utf8"
     );
     await client.query(migration);
+    const traitsMigration = await readFile(
+      new URL("../src/database/migrations/0021_companion_individual_traits.sql", import.meta.url),
+      "utf8"
+    );
+    await client.query(traitsMigration);
     client.release();
     clientReleased = true;
 
@@ -50,6 +55,7 @@ test("PostgreSQL conserve compagnons, soins et repos entre connexions", {
       initialHungerPercent: 40,
       initialThirstPercent: 70,
       initialEnergy: 20,
+      individualTraits: { coat_pattern: "tachete", is_nocturnal: false },
       now
     };
 
@@ -75,6 +81,7 @@ test("PostgreSQL conserve compagnons, soins et repos entre connexions", {
     });
     assert.equal(initialState.hungerPercent, 40);
     assert.equal(initialState.energy, 20);
+    assert.deepEqual(first.individualTraits, { coat_pattern: "tachete", is_nocturnal: false });
 
     const fed = await claimFreeCompanionRation(pool, {
       accountId,
