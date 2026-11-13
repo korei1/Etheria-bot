@@ -620,7 +620,7 @@ export default {
             throw new Error("Le format attendu est un objet contenant un tableau days.");
           }
           const schedule = parsed as WeeklyOpeningSchedule;
-          if (schedule.days.some((day) => !day || typeof day !== "object" || !Array.isArray(day.intervals))) {
+          if (schedule.days.some((day) => !day || typeof day !== "object" || !Array.isArray(day.intervals) || day.intervals.some((interval) => !interval || typeof interval !== "object"))) {
             throw new Error("Chaque jour doit contenir un tableau intervals.");
           }
           const issues = validateOpeningSchedule(schedule);
