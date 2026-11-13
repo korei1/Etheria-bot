@@ -96,3 +96,17 @@ Chaque dossier conserve le nom scientifique, les habitats décrits par les sourc
 **Ces dossiers sont exclusivement documentaires** (`research_only`). Ils ne définissent pas encore d'espèces jouables : rareté Etheria, élément, méthodes d'acquisition, capacités, taux de rencontre et rareté régionale restent non renseignés. Une évaluation IUCN mondiale ne doit jamais être présentée comme le statut de toutes les populations locales. Les évaluations territoriales et protections juridiques devront être enregistrées séparément, avec leur juridiction et leurs propres sources.
 
 Les données documentaires sont séparées du catalogue de gameplay afin d'éviter de transformer accidentellement une donnée écologique réelle en règle de jeu.
+
+
+### Extension des dossiers documentaires
+
+Quatre dossiers supplémentaires portent le registre à huit espèces réelles :
+
+- Loutre d'Europe (`Lutra lutra`) : évaluation mondiale quasi menacée, évaluée en 2020 et publiée en 2022.
+- Cerf élaphe (`Cervus elaphus`) : évaluation mondiale préoccupation mineure, évaluée en 2015 et publiée en 2018 ; la fiche IUCN signale que cette évaluation nécessite une mise à jour.
+- Hérisson d'Europe (`Erinaceus europaeus`) : évaluation mondiale quasi menacée, publiée dans la mise à jour IUCN 2024-2. La date exacte d'évaluation n'est pas fournie dans la fiche et reste donc vide.
+- Lynx boréal (`Lynx lynx`) : évaluation européenne préoccupation mineure, évaluée en 2022 et publiée en 2025 ; une évaluation distincte de l'UE à 27 pays le classe quasi menacé.
+
+Le modèle distingue désormais les périmètres global, européen, UE-27 et national. Une catégorie ne peut pas être interprétée sans son périmètre. Les dates d'évaluation absentes restent facultatives plutôt que d'être estimées.
+
+Ces huit dossiers restent `research_only` : ils ne sont pas des espèces jouables et ne déterminent aucune règle de rareté, d'élément, de capacité ou d'acquisition Etheria.
