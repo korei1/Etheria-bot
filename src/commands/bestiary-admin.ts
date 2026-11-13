@@ -108,6 +108,40 @@ export const bestiaryAdminCommand = new SlashCommandBuilder()
   )
   .addSubcommand((subcommand) =>
     subcommand
+      .setName("itineraires")
+      .setDescription("Afficher les itinéraires enregistrés et leur statut.")
+  )
+  .addSubcommand((subcommand) =>
+    subcommand
+      .setName("ajouter-itineraire")
+      .setDescription("Créer un itinéraire en brouillon entre une zone et une localité ou deux localités.")
+      .addStringOption((option) => option.setName("cle").setDescription("Identifiant stable de l'itinéraire.").setRequired(true))
+      .addStringOption((option) => option.setName("nom").setDescription("Nom affiché de l'itinéraire.").setRequired(true))
+      .addStringOption((option) => option.setName("origine_type").setDescription("Type du lieu de départ.").setRequired(true)
+        .addChoices({ name: "Zone de départ", value: "spawn_zone" }, { name: "Localité", value: "settlement" }))
+      .addStringOption((option) => option.setName("origine").setDescription("Clé de la zone ou localité de départ.").setRequired(true))
+      .addStringOption((option) => option.setName("destination").setDescription("Clé d'une localité approuvée.").setRequired(true))
+      .addStringOption((option) => option.setName("mode").setDescription("Mode de déplacement.").setRequired(true)
+        .addChoices({ name: "Terrestre", value: "land" }, { name: "Maritime", value: "sea" }, { name: "Aérien", value: "air" }))
+      .addStringOption((option) => option.setName("type").setDescription("Type de liaison.").setRequired(true)
+        .addChoices(
+          { name: "Sentier", value: "trail" }, { name: "Route", value: "road" },
+          { name: "Pont", value: "bridge" }, { name: "Tunnel", value: "tunnel" },
+          { name: "Ferry", value: "ferry" }, { name: "Voie maritime", value: "sea_lane" },
+          { name: "Route aérienne", value: "air_route" }
+        ))
+      .addBooleanOption((option) => option.setName("bidirectionnel").setDescription("Le trajet peut-il être parcouru dans les deux sens ?").setRequired(true))
+      .addStringOption((option) => option.setName("visibilite").setDescription("Visibilité de l'itinéraire.").setRequired(true)
+        .addChoices({ name: "Publique", value: "public" }, { name: "Verrouillée jusqu'à découverte", value: "discovery_locked" }))
+  )
+  .addSubcommand((subcommand) =>
+    subcommand
+      .setName("approuver-itineraire")
+      .setDescription("Approuver un itinéraire après validation de ses deux extrémités.")
+      .addStringOption((option) => option.setName("cle").setDescription("Clé de l'itinéraire.").setRequired(true))
+  )
+  .addSubcommand((subcommand) =>
+    subcommand
       .setName("pnjs")
       .setDescription("Afficher les PNJ et leur état éditorial.")
   )
