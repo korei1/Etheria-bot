@@ -192,7 +192,7 @@ test("les dossiers documentaires réels sont sourcés et restent non jouables", 
     validateSpeciesResearchDossiers
   } = await import("../src/modules/companions/companion-species-research.js");
 
-  assert.equal(COMPANION_SPECIES_RESEARCH_DOSSIERS.length, 8);
+  assert.equal(COMPANION_SPECIES_RESEARCH_DOSSIERS.length, 12);
   assert.deepEqual(validateSpeciesResearchDossiers(), []);
   assert.ok(COMPANION_SPECIES_RESEARCH_DOSSIERS.every(
     (dossier) => dossier.gameplayStatus === "research_only"
@@ -250,4 +250,16 @@ test("les évaluations régionales sont validées séparément", async () => {
       sourceUrl: "http://invalid.test"
     }]
   }]).some((issue) => issue.includes("Évaluation régionale invalide")));
+});
+
+
+test("les nouvelles fiches distinguent correctement les évaluations mondiales et celles d'une sous-espèce", async () => {
+  const { COMPANION_SPECIES_RESEARCH_DOSSIERS, validateSpeciesResearchDossiers } =
+    await import("../src/modules/companions/companion-species-research.js");
+  const shark = COMPANION_SPECIES_RESEARCH_DOSSIERS.find((dossier) => dossier.key === "great_white_shark")!;
+  const monarch = COMPANION_SPECIES_RESEARCH_DOSSIERS.find((dossier) => dossier.key === "monarch_butterfly")!;
+  assert.equal(shark.assessment.category, "vulnerable");
+  assert.equal(monarch.assessment.category, "least_concern");
+  assert.ok(monarch.ecologicalNotes.some((note) => note.includes("Danaus plexippus plexippus")));
+  assert.deepEqual(validateSpeciesResearchDossiers(), []);
 });
