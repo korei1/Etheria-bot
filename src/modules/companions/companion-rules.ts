@@ -187,3 +187,27 @@ export function assertSpeciesCompanionCapacity(currentOwnedCount: number): void 
     throw new CompanionRuleError("La limite de quatre compagnons de cette espèce est atteinte.");
   }
 }
+
+export interface PurchasedCompanionFirstMeetingState {
+  wasPurchasedBeforeCharacterStart: boolean;
+  characterLevel: number;
+  hasArrivedAtVillage: boolean;
+  isFirstNatureOutingAfterVillage: boolean;
+  hasAlreadyMetCompanion: boolean;
+}
+
+/**
+ * Le compagnon acheté à l'avance observe le personnage sans se montrer.
+ * Il ne le rejoint qu'à partir du niveau 4, lors de sa première sortie
+ * en pleine nature après son arrivée au village.
+ */
+export function canTriggerPurchasedCompanionFirstMeeting(
+  state: PurchasedCompanionFirstMeetingState
+): boolean {
+  return state.wasPurchasedBeforeCharacterStart &&
+    Number.isInteger(state.characterLevel) &&
+    state.characterLevel >= 4 &&
+    state.hasArrivedAtVillage &&
+    state.isFirstNatureOutingAfterVillage &&
+    !state.hasAlreadyMetCompanion;
+}
