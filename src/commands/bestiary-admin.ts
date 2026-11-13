@@ -96,6 +96,18 @@ export const bestiaryAdminCommand = new SlashCommandBuilder()
   )
   .addSubcommand((subcommand) =>
     subcommand
+      .setName("localites")
+      .setDescription("Afficher les localités approuvées du monde.")
+  )
+  .addSubcommand((subcommand) =>
+    subcommand
+      .setName("placer-pnj-localite")
+      .setDescription("Placer un PNJ dans une localité approuvée.")
+      .addStringOption((option) => option.setName("pnj").setDescription("Clé du PNJ.").setRequired(true))
+      .addStringOption((option) => option.setName("localite").setDescription("Clé de la localité approuvée.").setRequired(true))
+  )
+  .addSubcommand((subcommand) =>
+    subcommand
       .setName("pnjs")
       .setDescription("Afficher les PNJ et leur état éditorial.")
   )
