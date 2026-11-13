@@ -168,3 +168,15 @@ Les migrations 0024 à 0029 sont préparées dans le dépôt mais ne doivent pas
 - Une localité absente ou non approuvée n'expose pas l'horloge.
 - Les tests du moteur et du service utilisent le runner natif `node:test`, cohérent avec la commande `npm test` du projet.
 - Le branchement de cette donnée dans les commandes joueur, les horaires d'ouverture et les comportements des PNJ reste l'étape suivante. Les migrations 0030 à 0032 ne sont pas exécutées sur Supabase.
+
+
+## Horloge appliquée à la vie locale
+
+- `getCurrentLocalLife` récupère désormais l'heure locale calculée depuis l'horloge mondiale et le fuseau approuvé de la localité.
+- `/etheria localite` affiche l'heure et le nom du fuseau local, même lorsqu'aucune activité ou aucun commerce n'est encore configuré.
+- Les horaires hebdomadaires approuvés sont évalués avec le jour de semaine et la minute locale : le statut ouvert/fermé correspond donc au fuseau de la localité, pas à celui du serveur ni du joueur.
+- Les événements ayant des jours de début et de fin sont marqués en cours selon le jour local du calendrier Etheria.
+- Si aucun fuseau approuvé n'est attribué, l'heure et les statuts dépendant de l'heure restent explicitement indisponibles ; le système ne devine rien.
+- Les données d'ouverture et les stocks restent en lecture seule dans cette commande. Aucun achat, débit ou changement de stock n'est déclenché.
+- Les emplacements PNJ n'ont pas encore de calendrier de présence configurable : leurs horaires ne sont donc pas filtrés artificiellement. Il faudra ajouter un calendrier de présence validé par placement avant de faire varier leurs apparitions selon l'heure.
+- Les périodes « matinée », « midi », « après-midi », « soirée » et « nuit » ne reçoivent pas encore de seuils horaires : leurs bornes doivent être définies avant de les utiliser dans les comportements.
