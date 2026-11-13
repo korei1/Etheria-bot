@@ -58,6 +58,14 @@ test("une première conversation PNJ révèle le lieu et persiste les choix", {
       )`
     );
     await setupClient.query(
+      `CREATE TABLE world_settlements (
+        id UUID PRIMARY KEY,
+        settlement_key TEXT NOT NULL UNIQUE,
+        editorial_status TEXT NOT NULL,
+        visibility TEXT NOT NULL
+      )`
+    );
+    await setupClient.query(
       `CREATE TABLE npc_encounters (
         encounter_id UUID PRIMARY KEY,
         account_id UUID NOT NULL,
@@ -103,6 +111,32 @@ test("une première conversation PNJ révèle le lieu et persiste les choix", {
       "utf8"
     );
     await setupClient.query(dialogueMigration);
+    const settlementMigration = await readFile(
+      new URL("../src/database/migrations/0028_npc_settlement_presence.sql", import.meta.url),
+      "utf8"
+    );
+    await setupClient.query(settlementMigration);
+
+    const settlementId = randomUUID();
+    await setupClient.query(
+      `INSERT INTO world_settlements (id, settlement_key, editorial_status, visibility)
+       VALUES ($1, 'settlement_alpha', 'approved', 'discovery_locked')`,
+      [settlementId]
+    );
+    await setupClient.query(
+      `WITH event_row AS (
+         INSERT INTO world_discovery_events
+         (account_id, event_id, target_kind, target_key, discovery_method, outcome, occurred_at)
+         VALUES ($1, 'settlement-discovery', 'settlement', 'settlement_alpha',
+                 'exploration', 'discovered', NOW())
+         RETURNING id, occurred_at
+       )
+       INSERT INTO world_discoveries
+       (account_id, target_kind, target_key, discovery_method, discovered_at, first_event_id)
+       SELECT $1, 'settlement', 'settlement_alpha', 'exploration', event_row.occurred_at, event_row.id
+       FROM event_row`,
+      [accountId]
+    );
 
     await setupClient.query("BEGIN");
     await setupClient.query(
@@ -125,6 +159,11 @@ test("une première conversation PNJ révèle le lieu et persiste les choix", {
       `INSERT INTO npc_spawn_locations (npc_key, spawn_zone_id)
        VALUES ('first_resident', $1)`,
       [spawnZoneId]
+    );
+    await setupClient.query(
+      `INSERT INTO npc_settlement_locations (npc_key, settlement_id)
+       VALUES ('first_resident', $1)`,
+      [settlementId]
     );
     await setupClient.query("COMMIT");
 
@@ -178,6 +217,23 @@ test("une première conversation PNJ révèle le lieu et persiste les choix", {
     });
     assert.equal(repeated.firstEncounter, false);
     assert.equal(repeated.revealedLocation?.countryName, "Pays Alpha");
+
+    await appPool.query(
+      "UPDATE characters SET current_settlement_id = $2 WHERE id = $1",
+      [characterId, settlementId]
+    );
+    const settlementNpcs = await listNpcEncountersAtCharacterSpawn(appPool, { accountId });
+    assert.equal(settlementNpcs.length, 1);
+    assert.equal(settlementNpcs[0]?.npcKey, "first_resident");
+
+    const settlementConversation = await startNpcConversation(appPool, {
+      interactionId: "discord-interaction-settlement",
+      accountId,
+      characterId,
+      npcKey: "first_resident"
+    });
+    assert.equal(settlementConversation.npcKey, "first_resident");
+    assert.equal(settlementConversation.firstEncounter, false);
 
     const discoveries = await appPool.query<{ target_kind: string; target_key: string }>(
       "SELECT target_kind, target_key FROM world_discoveries WHERE account_id = $1 ORDER BY target_kind",
