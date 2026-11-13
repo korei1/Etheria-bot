@@ -6,6 +6,7 @@ import {
   EmbedBuilder,
   Events,
   ModalBuilder,
+  StringSelectMenuBuilder,
   PermissionFlagsBits,
   TextInputBuilder,
   TextInputStyle,
@@ -52,6 +53,7 @@ import { getItemDisplayName } from "../modules/inventory/item-model.js";
 import { getDatabasePool } from "../database/client.js";
 import { getPersistedDiscoveryState } from "../modules/world/discovery-repository.js";
 import { getPersonalMapProgress } from "../modules/world/discovery.js";
+import { chooseNpcDialogueOption, listNpcEncountersAtCharacterSpawn, startNpcConversation, type NpcDialogueView } from "../modules/npc/npc-dialogue-service.js";
 import { logger } from "../core/logger.js";
 import {
   approvePersistedEditorialSpecies,
@@ -156,7 +158,31 @@ function draftButtons() {
 }
 
 
-function explorationButton(customId: string, label: string, style = ButtonStyle.Primary) {
+
+function npcDialoguePayload(view: NpcDialogueView) {
+  const reveal = view.firstEncounter && view.revealedLocation
+    ? "\\n\\n**Tu découvres enfin où tu te trouves.**\\n" +
+      `Pays : **${view.revealedLocation.countryName}**\\nRégion : **${view.revealedLocation.regionName}**\\n` +
+      (view.revealedLocation.localityName ? `Localité : **${view.revealedLocation.localityName}**\\n` : "") +
+      `Environnement : **${view.revealedLocation.biomeName}**`
+    : "";
+  const components = view.choices.length > 0
+    ? [new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+        new StringSelectMenuBuilder()
+          .setCustomId(`etheria:npc:choice:${view.conversationId}`)
+          .setPlaceholder("Choisir une réponse")
+          .addOptions(view.choices.map((choice) => ({
+            label: choice.label.slice(0, 100),
+            value: choice.choiceKey
+          })))
+      )]
+    : [];
+  return {
+    content: `**${view.npcName}**\\n\\n${view.dialogueText}${reveal}`,
+    components
+  };
+}
+\nfunction explorationButton(customId: string, label: string, style = ButtonStyle.Primary) {
   return new ButtonBuilder().setCustomId(customId).setLabel(label).setStyle(style);
 }
 
@@ -593,6 +619,41 @@ export default {
 
     if (interaction.isChatInputCommand() && interaction.commandName === "etheria") {
       const subcommand = interaction.options.getSubcommand(false);
+      if (subcommand === "rencontrer") {
+        await interaction.deferReply({ ephemeral: true });
+        try {
+          const account = await getAccount(interaction);
+          const character = await getActiveCharacter(getDatabase(), account.accountId);
+          if (!character) {
+            await interaction.editReply("Tu dois d'abord créer un personnage actif pour rencontrer les habitants d'Etheria.");
+            return;
+          }
+          const npcs = await listNpcEncountersAtCharacterSpawn(getDatabase(), {
+            accountId: account.accountId
+          });
+          if (npcs.length === 0) {
+            await interaction.editReply("Aucun habitant n'est actuellement configuré dans ton lieu. Les rencontres apparaîtront ici lorsque les premiers PNJ de cette zone auront été ajoutés.");
+            return;
+          }
+          const menu = new StringSelectMenuBuilder()
+            .setCustomId("etheria:npc:begin")
+            .setPlaceholder("Choisir une personne à rencontrer")
+            .addOptions(npcs.slice(0, 25).map((npc) => ({
+              label: npc.displayName.slice(0, 100),
+              value: npc.npcKey,
+              description: npc.description?.slice(0, 100)
+            })));
+          await interaction.editReply({
+            content: "Tu aperçois des habitants à proximité. Choisis la personne que tu souhaites approcher.",
+            components: [new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(menu)]
+          });
+        } catch (error) {
+          logger.error("Impossible de rechercher les PNJ proches.", error);
+          await interaction.editReply("Je n'ai pas pu repérer les habitants de cette zone. Ta progression n'a pas été modifiée.");
+        }
+        return;
+      }
+
       if (subcommand === "carte" || subcommand === "progression") {
         await interaction.deferReply({ ephemeral: true });
         try {
@@ -661,6 +722,63 @@ export default {
         components: [row],
         ephemeral: true
       });
+      return;
+    }
+
+    if (interaction.isStringSelectMenu() && interaction.customId === "etheria:npc:begin") {
+      await interaction.deferReply({ ephemeral: true });
+      try {
+        const account = await getAccount(interaction);
+        const character = await getActiveCharacter(getDatabase(), account.accountId);
+        if (!character) {
+          await interaction.editReply("Aucun personnage actif n'a été trouvé.");
+          return;
+        }
+        const npcKey = interaction.values[0];
+        const view = await startNpcConversation(getDatabase(), {
+          interactionId: interaction.id,
+          accountId: account.accountId,
+          characterId: character.id,
+          npcKey
+        });
+        await interaction.editReply(npcDialoguePayload(view));
+      } catch (error) {
+        logger.error("Impossible de démarrer la rencontre PNJ.", error);
+        await interaction.editReply(
+          error instanceof Error
+            ? error.message
+            : "La rencontre n'a pas pu commencer. Ta progression précédente est conservée."
+        );
+      }
+      return;
+    }
+
+    if (interaction.isStringSelectMenu() && interaction.customId.startsWith("etheria:npc:choice:")) {
+      await interaction.deferReply({ ephemeral: true });
+      try {
+        const account = await getAccount(interaction);
+        const character = await getActiveCharacter(getDatabase(), account.accountId);
+        if (!character) {
+          await interaction.editReply("Aucun personnage actif n'a été trouvé.");
+          return;
+        }
+        const conversationId = interaction.customId.slice("etheria:npc:choice:".length);
+        const view = await chooseNpcDialogueOption(getDatabase(), {
+          interactionId: interaction.id,
+          accountId: account.accountId,
+          characterId: character.id,
+          conversationId,
+          choiceKey: interaction.values[0]
+        });
+        await interaction.editReply(npcDialoguePayload(view));
+      } catch (error) {
+        logger.error("Impossible d'enregistrer le choix de dialogue.", error);
+        await interaction.editReply(
+          error instanceof Error
+            ? error.message
+            : "Ce choix n'a pas pu être enregistré. La conversation précédente est conservée."
+        );
+      }
       return;
     }
 
