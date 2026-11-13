@@ -13,8 +13,8 @@ export const bestiaryAdminCommand = new SlashCommandBuilder()
       .setName("historique")
       .setDescription("Consulter les dernières opérations administratives du bestiaire.")
       .addIntegerOption((option) =>
-        option.setName("limite").setDescription("Nombre d'événements à afficher (1 à 20).")
-          .setRequired(false).setMinValue(1).setMaxValue(20)
+        option.setName("limite").setDescription("Nombre d'événements à afficher (1 à 10).")
+          .setRequired(false).setMinValue(1).setMaxValue(10)
       )
   )
   .addSubcommand((subcommand) =>
