@@ -119,11 +119,14 @@ export function listAvailableWorldTravelLinks(
 /** Renvoie les voisins accessibles depuis un point, en respectant le sens des liaisons. */
 export function getWorldTravelNeighbors(
   links: readonly WorldTravelLinkDefinition[],
-  endpoint: WorldTravelEndpoint
+  endpoint: WorldTravelEndpoint,
+  discoveredKeys: ReadonlySet<string> = new Set()
 ): WorldTravelEndpoint[] {
   const neighbors: WorldTravelEndpoint[] = [];
   for (const link of links) {
     if (link.status !== "approved") continue;
+    if (link.visibility === "discovery_locked" &&
+        (!discoveredKeys.has(link.from.key) || !discoveredKeys.has(link.to.key))) continue;
     if (link.from.kind === endpoint.kind && link.from.key === endpoint.key) {
       neighbors.push(link.to);
     } else if (link.bidirectional &&
