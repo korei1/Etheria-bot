@@ -22,7 +22,7 @@ jobs:
       - run:
           name: Attendre PostgreSQL
           command: |
-            node --input-type=module <<'NODE'
+            node --input-type=module -e '
             import pg from "pg";
 
             const pool = new pg.Pool({
@@ -43,8 +43,8 @@ jobs:
             }
 
             await pool.end();
-            throw lastError ?? new Error("PostgreSQL n'est pas devenu disponible.");
-            NODE
+            throw lastError ?? new Error("PostgreSQL ne répond pas.");
+            '
 
       - run:
           name: Vérifier les types TypeScript
