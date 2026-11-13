@@ -63,6 +63,8 @@ La migration additive `0018_traceable_item_lots.sql` crée `character_item_lots`
 
 `item-lot-repository.ts` ajoute une lecture des lots persistés d'un personnage, en restreignant l'accès au compte propriétaire et aux personnages actifs. Cette lecture dépend de l'application préalable de la migration 0018.
 
+La migration additive `0019_enforce_item_lot_totals.sql` ajoute des contraintes différées en fin de transaction : pour chaque emplacement du sac et chaque entrée du stockage du camp, la somme des lots doit être exactement égale à la quantité agrégée, et tous les lots rattachés doivent porter le même code objet que leur contenant. Les contrôles couvrent les créations, modifications, suppressions et déplacements de lots. Ils empêchent qu'une transaction valide un stock désynchronisé. Cette migration n'a pas été exécutée sur Supabase ; elle doit d'abord être testée sur une base de préproduction.
+
 **Raccordement transactionnel actuel :** les services de collecte, de fabrication, de collecte scénarisée initiale, de cuisson, de découverte des fragments et de dépôt/retrait au camp synchronisent désormais les lots dans la transaction de mise à jour du stock. La quantité agrégée reste une vue de compatibilité ; les lots conservent séparément les provenances et peuvent cohabiter sous une même ligne de stock. Le retrait partiel du stockage du camp sépare un lot si nécessaire et conserve son état/provenance. La fusion de lots reste interdite dans le domaine pur tant que les règles d'empilement de gameplay ne sont pas définies.
 
 ## Service de réception
@@ -81,7 +83,7 @@ La migration additive `0018_traceable_item_lots.sql` crée `character_item_lots`
 
 Ce service est une brique d'inventaire, pas encore un système de récolte du monde. Il ne choisit aucun emplacement, biome, espèce, ressource disponible, quantité récoltable, outil, difficulté, durée, fréquence de renouvellement ou règle écologique. Ces données devront venir du futur résolveur du monde, à partir des règles canoniques d'Etheria.
 
-Le service n'est pas encore appelé par une interaction Discord. La collecte scénarisée déjà présente dans la première quête reste inchangée. Les migrations `0017_resource_collection_events.sql` et `0018_traceable_item_lots.sql` doivent être appliquées avant l'utilisation de ces services raccordés ; aucune de ces migrations n'a été exécutée sur Supabase.
+Le service n'est pas encore appelé par une interaction Discord. La collecte scénarisée déjà présente dans la première quête reste inchangée. Les migrations `0017_resource_collection_events.sql`, `0018_traceable_item_lots.sql` et `0019_enforce_item_lot_totals.sql` doivent être appliquées avant l'utilisation de ces services raccordés ; aucune de ces migrations n'a été exécutée sur Supabase.
 
 
 ## Raccordement au futur moteur du monde
