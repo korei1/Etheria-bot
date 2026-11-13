@@ -41,6 +41,17 @@ Les 28 pays déjà présents dans la migration 0004 sont rattachés à leur cont
 - Les hiérarchies, rattachements au pays, capitales et règles de visibilité sont validés avant publication.
 - Les villes secondaires, villages, hameaux, subdivisions et implantations isolées attendent une validation éditoriale.
 
+## Découverte et carte personnelle
+
+- `discovery.ts` enregistre les découvertes par compte joueur, avec méthode, date et identifiant d'événement.
+- Les événements sont idempotents ; un même événement ne peut pas créer plusieurs découvertes.
+- Les prérequis sont vérifiés avant d'autoriser une découverte.
+- Les brouillons ne sont jamais découvrables.
+- Les découvertes sont conservées même si une fiche géographique est ensuite retirée du catalogue.
+- Les clés découvertes alimentent les filtres de visibilité des continents, pays, localités, caractéristiques et itinéraires.
+- La progression cartographique est calculée séparément pour chaque compte.
+- Ce module définit les règles métier en mémoire ; aucune persistance SQL ni commande Discord n'est encore branchée.
+
 ## Déplacements
 
 - `travel-network.ts` décrit les connexions entre localités et caractéristiques géographiques.
