@@ -53,3 +53,17 @@ Le fichier `companion-species-catalog.ts` fournit le contrat du catalogue :
 - Le validateur refuse les clés dupliquées, les catégories/raretés/méthodes inconnues, les configurations élémentaires incohérentes et les caractéristiques individuelles non autorisées.
 
 Aucune espèce concrète n'est préremplie : leurs noms, raretés, éléments, méthodes d'acquisition et caractéristiques doivent être confirmés avant d'entrer dans le catalogue. Les caractéristiques individuelles sont descriptives et n'accordent aucun bonus de gameplay tant que leurs effets ne sont pas définis séparément.
+
+
+## Répartition régionale et variantes naturelles
+
+Le catalogue prend également en charge les décisions déjà validées pour la diversité des espèces :
+
+- Une espèce peut exister dans plusieurs régions et habitats.
+- Sa rareté peut varier selon le couple région/habitat ; en l'absence d'occurrence exacte, sa rareté générale de référence s'applique.
+- Les variantes naturelles possibles sont chromatiques, morphologiques, régionales, climatiques et génétiques.
+- Les règles de transmission sont définies séparément pour chaque espèce.
+- Une combinaison parentale ne produit une variante que si une règle explicite la décrit. Le code ne suppose aucun taux de transmission ni caractère dominant/récessif.
+- Le catalogue accepte des espèces animales existantes aussi bien que des créatures fantastiques, sans limiter le monde à l'une de ces familles.
+
+Les fiches d'espèces réelles ou fantastiques restent à renseigner avec leurs habitats, répartitions et variantes vérifiés. Aucune espèce, répartition ou capacité n'est inventée dans le catalogue par défaut.
