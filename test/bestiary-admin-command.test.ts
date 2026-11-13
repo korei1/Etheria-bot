@@ -21,6 +21,7 @@ test("les opérations administratives essentielles sont exposées", () => {
     "ajouter-region",
     "ajouter-espece",
     "approuver",
+    "zones-depart",
     "pnjs",
     "ajouter-pnj",
     "ajouter-dialogue",
