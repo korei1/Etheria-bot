@@ -4,10 +4,10 @@ import { loadConfig } from "./core/config.js";
 import { loadEvents } from "./core/event-loader.js";
 import {
   checkDatabaseConnection,
-  closeDatabaseConnection
+  closeDatabaseConnection,
+  getDatabasePool
 } from "./database/client.js";
 import { logger } from "./core/logger.js";
-import { getDatabasePool } from "./database/client.js";
 import { startNpcTravelWorker } from "./modules/npc/npc-travel-worker.js";
 
 const config = loadConfig();
@@ -38,6 +38,8 @@ try {
 } catch (error) {
   const message = error instanceof Error ? error.message : "Erreur inconnue";
   logger.error("Impossible de démarrer Etheria correctement.", message);
+  await stopNpcTravelWorker?.().catch(() => undefined);
+  stopNpcTravelWorker = undefined;
   await closeDatabaseConnection().catch(() => undefined);
   process.exitCode = 1;
 }
