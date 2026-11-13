@@ -485,32 +485,35 @@ export default {
           if (!/^[a-z0-9_-]{1,80}$/.test(npcKey) || !/^[a-z0-9_-]{1,80}$/.test(nodeKey)) {
             throw new Error("Les clés du PNJ et du dialogue doivent utiliser uniquement lettres minuscules, chiffres, tirets ou tirets bas.");
           }
-          await database.query("BEGIN");
+          const client = await database.connect();
           try {
-            const zone = await database.query<{ id: string }>(
+            await client.query("BEGIN");
+            const zone = await client.query<{ id: string }>(
               "SELECT id FROM starting_spawn_zones WHERE zone_key = $1 AND is_active = TRUE",
               [zoneKey]
             );
             if (!zone.rows[0]) throw new Error("Cette zone de départ n'existe pas ou n'est plus active.");
-            await database.query(
+            await client.query(
               `INSERT INTO npc_definitions
                (npc_key, display_name, description, start_node_key, editorial_status)
                VALUES ($1, $2, $3, $4, 'draft')`,
               [npcKey, displayName, description, nodeKey]
             );
-            await database.query(
+            await client.query(
               `INSERT INTO npc_dialogue_nodes (npc_key, node_key, dialogue_text, is_terminal)
                VALUES ($1, $2, $3, FALSE)`,
               [npcKey, nodeKey, dialogueText]
             );
-            await database.query(
+            await client.query(
               "INSERT INTO npc_spawn_locations (npc_key, spawn_zone_id) VALUES ($1, $2)",
               [npcKey, zone.rows[0].id]
             );
-            await database.query("COMMIT");
+            await client.query("COMMIT");
           } catch (error) {
-            await database.query("ROLLBACK").catch(() => undefined);
+            await client.query("ROLLBACK").catch(() => undefined);
             throw error;
+          } finally {
+            client.release();
           }
           await interaction.editReply("PNJ créé en brouillon avec son premier dialogue et son emplacement. Ajoute ses réponses, puis approuve-le lorsqu'il est complet.");
           return;
@@ -555,19 +558,20 @@ export default {
 
         if (subcommand === "approuver-pnj") {
           const npcKey = interaction.options.getString("pnj", true).trim().toLowerCase();
-          await database.query("BEGIN");
+          const client = await database.connect();
           try {
-            const npc = await database.query<{ start_node_key: string }>(
+            await client.query("BEGIN");
+            const npc = await client.query<{ start_node_key: string }>(
               "SELECT start_node_key FROM npc_definitions WHERE npc_key = $1 FOR UPDATE",
               [npcKey]
             );
             if (!npc.rows[0]) throw new Error("PNJ introuvable.");
-            const placement = await database.query(
+            const placement = await client.query(
               "SELECT 1 FROM npc_spawn_locations WHERE npc_key = $1 AND is_active = TRUE LIMIT 1",
               [npcKey]
             );
             if (!placement.rowCount) throw new Error("Le PNJ doit être placé dans au moins une zone active.");
-            const incomplete = await database.query<{ node_key: string }>(
+            const incomplete = await client.query<{ node_key: string }>(
               `SELECT n.node_key
                FROM npc_dialogue_nodes n
                WHERE n.npc_key = $1 AND n.is_terminal = FALSE
@@ -581,14 +585,16 @@ export default {
             if (incomplete.rows[0]) {
               throw new Error(`Le nœud "${incomplete.rows[0].node_key}" n'a aucune réponse et n'est pas terminal.`);
             }
-            await database.query(
+            await client.query(
               "UPDATE npc_definitions SET editorial_status = 'approved', is_active = TRUE, updated_at = NOW() WHERE npc_key = $1",
               [npcKey]
             );
-            await database.query("COMMIT");
+            await client.query("COMMIT");
           } catch (error) {
-            await database.query("ROLLBACK").catch(() => undefined);
+            await client.query("ROLLBACK").catch(() => undefined);
             throw error;
+          } finally {
+            client.release();
           }
           await interaction.editReply("PNJ approuvé et disponible dans sa zone de placement.");
           return;
