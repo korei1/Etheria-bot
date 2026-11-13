@@ -12,6 +12,11 @@ import {
   validateCompanionSpeciesDefinition,
   type CompanionSpeciesDefinition
 } from "./companion-species-catalog.js";
+import {
+  INITIAL_FANTASY_BESTIARY,
+  INITIAL_FANTASY_BESTIARY_REGIONS,
+  type InitialFantasyBestiaryElement
+} from "./initial-fantasy-bestiary.js";
 
 export type CompanionRegionVisibility = "public" | "discovery_locked";
 
@@ -34,6 +39,15 @@ export interface CompanionEvolutionForm {
   order: number;
 }
 
+export interface RegisteredEditorialCompanionSpecies {
+  key: string;
+  name: string;
+  regionKey: string;
+  element: InitialFantasyBestiaryElement;
+  editorialStatus: "approved";
+  forms: readonly CompanionEvolutionForm[];
+}
+
 export interface RegisteredCompanionSpecies {
   definition: CompanionSpeciesDefinition;
   regionKey: string;
@@ -44,6 +58,9 @@ export interface RegisteredCompanionSpecies {
 
 export interface CompanionSpeciesRegistry {
   readonly regions: ReadonlyMap<string, CompanionRegionDefinition>;
+  /** Fiches éditoriales approuvées, même si leurs paramètres de gameplay sont incomplets. */
+  readonly editorialSpecies: ReadonlyMap<string, RegisteredEditorialCompanionSpecies>;
+  /** Espèces entièrement configurées pour les systèmes de gameplay. */
   readonly species: ReadonlyMap<string, RegisteredCompanionSpecies>;
 }
 
@@ -147,7 +164,85 @@ export function createCompanionSpeciesRegistry(
   if (issues.length > 0) {
     throw new CompanionSpeciesRegistryError(issues.join("\n"));
   }
-  return { regions: regionMap, species: speciesMap };
+  return { regions: regionMap, editorialSpecies: new Map(), species: speciesMap };
+}
+
+/**
+ * Ajoute une fiche éditoriale sans inventer sa rareté, ses habitats ou ses
+ * méthodes d'acquisition. Elle peut être complétée en définition gameplay
+ * dans une étape ultérieure.
+ */
+export function addEditorialCompanionSpecies(
+  registry: CompanionSpeciesRegistry,
+  entry: RegisteredEditorialCompanionSpecies
+): CompanionSpeciesRegistry {
+  if (registry.editorialSpecies.has(entry.key) || registry.species.has(entry.key)) {
+    throw new CompanionSpeciesRegistryError(
+      `La clé d'espèce existe déjà et ne peut pas être réutilisée : ${entry.key}.`
+    );
+  }
+  if (!/^[a-z][a-z0-9_]*$/.test(entry.key) || !entry.name.trim()) {
+    throw new CompanionSpeciesRegistryError(`Fiche éditoriale invalide : ${entry.key}.`);
+  }
+  if (!registry.regions.has(entry.regionKey)) {
+    throw new CompanionSpeciesRegistryError(`Région inconnue : ${entry.regionKey}.`);
+  }
+  if (entry.editorialStatus !== "approved") {
+    throw new CompanionSpeciesRegistryError(`Le bestiaire canonique initial doit être approuvé : ${entry.key}.`);
+  }
+  if (entry.forms.length < 2) {
+    throw new CompanionSpeciesRegistryError(`Une fiche doit contenir au moins deux formes : ${entry.key}.`);
+  }
+  const formKeys = new Set<string>();
+  const formOrders = new Set<number>();
+  for (const form of entry.forms) {
+    if (!/^[a-z][a-z0-9_]*$/.test(form.key) || !form.name.trim() ||
+      !Number.isInteger(form.order) || form.order < 0 ||
+      formKeys.has(form.key) || formOrders.has(form.order)) {
+      throw new CompanionSpeciesRegistryError(`Formes éditoriales invalides : ${entry.key}.`);
+    }
+    formKeys.add(form.key);
+    formOrders.add(form.order);
+  }
+  const editorialSpecies = new Map(registry.editorialSpecies);
+  editorialSpecies.set(entry.key, entry);
+  return { regions: registry.regions, editorialSpecies, species: registry.species };
+}
+
+/** Construit le registre initial avec les 43 fiches canoniques approuvées. */
+export function createInitialFantasyBestiaryRegistry(): CompanionSpeciesRegistry {
+  const regions: CompanionRegionDefinition[] = INITIAL_FANTASY_BESTIARY_REGIONS.map(
+    (region) => ({ key: region.key, name: region.name, visibility: region.visibility })
+  );
+  let registry = createCompanionSpeciesRegistry(regions, []);
+  for (const entry of INITIAL_FANTASY_BESTIARY) {
+    registry = addEditorialCompanionSpecies(registry, {
+      key: entry.key,
+      name: entry.name,
+      regionKey: entry.regionKey,
+      element: entry.element,
+      editorialStatus: "approved",
+      forms: [
+        { key: "initial", name: entry.initialForm, order: 0 },
+        { key: "young", name: entry.youngForm, order: 1 },
+        { key: "adult", name: entry.adultForm, order: 2 },
+        { key: "elemental_evolution", name: entry.elementalEvolution, order: 3 }
+      ]
+    });
+  }
+  return registry;
+}
+
+/** Encyclopédie éditoriale visible selon la découverte des régions, sans condition d'acquisition. */
+export function listVisibleEditorialCompanionSpecies(
+  registry: CompanionSpeciesRegistry,
+  discoveredRegionKeys: ReadonlySet<string>
+): readonly RegisteredEditorialCompanionSpecies[] {
+  return [...registry.editorialSpecies.values()].filter((entry) => {
+    const region = registry.regions.get(entry.regionKey);
+    return entry.editorialStatus === "approved" && region !== undefined &&
+      (region.visibility === "public" || discoveredRegionKeys.has(region.key));
+  });
 }
 
 /** Ajoute une espèce sans plafond global et sans modifier les entrées existantes. */
