@@ -33,8 +33,25 @@ Les 28 pays déjà présents dans la migration 0004 sont rattachés à leur cont
 - Aucune extension PostGIS ni aucun format cartographique propriétaire n'est imposé à ce stade.
 - Les tables sont protégées par RLS et destinées au backend de confiance.
 
-## Hors périmètre de cette première fondation
+## Territoires et localités
 
-Les unités administratives, les frontières politiques historiques, les changements de souveraineté, les régimes, les institutions et les gouvernements seront ajoutés dans des modules séparés. Aucun pays ne reçoit de régime politique ou de dirigeant inventé par cette migration.
+- `territories.ts` définit les territoires administratifs et les localités sans inventer de nouvelles entrées canoniques.
+- La migration 0025 crée les tables de territoires et de localités et reprend les 24 capitales publiques depuis `countries.capital_name`.
+- Les quatre pays secrets d'Umbrelune ne reçoivent aucune capitale ni localité publique.
+- Les hiérarchies, rattachements au pays, capitales et règles de visibilité sont validés avant publication.
+- Les villes secondaires, villages, hameaux, subdivisions et implantations isolées attendent une validation éditoriale.
 
-La migration 0024 est préparée dans le dépôt mais ne doit pas être exécutée sur Supabase sans revue et approbation explicites. Elle rattache les 28 pays existants aux sept continents sans modifier leurs identifiants ni leurs noms.
+## Déplacements
+
+- `travel-network.ts` décrit les connexions entre localités et caractéristiques géographiques.
+- Les modes pris en charge sont terrestre, maritime et aérien ; les types comprennent sentiers, routes, ponts, tunnels, ferries, voies maritimes et routes aériennes.
+- Le sens unique ou bidirectionnel est explicite.
+- Les itinéraires secrets restent masqués tant que leurs deux extrémités ne sont pas découvertes.
+- Les distances et durées restent facultatives et ne doivent être renseignées qu'à partir de données validées.
+- Aucun trajet concret n'est prérempli et aucune durée ou distance n'est inventée.
+
+## Hors périmètre
+
+Les frontières politiques historiques, les changements de souveraineté, les régimes, les institutions et les gouvernements restent des domaines séparés. Aucun pays ne reçoit de régime politique ou de dirigeant inventé par ces modèles.
+
+Les migrations 0024 et 0025 sont préparées dans le dépôt mais ne doivent pas être exécutées sur Supabase sans revue et approbation explicites. La migration 0024 rattache les 28 pays existants aux sept continents ; la migration 0025 reprend les capitales publiques déjà enregistrées et crée les tables de territoires et localités.
