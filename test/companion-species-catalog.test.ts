@@ -184,3 +184,36 @@ test("les statuts de conservation Etheria sont contrôlés séparément", () => 
     etheriaConservation: { status: "unknown_status" as never }
   }).some((issue) => issue.includes("Statut de conservation Etheria")));
 });
+
+
+test("les dossiers documentaires réels sont sourcés et restent non jouables", async () => {
+  const {
+    COMPANION_SPECIES_RESEARCH_DOSSIERS,
+    validateSpeciesResearchDossiers
+  } = await import("../src/modules/companions/companion-species-research.js");
+
+  assert.equal(COMPANION_SPECIES_RESEARCH_DOSSIERS.length, 4);
+  assert.deepEqual(validateSpeciesResearchDossiers(), []);
+  assert.ok(COMPANION_SPECIES_RESEARCH_DOSSIERS.every(
+    (dossier) => dossier.gameplayStatus === "research_only"
+  ));
+  assert.ok(COMPANION_SPECIES_RESEARCH_DOSSIERS.every(
+    (dossier) => dossier.assessment.scope === "global"
+  ));
+});
+
+test("les dossiers refusent les sources non HTTPS et les identifiants dupliqués", async () => {
+  const {
+    COMPANION_SPECIES_RESEARCH_DOSSIERS,
+    validateSpeciesResearchDossiers
+  } = await import("../src/modules/companions/companion-species-research.js");
+
+  const first = COMPANION_SPECIES_RESEARCH_DOSSIERS[0]!;
+  assert.ok(validateSpeciesResearchDossiers([
+    first,
+    { ...first, key: "duplicate_key", assessment: { ...first.assessment, sourceUrl: "http://invalid.test" } }
+  ]).some((issue) => issue.includes("Clé de dossier dupliquée")));
+  assert.ok(validateSpeciesResearchDossiers([
+    { ...first, assessment: { ...first.assessment, sourceUrl: "http://invalid.test" } }
+  ]).some((issue) => issue.includes("Source IUCN HTTPS")));
+});
