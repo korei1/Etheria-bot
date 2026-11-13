@@ -167,7 +167,7 @@ test("une première conversation PNJ révèle le lieu et persiste les choix", {
       npcKey: "first_resident"
     });
     assert.equal(repeated.firstEncounter, false);
-    assert.equal(repeated.revealedLocation, null);
+    assert.equal(repeated.revealedLocation?.countryName, "Pays Alpha");
 
     const discoveries = await appPool.query<{ target_kind: string; target_key: string }>(
       "SELECT target_kind, target_key FROM world_discoveries WHERE account_id = $1 ORDER BY target_kind",
