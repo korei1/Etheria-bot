@@ -130,7 +130,8 @@ export const bestiaryAdminCommand = new SlashCommandBuilder()
       .setDescription("Publier un PNJ après vérification de son dialogue et de son placement.")
       .addStringOption((option) => option.setName("pnj").setDescription("Clé du PNJ.").setRequired(true))
   )
-\n  .addSubcommand((subcommand) =>
+
+  .addSubcommand((subcommand) =>
     subcommand
       .setName("visibilite-region")
       .setDescription("Modifier la visibilité d'une région.")
