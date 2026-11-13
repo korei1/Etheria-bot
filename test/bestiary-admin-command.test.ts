@@ -36,7 +36,10 @@ test("les opérations administratives essentielles sont exposées", () => {
     "contenus-locaux",
     "ajouter-contenu-local",
     "modifier-contenu-local",
-    "approuver-contenu-local"
+    "approuver-contenu-local",
+    "definir-horaires-local",
+    "stocks-locaux",
+    "ajouter-stock-local"
   ]);
 });
 
@@ -74,4 +77,11 @@ test("la modification et l'approbation des contenus locaux exigent une révision
     assert.ok(command);
     assert.ok(command.options?.some((option) => option.name === "revision" && option.required));
   }
+});
+
+test("les commandes de gestion des horaires et stocks sont exposées", () => {
+  const options = bestiaryAdminCommand.toJSON().options ?? [];
+  assert.ok(options.some((option) => option.name === "definir-horaires-local"));
+  assert.ok(options.some((option) => option.name === "stocks-locaux"));
+  assert.ok(options.some((option) => option.name === "ajouter-stock-local"));
 });
