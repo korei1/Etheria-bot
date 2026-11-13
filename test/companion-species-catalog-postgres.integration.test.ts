@@ -69,6 +69,32 @@ test("PostgreSQL persiste les 43 fiches, leurs 172 formes et journalise les chan
     );
     assert.equal(audit.rows[0]?.count, "1");
 
+    await client.query(
+      "INSERT INTO companion_regions (region_key, display_name, visibility) VALUES ('region_future', 'Région future', 'discovery_locked')"
+    );
+    await client.query(
+      `INSERT INTO companion_species_catalog
+       (species_key, display_name, region_key, element, editorial_status, availability_status)
+       VALUES ('espece_future', 'Espèce future', 'region_future', 'terre', 'draft', 'unavailable')`
+    );
+    await client.query(
+      `INSERT INTO companion_species_forms (species_key, form_key, display_name, form_order)
+       VALUES ('espece_future', 'initial', 'Forme initiale', 0),
+              ('espece_future', 'adult', 'Forme adulte', 1)`
+    );
+    await client.query(
+      `UPDATE companion_species_catalog
+       SET editorial_status = 'approved', revision = revision + 1
+       WHERE species_key = 'espece_future' AND editorial_status = 'draft'`
+    );
+    const future = await client.query<{ editorial_status: string; availability_status: string }>(
+      "SELECT editorial_status, availability_status FROM companion_species_catalog WHERE species_key = 'espece_future'"
+    );
+    assert.deepEqual(future.rows[0], {
+      editorial_status: "approved",
+      availability_status: "unavailable"
+    });
+
   } finally {
     try {
       await client.query("ROLLBACK");
