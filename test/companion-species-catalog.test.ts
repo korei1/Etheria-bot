@@ -263,3 +263,14 @@ test("les nouvelles fiches distinguent correctement les évaluations mondiales e
   assert.ok(monarch.ecologicalNotes.some((note) => note.includes("Danaus plexippus plexippus")));
   assert.deepEqual(validateSpeciesResearchDossiers(), []);
 });
+
+test("les espèces domestiques restent documentaires et ne reçoivent pas de statut de menace inventé", async () => {
+  const { COMPANION_SPECIES_RESEARCH_DOSSIERS, validateSpeciesResearchDossiers } =
+    await import("../src/modules/companions/companion-species-research.js");
+  const domesticKeys = ["domestic_dog", "domestic_cat", "domestic_horse", "honey_bee"];
+  const dossiers = COMPANION_SPECIES_RESEARCH_DOSSIERS.filter((dossier) => domesticKeys.includes(dossier.key));
+  assert.equal(dossiers.length, 4);
+  assert.ok(dossiers.every((dossier) => dossier.assessment.category === "not_evaluated"));
+  assert.ok(dossiers.every((dossier) => dossier.gameplayStatus === "research_only"));
+  assert.deepEqual(validateSpeciesResearchDossiers(dossiers), []);
+});
