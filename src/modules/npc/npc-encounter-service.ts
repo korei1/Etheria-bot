@@ -144,6 +144,7 @@ export async function recordNpcEncounter(
       };
     }
 
+    const revealedLocation = mapLocation(row);
     await client.query(
       `UPDATE characters
        SET first_npc_key = $2,
@@ -184,13 +185,20 @@ export async function recordNpcEncounter(
       if (!event.rows[0]) {
         throw new NpcEncounterError("Cet événement de première découverte a déjà été utilisé.");
       }
-      await client.query(
+      const discoveryInsert = await client.query(
         `INSERT INTO world_discoveries
          (account_id, target_kind, target_key, discovery_method, discovered_at, first_event_id)
          VALUES ($1, $2, $3, 'first_encounter', $4, $5)
-         ON CONFLICT (account_id, target_kind, target_key) DO NOTHING`,
+         ON CONFLICT (account_id, target_kind, target_key) DO NOTHING
+         RETURNING account_id`,
         [input.accountId, discovery.kind, discovery.key, occurredAt, event.rows[0].id]
       );
+      if (discoveryInsert.rowCount === 0) {
+        await client.query(
+          "UPDATE world_discovery_events SET outcome = 'already_discovered' WHERE id = $1",
+          [event.rows[0].id]
+        );
+      }
     }
 
     await client.query("COMMIT");
@@ -199,7 +207,7 @@ export async function recordNpcEncounter(
       firstEncounter: true,
       npcKey,
       occurredAt: occurredAt.toISOString(),
-      revealedLocation: mapLocation(row)
+      revealedLocation
     };
   } catch (error) {
     await client.query("ROLLBACK").catch(() => undefined);
