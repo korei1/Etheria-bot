@@ -5,25 +5,21 @@ import { DirectionalLight, Model3D, View3D } from '@pixi/3d';
 import type { Scene3DSource } from '@pixi/3d';
 import { OrbitCamera } from '@pixi/3d/extras';
 
-const FOX_MODEL_URL =
-  'https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Assets@edc7c9e67c639d230715049ee31f9a96a6babbbe/Models/Fox/glTF-Binary/Fox.glb';
+const LYKOS_MODEL_URL = '/assets/lykos.glb';
 
 const host = document.querySelector<HTMLDivElement>('#canvas-host');
 const status = document.querySelector<HTMLParagraphElement>('#status');
 const animationButtons = document.querySelectorAll<HTMLButtonElement>('[data-clip]');
 
-if (!host || !status) {
-  throw new Error('Éléments HTML du prototype introuvables.');
-}
+if (!host || !status) throw new Error('Éléments HTML introuvables.');
 
-const setStatus = (message: string, state: 'loading' | 'ready' | 'error' = 'loading') => {
+function setStatus(message: string, state: 'loading' | 'ready' | 'error' = 'loading') {
   status.textContent = message;
   status.dataset.state = state;
-};
+}
 
-async function startCompanionPreview(): Promise<void> {
+async function start(): Promise<void> {
   const app = new Application();
-
   await app.init({
     preference: 'webgpu',
     antialias: true,
@@ -32,65 +28,57 @@ async function startCompanionPreview(): Promise<void> {
     resolution: Math.min(window.devicePixelRatio || 1, 2),
     autoDensity: true,
   });
-
   host.appendChild(app.canvas);
 
   const view = new View3D({
     autoResize: true,
-    environment: {
-      skyColor: 0xc5e3f2,
-      groundColor: 0x617b62,
-    },
+    environment: { skyColor: 0xc5e3f2, groundColor: 0x617b62, intensity: 0.8 },
   });
-
   app.stage.addChild(view);
 
-  const sun = new DirectionalLight({ intensity: 3 });
+  const sun = new DirectionalLight({ intensity: 3, color: 0xfff1dc });
   sun.position.set(-3, 5, 4);
+  sun.lookAt({ x: 0, y: 0.7, z: 0 });
   view.root.addChild(sun);
 
-  view.camera.position.set(0, 1.2, 3.8);
-  new OrbitCamera({ view });
+  view.camera.position.set(0, 1.25, 3.8);
+  new OrbitCamera({
+    view,
+    target: { x: 0, y: 0.85, z: 0 },
+    enableDamping: true,
+    minDistance: 2,
+    maxDistance: 8,
+  });
 
-  setStatus('Chargement du modèle 3D…');
-
-  const source = await Assets.load<Scene3DSource>(FOX_MODEL_URL);
-  const fox = new Model3D({ source });
-
-  if (fox.height > 0) {
-    fox.scale.set(0.9 / fox.height);
-  }
-
-  view.root.addChild(fox);
+  setStatus('Chargement de Lykos…');
+  const source = await Assets.load<Scene3DSource>(LYKOS_MODEL_URL);
+  const lykos = new Model3D({ source });
+  if (lykos.height > 0) lykos.scale.set(1.25 / lykos.height);
+  view.root.addChild(lykos);
 
   const playClip = (clipName: string) => {
-    if (!fox.player) {
+    if (!lykos.player) {
       setStatus('Le modèle ne contient pas de lecteur d’animation.', 'error');
       return;
     }
-
-    fox.player.play(clipName);
+    lykos.player.play(clipName);
     animationButtons.forEach((button) => {
       button.classList.toggle('active', button.dataset.clip === clipName);
     });
-    setStatus(`Animation : ${clipName}`, 'ready');
+    setStatus('Lykos · animation ' + clipName, 'ready');
   };
 
   animationButtons.forEach((button) => {
     button.addEventListener('click', () => {
-      const clipName = button.dataset.clip;
-      if (clipName) playClip(clipName);
+      if (button.dataset.clip) playClip(button.dataset.clip);
     });
   });
 
-  playClip('Survey');
-  setStatus('Compagnon chargé · fais glisser pour tourner autour de lui.', 'ready');
+  playClip('Idle');
+  setStatus('Lykos est prêt · fais glisser pour tourner autour de lui.', 'ready');
 }
 
-startCompanionPreview().catch((error: unknown) => {
+start().catch((error: unknown) => {
   console.error(error);
-  setStatus(
-    'Impossible de charger la scène 3D. Vérifie la connexion et la compatibilité WebGL2/WebGPU du navigateur.',
-    'error',
-  );
+  setStatus('Impossible de charger Lykos. Génère le fichier GLB avec Blender puis recharge la page.', 'error');
 });
