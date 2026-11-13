@@ -7,8 +7,12 @@ import {
   closeDatabaseConnection
 } from "./database/client.js";
 import { logger } from "./core/logger.js";
+import { getDatabasePool } from "./database/client.js";
+import { startNpcTravelWorker } from "./modules/npc/npc-travel-worker.js";
 
 const config = loadConfig();
+
+let stopNpcTravelWorker: (() => Promise<void>) | undefined;
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds]
@@ -20,6 +24,10 @@ try {
   if (config.databaseUrl) {
     await checkDatabaseConnection(config.databaseUrl);
     logger.info("Connexion à la base PostgreSQL vérifiée.");
+    stopNpcTravelWorker = startNpcTravelWorker(getDatabasePool(config.databaseUrl), {
+      onError: (error) => logger.error("Échec de synchronisation des voyages PNJ.", error)
+    });
+    logger.info("Synchronisation autonome des voyages PNJ démarrée.");
   } else {
     logger.warn(
       "DATABASE_URL absent : le bot démarre sans accès aux fonctionnalités nécessitant la base de données."
@@ -38,6 +46,8 @@ async function shutdown(signal: string): Promise<void> {
   logger.info(`Arrêt demandé (${signal}).`);
   client.destroy();
   try {
+    await stopNpcTravelWorker?.();
+    stopNpcTravelWorker = undefined;
     await closeDatabaseConnection();
     logger.info("Connexions à la base de données fermées.");
   } catch (error) {
