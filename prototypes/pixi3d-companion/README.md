@@ -1,14 +1,24 @@
 # Etheria — prototype compagnon 3D
 
-Prototype web isolé du bot Discord. Il utilise PixiJS 3D pour charger un modèle glTF animé, afficher une scène 3D et piloter ses clips depuis des boutons HTML.
+Prototype web isolé du bot Discord. Il utilise PixiJS 3D (`@pixi/3d`) pour charger un modèle glTF/GLB, afficher une scène 3D et piloter ses animations.
 
-## Prérequis
+## Générer le modèle original de Lykos
 
-- Node.js 20+
-- Un navigateur récent avec WebGL2 ou WebGPU
-- Connexion Internet pour charger le modèle de démonstration
+Le dépôt contient un générateur Blender Python :
 
-## Lancer
+```bash
+blender --background --python tools/create_lykos_blender.py
+```
+
+Le script produit :
+
+`prototypes/pixi3d-companion/public/assets/lykos.glb`
+
+Lykos est un renard fantastique stylisé, avec fourrure orange et crème, grands yeux bleus, oreilles, queue touffue et sacoche. Le générateur construit aussi un squelette et trois clips : `Idle`, `Walk` et `Run`.
+
+Prérequis : Blender 4.x installé localement. Le modèle est une base procédurale originale et modifiable, pas encore une création artistique finale. Vérifier le résultat dans Blender avant de le considérer comme validé.
+
+## Lancer l'aperçu PixiJS 3D
 
 Depuis ce dossier :
 
@@ -23,19 +33,17 @@ Pour vérifier la compilation :
 npm run build
 ```
 
-## Modèle temporaire
-
-Le prototype charge le Fox Sample Asset du dépôt Khronos glTF Sample Assets. Ce modèle sert uniquement à valider le pipeline de chargement, la caméra et la lecture des animations. Il ne constitue pas le modèle officiel de Lykos.
-
-Attribution : Fox Sample Asset, Khronos Group, licence CC BY 4.0. Le modèle final d'Etheria devra être un fichier glTF/GLB original, avec ses propres matériaux, son squelette et ses clips d'animation.
-
 ## Contrôles
 
-- Observer : clip `Survey`
-- Marcher : clip `Walk`
-- Courir : clip `Run`
-- Souris ou tactile : orbiter la caméra avec `OrbitCamera`
+- Observer : animation `Idle`
+- Marcher : animation `Walk`
+- Courir : animation `Run`
+- Souris ou tactile : orbiter la caméra et zoomer
 
-## Notes
+## Architecture
 
-PixiJS 3D est actuellement en bêta ouverte. Son API peut évoluer. Le prototype est volontairement séparé du code Discord et ne touche ni à la base de données ni aux migrations Supabase.
+- Blender génère le fichier GLB dans `public/assets`.
+- PixiJS 3D charge le GLB avec `Assets.load` et l'affiche via `Model3D` dans un `View3D`.
+- Le modèle et ses animations restent indépendants du bot Discord et de Supabase.
+
+PixiJS 3D est en bêta ouverte ; son API peut évoluer.
