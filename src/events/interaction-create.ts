@@ -6,6 +6,7 @@ import {
   EmbedBuilder,
   Events,
   ModalBuilder,
+  PermissionFlagsBits,
   TextInputBuilder,
   TextInputStyle,
   type ButtonInteraction,
@@ -50,6 +51,12 @@ import {
 import { getItemDisplayName } from "../modules/inventory/item-model.js";
 import { getDatabasePool } from "../database/client.js";
 import { logger } from "../core/logger.js";
+import {
+  approvePersistedEditorialSpecies,
+  createPersistedCompanionRegion,
+  createPersistedEditorialSpecies,
+  setPersistedSpeciesAvailability
+} from "../modules/companions/companion-species-catalog-repository.js";
 
 function discordInteractionUuid(interactionId: string): string {
   const bytes = createHash("sha256").update("etheria:crafting:" + interactionId).digest().subarray(0, 16);
@@ -406,6 +413,126 @@ function showCharacterModal(
 export default {
   name: Events.InteractionCreate,
   async execute(interaction: Interaction): Promise<void> {
+    if (interaction.isChatInputCommand() && interaction.commandName === "etheria-admin") {
+      if (!interaction.inGuild() ||
+        !interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
+        await interaction.reply({
+          content: "Cette commande est réservée aux administrateurs du serveur.",
+          ephemeral: true
+        });
+        return;
+      }
+
+      await interaction.deferReply({ ephemeral: true });
+      try {
+        const database = getDatabase();
+        const subcommand = interaction.options.getSubcommand();
+        const account = await getAccount(interaction);
+
+        if (subcommand === "regions") {
+          const result = await database.query<{
+            region_key: string; display_name: string; visibility: string; revision: number;
+          }>(
+            "SELECT region_key, display_name, visibility, revision FROM companion_regions ORDER BY region_key"
+          );
+          const content = result.rows.map((row) =>
+            `• **${row.display_name}** (`${row.region_key}`) — ${row.visibility}, révision ${row.revision}`
+          ).join("\n");
+          await interaction.editReply(content ? `**Régions Etheria**\n\n${content}` : "Aucune région enregistrée.");
+          return;
+        }
+
+        if (subcommand === "especes") {
+          const region = interaction.options.getString("region");
+          const result = await database.query<{
+            species_key: string; display_name: string; region_key: string;
+            element: string; editorial_status: string; availability_status: string; revision: number;
+          }>(
+            `SELECT species_key, display_name, region_key, element, editorial_status, availability_status, revision
+             FROM companion_species_catalog
+             WHERE ($1::text IS NULL OR region_key = $1)
+             ORDER BY region_key, display_name
+             LIMIT 50`,
+            [region]
+          );
+          const content = result.rows.map((row) =>
+            `• **${row.display_name}** (`${row.species_key}`) — ${row.region_key} · ${row.element} · ${row.editorial_status}/${row.availability_status} · rev ${row.revision}`
+          ).join("\n");
+          await interaction.editReply(content
+            ? `**Espèces Etheria** (50 maximum par affichage)\n\n${content}`
+            : "Aucune espèce ne correspond à ce filtre.");
+          return;
+        }
+
+        if (subcommand === "ajouter-region") {
+          await createPersistedCompanionRegion(database, {
+            regionKey: interaction.options.getString("cle", true).trim().toLowerCase(),
+            name: interaction.options.getString("nom", true).trim(),
+            visibility: interaction.options.getString("visibilite", true) as "public" | "discovery_locked",
+            actorAccountId: account.accountId,
+            idempotencyKey: discordInteractionUuid(interaction.id)
+          });
+          await interaction.editReply("La nouvelle région a été créée et inscrite dans le journal administratif.");
+          return;
+        }
+
+        if (subcommand === "ajouter-espece") {
+          const rawForms = interaction.options.getString("formes", true);
+          const forms = rawForms.split("\n").map((line, order) => {
+            const separator = line.indexOf("|");
+            if (separator < 1) throw new Error("Chaque forme doit respecter le format cle|nom, une forme par ligne.");
+            return {
+              key: line.slice(0, separator).trim().toLowerCase(),
+              name: line.slice(separator + 1).trim(),
+              order
+            };
+          });
+          if (forms.length > 4) throw new Error("La fiche accepte au maximum quatre formes pour cette commande Discord.");
+          await createPersistedEditorialSpecies(database, {
+            speciesKey: interaction.options.getString("cle", true).trim().toLowerCase(),
+            name: interaction.options.getString("nom", true).trim(),
+            regionKey: interaction.options.getString("region", true).trim().toLowerCase(),
+            element: interaction.options.getString("element", true),
+            editorialStatus: "draft",
+            forms,
+            actorAccountId: account.accountId,
+            idempotencyKey: discordInteractionUuid(interaction.id)
+          });
+          if (interaction.options.getBoolean("approuvee", true)) {
+            await approvePersistedEditorialSpecies(database, {
+              speciesKey: interaction.options.getString("cle", true).trim().toLowerCase(),
+              expectedRevision: 1,
+              actorAccountId: account.accountId,
+              idempotencyKey: discordInteractionUuid(interaction.id + ":approve")
+            });
+          }
+          await interaction.editReply("La fiche d'espèce a été créée. Elle reste indisponible en jeu tant que sa disponibilité n'est pas modifiée.");
+          return;
+        }
+
+        if (subcommand === "disponibilite") {
+          const result = await setPersistedSpeciesAvailability(database, {
+            speciesKey: interaction.options.getString("espece", true).trim().toLowerCase(),
+            nextStatus: interaction.options.getString("statut", true) as "discoverable" | "available" | "retired",
+            expectedRevision: interaction.options.getInteger("revision", true),
+            actorAccountId: account.accountId,
+            idempotencyKey: discordInteractionUuid(interaction.id)
+          });
+          await interaction.editReply(
+            `Disponibilité mise à jour : **${result.availabilityStatus}** (révision ${result.revision}).`
+          );
+          return;
+        }
+
+        await interaction.editReply("Sous-commande administrative inconnue.");
+      } catch (error) {
+        logger.error("Échec d'une commande d'administration du bestiaire.", error);
+        const message = error instanceof Error ? error.message : "Erreur inconnue.";
+        await interaction.editReply(`Impossible d'effectuer cette opération : ${message}`);
+      }
+      return;
+    }
+
     if (interaction.isChatInputCommand() && interaction.commandName === "etheria") {
       const startButton = new ButtonBuilder()
         .setCustomId("etheria:start")
