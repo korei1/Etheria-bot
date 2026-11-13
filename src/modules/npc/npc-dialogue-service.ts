@@ -43,10 +43,17 @@ interface DialogueChoiceRow {
  * Sans calendrier, le placement reste disponible. Avec un calendrier mais
  * sans heure locale connue (notamment en zone de départ), il n'est pas affiché.
  */
+export function isNpcWithinPresenceSchedule(
+  schedule: WeeklyOpeningSchedule | null,
+  weekday: number,
+  minuteOfDay: number
+): boolean {
+  return schedule === null || isOpenAtLocalMinute(schedule, weekday, minuteOfDay);
+}
+
 async function isNpcPresentAtLocalTime(
   pool: Pool,
   input: {
-    accountId: string;
     settlementId: string | null;
     schedule: WeeklyOpeningSchedule | null;
     now?: Date;
@@ -56,7 +63,7 @@ async function isNpcPresentAtLocalTime(
   if (!input.settlementId) return false;
   const clock = await getSettlementLocalTime(pool, input.settlementId, input.now);
   if (clock.status !== "available") return false;
-  return isOpenAtLocalMinute(
+  return isNpcWithinPresenceSchedule(
     input.schedule,
     clock.localDate.weekday,
     clock.localDate.minuteOfDay
@@ -172,7 +179,6 @@ export async function listNpcEncountersAtCharacterLocation(
   const available = await Promise.all(result.rows.map(async (row) => ({
     row,
     present: await isNpcPresentAtLocalTime(pool, {
-      accountId: input.accountId,
       settlementId: row.settlement_id,
       schedule: row.presence_schedule
     })
@@ -250,7 +256,6 @@ export async function startNpcConversation(
     throw new NpcDialogueError("Ce personnage n'est pas disponible dans ton lieu actuel ou ce lieu n'a pas encore été découvert.");
   }
   const isPresent = await isNpcPresentAtLocalTime(pool, {
-    accountId: input.accountId,
     settlementId: npc.settlement_id,
     schedule: npc.presence_schedule
   });
