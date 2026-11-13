@@ -51,7 +51,7 @@ testCase("les itinéraires refusent les extrémités identiques et les mesures i
   }], context).some((issue) => issue.includes("distance")));
 });
 
-testCase("les liaisons secrètes restent indisponibles avant découverte des deux extrémités", () => {
+testCase("les itinéraires secrets restent indisponibles avant leur découverte personnelle", () => {
   const secret: WorldTravelLinkDefinition = {
     ...road,
     key: "secret_passage",
@@ -63,14 +63,14 @@ testCase("les liaisons secrètes restent indisponibles avant découverte des deu
   };
   assert.equal(listAvailableWorldTravelLinks([secret], new Set()).length, 0);
   assert.equal(listAvailableWorldTravelLinks(
-    [secret], new Set(["north_pass", "blue_bay"])
+    [secret], new Set(["secret_passage"])
   ).length, 1);
   assert.deepEqual(
     getWorldTravelNeighbors([secret], secret.from),
     []
   );
   assert.deepEqual(
-    getWorldTravelNeighbors([secret], secret.from, new Set(["north_pass", "blue_bay"])),
+    getWorldTravelNeighbors([secret], secret.from, new Set(["secret_passage"])),
     [secret.to]
   );
 });
