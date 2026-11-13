@@ -449,7 +449,7 @@ export default {
             `• ${row.action} — ${row.entity_type} ${row.entity_key} · révision ${row.revision} · ${row.created_at.toISOString()}`
           ).join("\n");
           await interaction.editReply(content
-            ? `**Historique administratif** (\${result.rows.length} événements)\n\n\${content}`
+            ? `**Historique administratif** (${result.rows.length} événements)\n\n${content}`
             : "Aucune opération administrative enregistrée.");
           return;
         }
