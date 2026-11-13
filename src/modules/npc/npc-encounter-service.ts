@@ -138,7 +138,7 @@ export async function recordNpcEncounter(
       await client.query("COMMIT");
       return {
         recorded: true,
-        firstEncounter: isOriginalFirstNpc,
+        firstEncounter: false,
         npcKey,
         occurredAt: occurredAt.toISOString(),
         revealedLocation: isOriginalFirstNpc ? mapLocation(row) : null
