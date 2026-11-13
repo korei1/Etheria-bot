@@ -5,6 +5,11 @@ export const etheriaCommand = new SlashCommandBuilder()
   .setDescription("Découvrir et commencer ton aventure dans Etheria.")
   .addSubcommand((subcommand) =>
     subcommand
+      .setName("rencontrer")
+      .setDescription("Chercher un habitant présent dans ton lieu actuel.")
+  )
+  .addSubcommand((subcommand) =>
+    subcommand
       .setName("carte")
       .setDescription("Consulter les lieux déjà découverts dans ta carte personnelle.")
   )
