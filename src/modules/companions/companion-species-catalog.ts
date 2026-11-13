@@ -118,8 +118,6 @@ export interface CompanionSpeciesDefinition {
   discordShopElementChoice: boolean;
   /** Obligatoire pour une espèce dont l'élément n'est pas choisi en boutique. */
   fixedElement?: CompanionElement;
-  /** Rareté générale de référence, utilisée hors occurrence régionale précise. */
-  rarity: CompanionRarity;
   /** Répartition connue ; la rareté régionale prévaut en cas de correspondance. */
   regionalOccurrences?: readonly CompanionRegionalOccurrence[];
   /** Variantes naturelles propres à cette espèce. */
