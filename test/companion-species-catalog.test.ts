@@ -192,13 +192,16 @@ test("les dossiers documentaires réels sont sourcés et restent non jouables", 
     validateSpeciesResearchDossiers
   } = await import("../src/modules/companions/companion-species-research.js");
 
-  assert.equal(COMPANION_SPECIES_RESEARCH_DOSSIERS.length, 4);
+  assert.equal(COMPANION_SPECIES_RESEARCH_DOSSIERS.length, 8);
   assert.deepEqual(validateSpeciesResearchDossiers(), []);
   assert.ok(COMPANION_SPECIES_RESEARCH_DOSSIERS.every(
     (dossier) => dossier.gameplayStatus === "research_only"
   ));
-  assert.ok(COMPANION_SPECIES_RESEARCH_DOSSIERS.every(
-    (dossier) => dossier.assessment.scope === "global"
+  assert.ok(COMPANION_SPECIES_RESEARCH_DOSSIERS.some(
+    (dossier) => dossier.assessment.scope === "europe"
+  ));
+  assert.ok(COMPANION_SPECIES_RESEARCH_DOSSIERS.some(
+    (dossier) => dossier.regionalAssessments?.some((assessment) => assessment.scope === "eu27")
   ));
 });
 
@@ -216,4 +219,35 @@ test("les dossiers refusent les sources non HTTPS et les identifiants dupliqués
   assert.ok(validateSpeciesResearchDossiers([
     { ...first, assessment: { ...first.assessment, sourceUrl: "http://invalid.test" } }
   ]).some((issue) => issue.includes("Source IUCN HTTPS")));
+});
+
+
+test("une date d'évaluation inconnue peut rester absente sans être inventée", async () => {
+  const {
+    COMPANION_SPECIES_RESEARCH_DOSSIERS,
+    validateSpeciesResearchDossiers
+  } = await import("../src/modules/companions/companion-species-research.js");
+  const hedgehog = COMPANION_SPECIES_RESEARCH_DOSSIERS.find(
+    (dossier) => dossier.key === "western_european_hedgehog"
+  )!;
+  assert.equal(hedgehog.assessment.assessedAt, undefined);
+  assert.deepEqual(validateSpeciesResearchDossiers([hedgehog]), []);
+});
+
+test("les évaluations régionales sont validées séparément", async () => {
+  const {
+    COMPANION_SPECIES_RESEARCH_DOSSIERS,
+    validateSpeciesResearchDossiers
+  } = await import("../src/modules/companions/companion-species-research.js");
+  const lynx = COMPANION_SPECIES_RESEARCH_DOSSIERS.find(
+    (dossier) => dossier.key === "eurasian_lynx"
+  )!;
+  assert.deepEqual(validateSpeciesResearchDossiers([lynx]), []);
+  assert.ok(validateSpeciesResearchDossiers([{
+    ...lynx,
+    regionalAssessments: [{
+      ...lynx.regionalAssessments![0]!,
+      sourceUrl: "http://invalid.test"
+    }]
+  }]).some((issue) => issue.includes("Évaluation régionale invalide")));
 });
