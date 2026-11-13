@@ -37,4 +37,4 @@ Les 28 pays déjà présents dans la migration 0004 sont rattachés à leur cont
 
 Les unités administratives, les frontières politiques historiques, les changements de souveraineté, les régimes, les institutions et les gouvernements seront ajoutés dans des modules séparés. Aucun pays ne reçoit de régime politique ou de dirigeant inventé par cette migration.
 
-La migration 0024 est préparée dans le dépôt mais ne doit pas être exécutée sur Supabase sans revue et approbation explicites.
+La migration 0024 est préparée dans le dépôt mais ne doit pas être exécutée sur Supabase sans revue et approbation explicites. Elle rattache les 28 pays existants aux sept continents sans modifier leurs identifiants ni leurs noms.
