@@ -1,24 +1,20 @@
 # Etheria — prototype compagnon 3D
 
-Prototype web isolé du bot Discord. Il utilise PixiJS 3D (`@pixi/3d`) pour charger un modèle glTF/GLB, afficher une scène 3D et piloter ses animations.
+Prototype web isolé du bot Discord. Il utilise PixiJS 3D (`@pixi/3d`) pour construire et afficher Lykos directement dans la scène, sans fichier Blender ni modèle externe.
 
-## Générer le modèle original de Lykos
+## Lykos procédural
 
-Le dépôt contient un générateur Blender Python :
+Le compagnon est assemblé en temps réel à partir de géométries 3D et de matériaux PixiJS :
 
-```bash
-blender --background --python tools/create_lykos_blender.py
-```
+- silhouette de renard orange et crème ;
+- grands yeux bleus, oreilles dressées et museau ;
+- queue touffue en plusieurs volumes ;
+- sacoche verte avec détails dorés ;
+- caméra orbitale et éclairage de scène.
 
-Le script produit :
+Les commandes Observer, Marcher et Courir pilotent des animations procédurales calculées à chaque image. Ce sont des mouvements de prototype, pas encore des clips de squelette exportés.
 
-`prototypes/pixi3d-companion/public/assets/lykos.glb`
-
-Lykos est un renard fantastique stylisé, avec fourrure orange et crème, grands yeux bleus, oreilles, queue touffue et sacoche. Le générateur construit aussi un squelette et trois clips : `Idle`, `Walk` et `Run`.
-
-Prérequis : Blender 4.x installé localement. Le modèle est une base procédurale originale et modifiable, pas encore une création artistique finale. Vérifier le résultat dans Blender avant de le considérer comme validé.
-
-## Lancer l'aperçu PixiJS 3D
+## Lancer l'aperçu
 
 Depuis ce dossier :
 
@@ -35,15 +31,16 @@ npm run build
 
 ## Contrôles
 
-- Observer : animation `Idle`
-- Marcher : animation `Walk`
-- Courir : animation `Run`
+- Observer : respiration et mouvements subtils de la tête et de la queue
+- Marcher : balancement du corps et mouvement alterné des pattes
+- Courir : mouvement plus rapide et plus ample
 - Souris ou tactile : orbiter la caméra et zoomer
 
-## Architecture
+## Suite prévue
 
-- Blender génère le fichier GLB dans `public/assets`.
-- PixiJS 3D charge le GLB avec `Assets.load` et l'affiche via `Model3D` dans un `View3D`.
-- Le modèle et ses animations restent indépendants du bot Discord et de Supabase.
+1. Vérifier le rendu et la compilation sur les navigateurs ciblés, notamment Safari sur iPad.
+2. Améliorer la silhouette et les proportions à partir des captures du prototype.
+3. Remplacer progressivement les volumes de base par une géométrie plus détaillée.
+4. Envisager ensuite un squelette et de vrais clips d'animation si le rendu le justifie.
 
-PixiJS 3D est en bêta ouverte ; son API peut évoluer.
+Le prototype reste séparé du bot Discord et de Supabase. Aucun déploiement ni migration n'est effectué ici.
