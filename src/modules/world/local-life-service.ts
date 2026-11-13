@@ -1,4 +1,6 @@
 import type { Pool } from "pg";
+import { isOpenAtLocalMinute } from "./local-life-simulation.js";
+import { getSettlementLocalTime, type SettlementClockResult } from "./world-clock-service.js";
 
 export type LocalLifeKind = "activity" | "service" | "shop" | "event";
 
@@ -18,6 +20,8 @@ export interface LocalLifeEntryView {
   openingSchedule: { days: Array<{ weekday: number; intervals: Array<{ opensAtMinute: number; closesAtMinute: number }> }> } | null;
   startDay: number | null;
   endDay: number | null;
+  isOpenNow: boolean | null;
+  isHappeningNow: boolean | null;
   stock: LocalLifeStockView[];
 }
 
@@ -25,7 +29,12 @@ export type CurrentLocalLifeResult =
   | { status: "no_active_character" }
   | { status: "not_in_settlement" }
   | { status: "settlement_not_discovered" }
-  | { status: "available"; settlementName: string; entries: LocalLifeEntryView[] };
+  | {
+      status: "available";
+      settlementName: string;
+      localClock: SettlementClockResult;
+      entries: LocalLifeEntryView[];
+    };
 
 interface SettlementRow {
   settlement_id: string | null;
@@ -48,15 +57,16 @@ interface LocalLifeRow {
   maximum_quantity: number | null;
 }
 
-/** Lit uniquement la vie locale publique de la localité où se trouve le personnage actif. */
+/** Lit la vie locale et la confronte à l'heure réelle du fuseau de la localité. */
 export async function getCurrentLocalLife(
   pool: Pool,
-  accountId: string
+  accountId: string,
+  now: Date = new Date()
 ): Promise<CurrentLocalLifeResult> {
   if (!accountId.trim()) throw new Error("Compte joueur absent.");
 
   const location = await pool.query<SettlementRow>(
-    \`SELECT c.current_settlement_id AS settlement_id,
+    `SELECT c.current_settlement_id AS settlement_id,
             s.display_name AS settlement_name,
             s.settlement_key
      FROM characters c
@@ -64,7 +74,7 @@ export async function getCurrentLocalLife(
        ON s.id = c.current_settlement_id
       AND s.editorial_status = 'approved'
      WHERE c.account_id = $1 AND c.status = 'active'
-     LIMIT 1\`,
+     LIMIT 1`,
     [accountId]
   );
   const character = location.rows[0];
@@ -74,18 +84,19 @@ export async function getCurrentLocalLife(
   }
 
   const discovered = await pool.query(
-    \`SELECT 1
+    `SELECT 1
      FROM world_discoveries
      WHERE account_id = $1
        AND target_kind = 'settlement'
        AND target_key = $2
-     LIMIT 1\`,
+     LIMIT 1`,
     [accountId, character.settlement_key]
   );
   if (!discovered.rowCount) return { status: "settlement_not_discovered" };
 
+  const localClock = await getSettlementLocalTime(pool, character.settlement_id, now);
   const result = await pool.query<LocalLifeRow>(
-    \`SELECT c.content_key, c.display_name, c.content_kind, c.description,
+    `SELECT c.content_key, c.display_name, c.content_kind, c.description,
             c.opening_schedule, c.start_day, c.end_day,
             st.stock_key, st.display_name AS stock_name,
             st.price_teas::TEXT, st.quantity, st.maximum_quantity
@@ -95,14 +106,27 @@ export async function getCurrentLocalLife(
        AND c.editorial_status = 'approved'
        AND c.visibility = 'public'
      ORDER BY c.content_kind, c.display_name, st.display_name
-     LIMIT 150\`,
+     LIMIT 150`,
     [character.settlement_id]
   );
 
+  const hasLocalDate = localClock.status === "available";
   const entries = new Map<string, LocalLifeEntryView>();
   for (const row of result.rows) {
     let entry = entries.get(row.content_key);
     if (!entry) {
+      const isOpenNow = hasLocalDate && row.opening_schedule
+        ? isOpenAtLocalMinute(
+            row.opening_schedule,
+            localClock.localDate.weekday,
+            localClock.localDate.minuteOfDay
+          )
+        : null;
+      const isHappeningNow = hasLocalDate && row.content_kind === "event" &&
+        row.start_day !== null && row.end_day !== null
+        ? localClock.localDate.dayOfYear >= row.start_day &&
+          localClock.localDate.dayOfYear <= row.end_day
+        : null;
       entry = {
         key: row.content_key,
         displayName: row.display_name,
@@ -111,6 +135,8 @@ export async function getCurrentLocalLife(
         openingSchedule: row.opening_schedule,
         startDay: row.start_day,
         endDay: row.end_day,
+        isOpenNow,
+        isHappeningNow,
         stock: []
       };
       entries.set(row.content_key, entry);
@@ -130,6 +156,7 @@ export async function getCurrentLocalLife(
   return {
     status: "available",
     settlementName: character.settlement_name,
+    localClock,
     entries: [...entries.values()]
   };
 }
@@ -159,4 +186,14 @@ export function formatLocalOpeningSchedule(
       return label + " : " + (intervals.length ? intervals.join(", ") : "fermé");
     })
     .join(" · ");
+}
+
+export function formatLocalAvailability(entry: LocalLifeEntryView): string {
+  if (entry.kind === "event") {
+    if (entry.isHappeningNow === true) return "En cours actuellement";
+    if (entry.isHappeningNow === false) return "Pas en cours actuellement";
+  }
+  if (entry.isOpenNow === true) return "Ouvert actuellement";
+  if (entry.isOpenNow === false) return "Fermé actuellement";
+  return entry.openingSchedule ? "Statut horaire indisponible" : "Horaires non renseignés";
 }
