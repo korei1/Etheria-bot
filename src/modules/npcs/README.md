@@ -79,3 +79,33 @@ Les intervalles sont validés et les chevauchements ou horaires mal ordonnés so
 Les zones de départ acceptent pour l'instant un libellé d'activité sans restriction horaire lors de la création du PNJ : leur fuseau local n'est pas encore raccordé au service d'horloge. Les horaires configurables sont donc limités aux localités approuvées.
 
 Cette étape fournit des routines éditoriales par lieu et des disponibilités fiables. Elle ne déplace pas encore automatiquement un PNJ entre localités : les trajets, les durées et les règles de déplacement des habitants restent à définir avant d'activer une simulation de déplacement.
+
+
+## Voyages planifiés des PNJ
+
+Les PNJ peuvent effectuer un voyage unique entre deux localités au moyen d'un itinéraire déjà approuvé. Le système réutilise le réseau de voyage du monde et l'horloge mondiale commune.
+
+### Préparer un itinéraire
+
+Lors de `/etheria-admin ajouter-itineraire`, le champ facultatif `duree_minutes` permet d'enregistrer une durée en minutes Etheria. Une route sans durée validée reste utilisable pour la navigation des joueurs si ses autres conditions sont remplies, mais elle ne peut pas servir à programmer un voyage de PNJ.
+
+### Programmer un voyage
+
+`/etheria-admin programmer-voyage-pnj` accepte :
+- `pnj` : clé d'un PNJ actif et approuvé ;
+- `itineraire` : clé d'un itinéraire approuvé, direct entre deux localités, sans condition d'accès non prise en charge et avec une durée ;
+- `depart_dans` : nombre de minutes Etheria avant le départ (0 = départ dès la prochaine synchronisation).
+
+Le PNJ doit posséder exactement un placement actif, correspondant à l'origine de l'itinéraire. Un seul voyage planifié ou en cours est autorisé par PNJ.
+
+### Simulation
+
+- Avant le départ, le PNJ reste à l'origine.
+- À partir de la minute de départ, son placement d'origine est désactivé : il n'est visible dans aucune localité pendant le trajet.
+- À la minute d'arrivée, son placement de destination est activé ou créé.
+- La synchronisation est transactionnelle et protégée contre les traitements concurrents ; les événements de départ et d'arrivée sont conservés.
+- Les transitions sont matérialisées à la prochaine consultation des rencontres PNJ ou au démarrage d'une conversation. L'heure de transition reste celle prévue par l'horloge mondiale, même si la consultation survient plus tard.
+- Si l'horloge mondiale est en pause, le voyage ne progresse pas.
+- Les voyages sont globaux : tous les joueurs voient le PNJ au même endroit au même instant, sous réserve des règles de découverte des localités.
+
+Cette première version ne crée aucun itinéraire, horaire, durée ou déplacement par défaut. Elle ne calcule pas automatiquement de chemins alternatifs, ne gère pas encore les trajets aller-retour et n'anime pas de scènes de voyage. Ces comportements nécessitent des données et règles supplémentaires validées.
