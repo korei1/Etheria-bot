@@ -199,3 +199,18 @@ RLS est activée sans politique d'accès client. Le backend de confiance doit ut
 Le test PostgreSQL d'intégration `companion-species-catalog-postgres.integration.test.ts` vérifie le seed (7 régions, 43 espèces, 172 formes), le verrouillage d'Umbrelune et le journal. Il est ignoré si `TEST_DATABASE_URL` n'est pas configurée.
 
 **Important :** la migration 0023 est seulement ajoutée au dépôt. Elle n'a pas été exécutée sur Supabase. Elle doit être relue, testée sur une base isolée, puis approuvée avant toute exécution sur la base du projet.
+
+
+### Commandes Discord d'administration
+
+La commande `/etheria-admin` est enregistrée avec la permission Discord Administrateur et vérifie également cette permission à l'exécution. Elle est réservée aux serveurs et répond en message éphémère.
+
+Sous-commandes disponibles :
+
+- `/etheria-admin regions` : liste les régions, leur visibilité et leur révision.
+- `/etheria-admin especes [region]` : affiche les fiches, leur élément, leurs statuts et leur révision (50 résultats maximum).
+- `/etheria-admin ajouter-region` : crée une région publique ou verrouillée.
+- `/etheria-admin ajouter-espece` : crée une fiche avec 2 à 4 formes au format `cle|nom`, une par ligne. La fiche peut être approuvée immédiatement, mais reste indisponible en jeu.
+- `/etheria-admin disponibilite` : fait évoluer la disponibilité en fournissant la révision courante, afin d'éviter d'écraser une modification concurrente.
+
+Les commandes d'administration nécessitent la migration 0023 préalablement exécutée. Elles ne l'exécutent jamais automatiquement. Le compte Discord de l'administrateur est enregistré comme acteur du journal d'audit.
