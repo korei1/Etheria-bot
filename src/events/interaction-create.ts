@@ -452,14 +452,14 @@ export default {
              FROM companion_species_catalog
              WHERE ($1::text IS NULL OR region_key = $1)
              ORDER BY region_key, display_name
-             LIMIT 50`,
+             LIMIT 15`,
             [region]
           );
           const content = result.rows.map((row) =>
             `• **${row.display_name}** (`${row.species_key}`) — ${row.region_key} · ${row.element} · ${row.editorial_status}/${row.availability_status} · rev ${row.revision}`
           ).join("\n");
           await interaction.editReply(content
-            ? `**Espèces Etheria** (50 maximum par affichage)\n\n${content}`
+            ? `**Espèces Etheria** (15 maximum par affichage)\n\n${content}`
             : "Aucune espèce ne correspond à ce filtre.");
           return;
         }
