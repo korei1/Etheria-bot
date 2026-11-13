@@ -2,4 +2,14 @@ import { SlashCommandBuilder } from "discord.js";
 
 export const etheriaCommand = new SlashCommandBuilder()
   .setName("etheria")
-  .setDescription("Découvrir et commencer ton aventure dans Etheria.");
+  .setDescription("Découvrir et commencer ton aventure dans Etheria.")
+  .addSubcommand((subcommand) =>
+    subcommand
+      .setName("carte")
+      .setDescription("Consulter les lieux déjà découverts dans ta carte personnelle.")
+  )
+  .addSubcommand((subcommand) =>
+    subcommand
+      .setName("progression")
+      .setDescription("Consulter ta progression de découverte dans Etheria.")
+  );
