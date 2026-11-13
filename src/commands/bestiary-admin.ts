@@ -111,7 +111,10 @@ export const bestiaryAdminCommand = new SlashCommandBuilder()
   .addSubcommand((subcommand) =>
     subcommand
       .setName("itineraires")
-      .setDescription("Afficher les itinéraires enregistrés et leur statut.")
+      .setDescription("Afficher les itinéraires ou programmer un voyage pour un PNJ.")
+      .addStringOption((option) => option.setName("pnj").setDescription("Clé du PNJ approuvé (à renseigner pour programmer un voyage).").setRequired(false))
+      .addStringOption((option) => option.setName("itineraire").setDescription("Clé de l'itinéraire approuvé (à renseigner pour programmer un voyage).").setRequired(false))
+      .addIntegerOption((option) => option.setName("depart_dans").setDescription("Départ dans ce nombre de minutes Etheria (0 = maintenant).").setMinValue(0).setMaxValue(1000000).setRequired(false))
   )
   .addSubcommand((subcommand) =>
     subcommand
@@ -254,6 +257,13 @@ export const bestiaryAdminCommand = new SlashCommandBuilder()
 
   .addSubcommand((subcommand) =>
     subcommand
+      .setName("approuver-contenu-local")
+      .setDescription("Approuver un contenu local après validation éditoriale.")
+      .addStringOption((option) => option.setName("cle").setDescription("Clé du contenu.").setRequired(true))
+      .addIntegerOption((option) => option.setName("revision").setDescription("Révision courante du contenu.").setMinValue(1).setRequired(true))
+  )
+  .addSubcommand((subcommand) =>
+    subcommand
       .setName("stocks-locaux")
       .setDescription("Afficher les stocks enregistrés dans les commerces.")
   )
@@ -269,11 +279,5 @@ export const bestiaryAdminCommand = new SlashCommandBuilder()
       .addIntegerOption((option) => option.setName("maximum").setDescription("Capacité maximale du stock.").setMinValue(0).setRequired(true))
       .addIntegerOption((option) => option.setName("reapprovisionnement_jours").setDescription("Intervalle en jours Etheria, facultatif.").setMinValue(1).setMaxValue(120).setRequired(false))
       .addIntegerOption((option) => option.setName("dernier_jour_absolu").setDescription("Compteur absolu du dernier réapprovisionnement, facultatif.").setMinValue(1).setRequired(false))
-  )
-  .addSubcommand((subcommand) =>
-    subcommand
-      .setName("approuver-contenu-local")
-      .setDescription("Approuver un contenu local après validation éditoriale.")
-      .addStringOption((option) => option.setName("cle").setDescription("Clé du contenu.").setRequired(true))
-      .addIntegerOption((option) => option.setName("revision").setDescription("Révision courante du contenu.").setMinValue(1).setRequired(true))
   );
+
