@@ -21,6 +21,11 @@ test("les opérations administratives essentielles sont exposées", () => {
     "ajouter-region",
     "ajouter-espece",
     "approuver",
+    "pnjs",
+    "ajouter-pnj",
+    "ajouter-dialogue",
+    "ajouter-choix",
+    "approuver-pnj",
     "visibilite-region"
   ]);
 });
