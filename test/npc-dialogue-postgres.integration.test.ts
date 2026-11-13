@@ -118,10 +118,13 @@ test("une première conversation PNJ révèle le lieu et persiste les choix", {
     await setupClient.query(settlementMigration);
 
     const settlementId = randomUUID();
+    const hiddenSettlementId = randomUUID();
     await setupClient.query(
       `INSERT INTO world_settlements (id, settlement_key, editorial_status, visibility)
-       VALUES ($1, 'settlement_alpha', 'approved', 'discovery_locked')`,
-      [settlementId]
+       VALUES
+         ($1, 'settlement_alpha', 'approved', 'discovery_locked'),
+         ($2, 'settlement_hidden', 'approved', 'discovery_locked')`,
+      [settlementId, hiddenSettlementId]
     );
     await setupClient.query(
       `WITH event_row AS (
@@ -162,8 +165,8 @@ test("une première conversation PNJ révèle le lieu et persiste les choix", {
     );
     await setupClient.query(
       `INSERT INTO npc_settlement_locations (npc_key, settlement_id)
-       VALUES ('first_resident', $1)`,
-      [settlementId]
+       VALUES ('first_resident', $1), ('first_resident', $2)`,
+      [settlementId, hiddenSettlementId]
     );
     await setupClient.query("COMMIT");
 
@@ -217,6 +220,22 @@ test("une première conversation PNJ révèle le lieu et persiste les choix", {
     });
     assert.equal(repeated.firstEncounter, false);
     assert.equal(repeated.revealedLocation?.countryName, "Pays Alpha");
+
+    await appPool.query(
+      "UPDATE characters SET current_settlement_id = $2 WHERE id = $1",
+      [characterId, hiddenSettlementId]
+    );
+    const hiddenSettlementNpcs = await listNpcEncountersAtCharacterSpawn(appPool, { accountId });
+    assert.equal(hiddenSettlementNpcs.length, 0);
+    await assert.rejects(
+      startNpcConversation(appPool, {
+        interactionId: "discord-interaction-hidden-settlement",
+        accountId,
+        characterId,
+        npcKey: "first_resident"
+      }),
+      /pas disponible dans ton lieu actuel/
+    );
 
     await appPool.query(
       "UPDATE characters SET current_settlement_id = $2 WHERE id = $1",
