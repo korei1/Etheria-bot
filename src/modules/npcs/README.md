@@ -40,7 +40,7 @@ Le service d'enregistrement de rencontre est implémenté et raccordé au suivi 
 - Les bornes d'intervalles suivent la règle [ouverture, fermeture[ : l'heure d'ouverture est incluse, l'heure de fermeture exclue.
 - Si un calendrier est configuré mais qu'aucune heure locale fiable n'est disponible, le PNJ n'est pas proposé. Les zones de départ n'ont pas encore de fuseau attribuable : leurs PNJ sans calendrier restent disponibles, ceux avec calendrier restent masqués jusqu'à prise en charge du fuseau de la zone.
 - Aucun PNJ, horaire ou dialogue n'est préchargé. La migration 0033 ajoute les champs, mais elle n'a pas été exécutée.
-- L'interface d'administration pour modifier ces calendriers reste à ajouter ; pour l'instant, les champs sont prêts côté base et service, sans commande joueur permettant de les modifier.
+- Les horaires sont configurables par l'administration via la commande de placement en localité ; les zones de départ restent sans horaire tant que leur fuseau n'est pas pris en charge.
 
 
 ## Activités quotidiennes configurables
