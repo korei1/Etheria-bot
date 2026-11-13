@@ -28,6 +28,51 @@ export const COMPANION_SPECIES_CATEGORIES = [
 
 export type CompanionSpeciesCategory = (typeof COMPANION_SPECIES_CATEGORIES)[number];
 
+export const COMPANION_SPECIES_ORIGINS = ["real_world", "fantasy", "hybrid"] as const;
+export type CompanionSpeciesOrigin = (typeof COMPANION_SPECIES_ORIGINS)[number];
+
+export const IUCN_CONSERVATION_CATEGORIES = [
+  "not_evaluated",
+  "data_deficient",
+  "least_concern",
+  "near_threatened",
+  "vulnerable",
+  "endangered",
+  "critically_endangered",
+  "extinct_in_the_wild",
+  "extinct"
+] as const;
+export type IucnConservationCategory = (typeof IUCN_CONSERVATION_CATEGORIES)[number];
+
+export interface RealWorldConservationAssessment {
+  system: "iucn_red_list";
+  category: IucnConservationCategory;
+  authority: string;
+  sourceName: string;
+  sourceUrl: string;
+  assessedAt: string;
+  /** Facultatif : une protection légale peut dépendre du pays ou de la région. */
+  jurisdiction?: string;
+}
+
+export const ETHERIA_CONSERVATION_STATUSES = [
+  "unassessed",
+  "stable",
+  "monitored",
+  "protected",
+  "vulnerable",
+  "endangered",
+  "critical",
+  "extinct_in_the_wild"
+] as const;
+export type EtheriaConservationStatus = (typeof ETHERIA_CONSERVATION_STATUSES)[number];
+
+export interface EtheriaConservationRecord {
+  status: EtheriaConservationStatus;
+  regionKey?: string;
+  notes?: string;
+}
+
 export const COMPANION_ACQUISITION_METHODS = [
   "discord_shop",
   "wild_encounter",
@@ -111,6 +156,7 @@ export interface CompanionSpeciesDefinition {
   key: string;
   /** Nom public de l'espèce. */
   name: string;
+  origin: CompanionSpeciesOrigin;
   category: CompanionSpeciesCategory;
   rarity: CompanionRarity;
   acquisitionMethods: readonly CompanionSpeciesAcquisitionMethod[];
@@ -120,6 +166,10 @@ export interface CompanionSpeciesDefinition {
   fixedElement?: CompanionElement;
   /** Répartition connue ; la rareté régionale prévaut en cas de correspondance. */
   regionalOccurrences?: readonly CompanionRegionalOccurrence[];
+  /** Données réelles sourcées ; distinctes de la protection légale locale. */
+  realWorldConservation?: RealWorldConservationAssessment;
+  /** Statut de conservation dans l'univers Etheria, indépendant du réel. */
+  etheriaConservation?: EtheriaConservationRecord;
   /** Variantes naturelles propres à cette espèce. */
   naturalVariants?: readonly CompanionNaturalVariantDefinition[];
   /** Règles de transmission explicites, propres à cette espèce. */
@@ -142,6 +192,9 @@ export class CompanionSpeciesCatalogError extends Error {
 }
 
 const categorySet = new Set<string>(COMPANION_SPECIES_CATEGORIES);
+const originSet = new Set<string>(COMPANION_SPECIES_ORIGINS);
+const iucnCategorySet = new Set<string>(IUCN_CONSERVATION_CATEGORIES);
+const etheriaStatusSet = new Set<string>(ETHERIA_CONSERVATION_STATUSES);
 const raritySet = new Set<string>(COMPANION_RARITIES);
 const elementSet = new Set<string>(COMPANION_ELEMENTS);
 const acquisitionSet = new Set<string>(COMPANION_ACQUISITION_METHODS);
@@ -161,6 +214,30 @@ export function validateCompanionSpeciesDefinition(
   }
   if (!categorySet.has(definition.category)) {
     issues.push(`[${prefix}] Catégorie inconnue.`);
+  }
+  if (!originSet.has(definition.origin)) {
+    issues.push(`[${prefix}] Origine d'espèce inconnue.`);
+  }
+  if (definition.origin === "fantasy" && definition.realWorldConservation) {
+    issues.push(`[${prefix}] Une espèce purement fantastique ne peut pas avoir d'évaluation réelle IUCN.`);
+  }
+  if (definition.realWorldConservation) {
+    const assessment = definition.realWorldConservation;
+    if (!iucnCategorySet.has(assessment.category)) {
+      issues.push(`[${prefix}] Catégorie IUCN inconnue.`);
+    }
+    if (!assessment.authority.trim() || !assessment.sourceName.trim() ||
+      !/^https:\/\//.test(assessment.sourceUrl)) {
+      issues.push(`[${prefix}] L'évaluation réelle exige une autorité, une source et une URL HTTPS.`);
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(assessment.assessedAt) ||
+      !Number.isFinite(Date.parse(assessment.assessedAt))) {
+      issues.push(`[${prefix}] Date d'évaluation réelle invalide.`);
+    }
+  }
+  if (definition.etheriaConservation &&
+    !etheriaStatusSet.has(definition.etheriaConservation.status)) {
+    issues.push(`[${prefix}] Statut de conservation Etheria inconnu.`);
   }
   if (!raritySet.has(definition.rarity)) {
     issues.push(`[${prefix}] Rareté inconnue.`);
