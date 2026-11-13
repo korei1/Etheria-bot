@@ -940,12 +940,32 @@ export default {
             editorial_status: string;
             is_active: boolean;
             start_node_key: string;
+            placement_summary: string | null;
           }>(
-            `SELECT npc_key, display_name, editorial_status, is_active, start_node_key
-             FROM npc_definitions ORDER BY display_name LIMIT 25`
+            `SELECT n.npc_key, n.display_name, n.editorial_status, n.is_active, n.start_node_key,
+                    (
+                      SELECT string_agg(p.place_label, E'\\n' ORDER BY p.place_label)
+                      FROM (
+                        SELECT s.display_name || ' · ' ||
+                               COALESCE(nl.activity_label, 'activité non définie') || ' · ' ||
+                               CASE WHEN nl.presence_schedule IS NULL THEN 'sans restriction horaire' ELSE 'horaires configurés' END AS place_label
+                        FROM npc_settlement_locations nl
+                        JOIN world_settlements s ON s.id = nl.settlement_id
+                        WHERE nl.npc_key = n.npc_key AND nl.is_active = TRUE
+                        UNION ALL
+                        SELECT z.zone_key || ' · ' ||
+                               COALESCE(sl.activity_label, 'activité non définie') || ' · sans restriction horaire'
+                        FROM npc_spawn_locations sl
+                        JOIN starting_spawn_zones z ON z.id = sl.spawn_zone_id
+                        WHERE sl.npc_key = n.npc_key AND sl.is_active = TRUE
+                      ) p
+                    ) AS placement_summary
+             FROM npc_definitions n
+             ORDER BY n.display_name LIMIT 25`
           );
           const lines = result.rows.map((row) =>
-            `• **${row.display_name}** (${row.npc_key}) — ${row.editorial_status}, ${row.is_active ? "actif" : "inactif"}, départ : ${row.start_node_key}`
+            `• **${row.display_name}** (${row.npc_key}) — ${row.editorial_status}, ${row.is_active ? "actif" : "inactif"}, départ : ${row.start_node_key}` +
+            (row.placement_summary ? `\\n  ${row.placement_summary}` : "")
           );
           await interaction.editReply(lines.length ? `**PNJ Etheria**\\n\\n${lines.join("\\n")}` : "Aucun PNJ n'est encore enregistré.");
           return;
