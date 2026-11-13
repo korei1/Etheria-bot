@@ -1,10 +1,18 @@
 import type { PoolClient } from "pg";
 import type { ItemOriginType } from "./item-properties.js";
+import { createItemStack } from "./item-model.js";
 
 export interface PersistedLotOrigin {
   originType: ItemOriginType;
   sourceReference?: string;
   occurredAt?: Date;
+}
+
+function validateLotInput(itemCode: string, quantity: number, ...references: string[]): void {
+  createItemStack(itemCode, quantity);
+  if (references.some((reference) => !reference.trim())) {
+    throw new Error("Les références du lot doivent être renseignées.");
+  }
 }
 
 /** Ajoute un lot distinct à une ligne agrégée de sac, dans la transaction appelante. */
@@ -17,6 +25,13 @@ export async function addInventoryItemLot(
     origin?: PersistedLotOrigin;
   }
 ): Promise<string> {
+  validateLotInput(input.itemCode, input.quantity, input.inventorySlotId);
+  if (input.origin?.sourceReference !== undefined && !input.origin.sourceReference.trim()) {
+    throw new Error("La référence de provenance du lot est invalide.");
+  }
+  if (input.origin?.occurredAt && !Number.isFinite(input.origin.occurredAt.getTime())) {
+    throw new Error("La date de provenance du lot est invalide.");
+  }
   const result = await client.query<{ id: string }>(
     `INSERT INTO character_item_lots (
        item_code, quantity, container_kind, inventory_slot_id,
@@ -99,6 +114,7 @@ export async function moveInventoryLotsToCampStorage(
   client: PoolClient,
   input: { inventorySlotId: string; campStorageEntryId: string; itemCode: string; quantity: number }
 ): Promise<void> {
+  validateLotInput(input.itemCode, input.quantity, input.inventorySlotId, input.campStorageEntryId);
   const result = await client.query<{ total: string }>(
     `SELECT COALESCE(SUM(quantity), 0)::text AS total
      FROM character_item_lots
@@ -124,6 +140,7 @@ export async function moveCampStorageLotsToInventory(
   client: PoolClient,
   input: { campStorageEntryId: string; inventorySlotId: string; itemCode: string }
 ): Promise<void> {
+  validateLotInput(input.itemCode, 1, input.campStorageEntryId, input.inventorySlotId);
   const result = await client.query<{ total: string }>(
     `SELECT COALESCE(SUM(quantity), 0)::text AS total
      FROM character_item_lots
@@ -149,6 +166,7 @@ export async function movePartialCampStorageLotsToInventory(
   client: PoolClient,
   input: { campStorageEntryId: string; inventorySlotId: string; itemCode: string; quantity: number }
 ): Promise<void> {
+  validateLotInput(input.itemCode, input.quantity, input.campStorageEntryId, input.inventorySlotId);
   const lots = await client.query<{
     id: string;
     quantity: number;
@@ -165,7 +183,7 @@ export async function movePartialCampStorageLotsToInventory(
     [input.campStorageEntryId, input.itemCode]
   );
   const total = lots.rows.reduce((sum, lot) => sum + Number(lot.quantity), 0);
-  if (!Number.isSafeInteger(input.quantity) || input.quantity <= 0 || total < input.quantity) {
+  if (total < input.quantity) {
     throw new Error("Les lots du camp ne correspondent pas à la quantité à retirer.");
   }
 
