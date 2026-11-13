@@ -28,7 +28,11 @@ export function startNpcTravelWorker(
     inFlight = advanceNpcTravelPlans(pool)
       .then(() => undefined)
       .catch((error: unknown) => {
-        options.onError?.(error);
+        try {
+          options.onError?.(error);
+        } catch {
+          // Une erreur de journalisation ne doit pas tuer la boucle de synchronisation.
+        }
       })
       .finally(() => {
         inFlight = undefined;
