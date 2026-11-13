@@ -91,6 +91,11 @@ export const bestiaryAdminCommand = new SlashCommandBuilder()
 
   .addSubcommand((subcommand) =>
     subcommand
+      .setName("zones-depart")
+      .setDescription("Afficher les zones de départ disponibles pour placer les premiers PNJ.")
+  )
+  .addSubcommand((subcommand) =>
+    subcommand
       .setName("pnjs")
       .setDescription("Afficher les PNJ et leur état éditorial.")
   )
