@@ -1,6 +1,10 @@
 import bpy
-import math
 import os
+
+try:
+    bpy.ops.preferences.addon_enable(module="io_scene_gltf2")
+except Exception:
+    pass
 
 # Run: blender --background --python tools/create_lykos_blender.py
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -129,9 +133,6 @@ def make_action(name, frames):
             pb.rotation_mode = "XYZ"
             pb.rotation_euler = rotation
             pb.keyframe_insert(data_path="rotation_euler", frame=frame, group=bone_name)
-    for curve in action.fcurves:
-        for key in curve.keyframe_points:
-            key.interpolation = "BEZIER"
     action.use_fake_user = True
     return action
 
