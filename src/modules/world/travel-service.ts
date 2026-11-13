@@ -1,4 +1,4 @@
-import type { Pool } from "pg";
+import type { Pool, PoolClient } from "pg";
 
 export interface AvailableTravelRoute {
   linkKey: string;
@@ -138,7 +138,7 @@ export async function listAvailableCharacterTravelRoutes(
 }
 
 async function recordTravelDiscovery(
-  client: Awaited<ReturnType<Pool["connect"]>>,
+  client: PoolClient,
   input: {
     accountId: string;
     eventId: string;
