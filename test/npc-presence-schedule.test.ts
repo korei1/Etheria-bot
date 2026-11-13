@@ -28,3 +28,16 @@ test("un PNJ programmé est présent uniquement dans ses intervalles locaux", ()
 test("un calendrier vide signifie aucune présence planifiée", () => {
   assert.equal(isNpcWithinPresenceSchedule({ days: [] }, 1, 12 * 60), false);
 });
+
+test("un calendrier invalide ne rend jamais le PNJ présent", () => {
+  const invalid = {
+    days: [{
+      weekday: 2,
+      intervals: [
+        { opensAtMinute: 900, closesAtMinute: 1000 },
+        { opensAtMinute: 800, closesAtMinute: 850 }
+      ]
+    }]
+  };
+  assert.equal(isNpcWithinPresenceSchedule(invalid, 2, 920), false);
+});
