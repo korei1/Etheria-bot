@@ -71,6 +71,20 @@ testCase("les brouillons ne peuvent pas être découverts", () => {
   assert.equal(result.status, "rejected");
 });
 
+testCase("les zones de départ révélées ont leur propre catégorie de progression", () => {
+  const state = createDiscoveryState([{
+    accountId: "account_one",
+    targetKey: "spawn_zone_alpha",
+    targetKind: "spawn_zone",
+    method: "first_encounter",
+    discoveredAt: "2026-11-13T12:00:00.000Z",
+    eventId: "first_npc_spawn_zone"
+  }]);
+  const progress = getPersonalMapProgress(state, "account_one");
+  assert.equal(progress.discoveredCount, 1);
+  assert.equal(progress.byKind.spawn_zone, 1);
+});
+
 testCase("la carte personnelle conserve les découvertes et sépare les comptes", () => {
   const first = discover(createDiscoveryState(), capital, "event_1");
   assert.equal(first.status, "discovered");
