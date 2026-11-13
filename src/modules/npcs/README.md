@@ -45,7 +45,7 @@ Le service d'enregistrement de rencontre est implémenté et raccordé au suivi 
 
 ## Activités quotidiennes configurables
 
-La commande administrateur `/etheria-admin programmer-pnj` configure un placement existant :
+La commande administrateur `/etheria-admin placer-pnj-localite` permet de définir le calendrier et l'activité d'un placement en localité :
 - `pnj` : clé du PNJ ;
 - `lieu_type` : `localite` ou `zone_depart` ;
 - `lieu` : clé du lieu ;
@@ -76,6 +76,6 @@ Exemple de calendrier (jours Etheria 1 à 7, heures locales en minutes depuis mi
 
 Les intervalles sont validés et les chevauchements ou horaires mal ordonnés sont refusés. Le menu joueur affiche le libellé d'activité à la place de la description courte lorsqu'il existe.
 
-Les zones de départ acceptent pour l'instant un libellé d'activité sans restriction horaire : leur fuseau local n'est pas encore raccordé au service d'horloge. Une programmation horaire dans ces zones est donc refusée plutôt que de masquer silencieusement le PNJ.
+Les zones de départ acceptent pour l'instant un libellé d'activité sans restriction horaire lors de la création du PNJ : leur fuseau local n'est pas encore raccordé au service d'horloge. Les horaires configurables sont donc limités aux localités approuvées.
 
 Cette étape fournit des routines éditoriales par lieu et des disponibilités fiables. Elle ne déplace pas encore automatiquement un PNJ entre localités : les trajets, les durées et les règles de déplacement des habitants restent à définir avant d'activer une simulation de déplacement.
