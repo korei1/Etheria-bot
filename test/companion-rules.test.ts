@@ -104,3 +104,20 @@ test("la limite de quatre compagnons s'applique à toutes les acquisitions", () 
   assert.equal(canAcquireSpeciesCompanion(1.5), false);
   assert.throws(() => assertSpeciesCompanionCapacity(4), CompanionRuleError);
 });
+
+test("le compagnon acheté à l'avance rejoint le personnage à sa première sortie en nature après le village, au niveau 4 minimum", async () => {
+  const { canTriggerPurchasedCompanionFirstMeeting } = await import("../src/modules/companions/companion-rules.js");
+  const valid = {
+    wasPurchasedBeforeCharacterStart: true,
+    characterLevel: 4,
+    hasArrivedAtVillage: true,
+    isFirstNatureOutingAfterVillage: true,
+    hasAlreadyMetCompanion: false
+  };
+  assert.equal(canTriggerPurchasedCompanionFirstMeeting(valid), true);
+  assert.equal(canTriggerPurchasedCompanionFirstMeeting({ ...valid, characterLevel: 3 }), false);
+  assert.equal(canTriggerPurchasedCompanionFirstMeeting({ ...valid, hasArrivedAtVillage: false }), false);
+  assert.equal(canTriggerPurchasedCompanionFirstMeeting({ ...valid, isFirstNatureOutingAfterVillage: false }), false);
+  assert.equal(canTriggerPurchasedCompanionFirstMeeting({ ...valid, hasAlreadyMetCompanion: true }), false);
+  assert.equal(canTriggerPurchasedCompanionFirstMeeting({ ...valid, wasPurchasedBeforeCharacterStart: false }), false);
+});
