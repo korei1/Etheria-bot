@@ -76,7 +76,8 @@ Les 28 pays déjà présents dans la migration 0004 sont rattachés à leur cont
 ## Rencontres et dialogues PNJ
 
 - La migration `0027_npc_dialogue_foundation.sql` crée le catalogue éditorial des PNJ, les nœuds et choix de dialogue, les placements par zone d'apparition et les conversations persistantes.
-- Aucun PNJ, nom, dialogue ou emplacement n'est préchargé : les contenus doivent être validés avant publication. Cela évite d'inventer des personnages ou de révéler des informations géographiques non approuvées.
+- Aucun PNJ, nom, dialogue ou emplacement n'est préchargé : les contenus doivent être créés et validés avant publication. Cela évite d'inventer des personnages ou de révéler des informations géographiques non approuvées.
+- Les administrateurs disposent de `/etheria-admin pnjs`, `/etheria-admin ajouter-pnj`, `/etheria-admin ajouter-dialogue`, `/etheria-admin ajouter-choix` et `/etheria-admin approuver-pnj` pour rédiger et publier les dialogues. Un PNJ reste en brouillon jusqu'à son approbation.
 - `/etheria rencontrer` liste uniquement les PNJ approuvés, actifs et placés dans la zone de départ du personnage actif.
 - Le joueur choisit un PNJ dans un menu, puis un menu de réponses fait progresser la conversation selon les choix enregistrés dans le catalogue.
 - À la première conversation avec un PNJ, `recordNpcEncounter` enregistre la rencontre et révèle le pays et la zone exacte d'apparition. Les rencontres avec d'autres PNJ ne révèlent pas à nouveau le lieu.
