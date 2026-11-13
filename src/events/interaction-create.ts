@@ -1343,7 +1343,7 @@ export default {
             .addOptions(npcs.slice(0, 25).map((npc) => ({
               label: npc.displayName.slice(0, 100),
               value: npc.npcKey,
-              description: npc.description?.slice(0, 100)
+              description: (npc.activityLabel ?? npc.description)?.slice(0, 100)
             })));
           await interaction.editReply({
             content: "Tu aperçois des habitants à proximité. Choisis la personne que tu souhaites approcher.",
