@@ -3,6 +3,13 @@ import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { Pool } from "pg";
 import test from "node:test";
+import {
+  approvePersistedEditorialSpecies,
+  createPersistedCompanionRegion,
+  createPersistedEditorialSpecies,
+  setPersistedRegionVisibility,
+  setPersistedSpeciesAvailability
+} from "../src/modules/companions/companion-species-catalog-repository.js";
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 
@@ -12,6 +19,7 @@ test("PostgreSQL persiste les 43 fiches, leurs 172 formes et journalise les chan
   const pool = new Pool({ connectionString: databaseUrl, max: 1 });
   const client = await pool.connect();
   const schema = `etheria_species_${randomUUID().replaceAll("-", "")}`;
+  let repositoryPool: Pool | undefined;
 
   try {
     await client.query(`CREATE SCHEMA "${schema}"`);
@@ -95,8 +103,71 @@ test("PostgreSQL persiste les 43 fiches, leurs 172 formes et journalise les chan
       availability_status: "unavailable"
     });
 
+    repositoryPool = new Pool({
+      connectionString: databaseUrl,
+      options: `-c search_path=${schema},public`,
+      max: 3
+    });
+    await createPersistedCompanionRegion(repositoryPool, {
+      regionKey: "region_admin_test",
+      name: "Région de test admin",
+      visibility: "discovery_locked"
+    });
+    await createPersistedEditorialSpecies(repositoryPool, {
+      speciesKey: "espece_admin_test",
+      name: "Espèce de test admin",
+      regionKey: "region_admin_test",
+      element: "terre",
+      editorialStatus: "draft",
+      forms: [
+        { key: "initial", name: "Petite forme", order: 0 },
+        { key: "adult", name: "Forme adulte", order: 1 }
+      ]
+    });
+    const approvedRevision = await approvePersistedEditorialSpecies(repositoryPool, {
+      speciesKey: "espece_admin_test",
+      expectedRevision: 1
+    });
+    assert.equal(approvedRevision, 2);
+
+    const discoverable = await setPersistedSpeciesAvailability(repositoryPool, {
+      speciesKey: "espece_admin_test",
+      nextStatus: "discoverable",
+      expectedRevision: 2
+    });
+    assert.deepEqual(discoverable, { revision: 3, availabilityStatus: "discoverable" });
+
+    const available = await setPersistedSpeciesAvailability(repositoryPool, {
+      speciesKey: "espece_admin_test",
+      nextStatus: "available",
+      expectedRevision: 3
+    });
+    assert.deepEqual(available, { revision: 4, availabilityStatus: "available" });
+
+    await assert.rejects(
+      setPersistedSpeciesAvailability(repositoryPool, {
+        speciesKey: "espece_admin_test",
+        nextStatus: "retired",
+        expectedRevision: 3
+      }),
+      /fiche a changé/
+    );
+
+    const regionVisibility = await setPersistedRegionVisibility(repositoryPool, {
+      regionKey: "region_admin_test",
+      visibility: "public",
+      expectedRevision: 1
+    });
+    assert.deepEqual(regionVisibility, { revision: 2, visibility: "public" });
+
+    const repositoryAudit = await repositoryPool.query<{ count: string }>(
+      "SELECT COUNT(*)::text AS count FROM companion_species_admin_events WHERE entity_key IN ('region_admin_test', 'espece_admin_test')"
+    );
+    assert.equal(repositoryAudit.rows[0]?.count, "6");
+
   } finally {
     try {
+      await repositoryPool?.end();
       await client.query("ROLLBACK");
       await client.query("RESET search_path");
       await client.query(`DROP SCHEMA IF EXISTS "${schema}" CASCADE`);
