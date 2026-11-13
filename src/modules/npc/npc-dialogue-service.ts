@@ -1,5 +1,7 @@
 import type { Pool } from "pg";
 import { recordNpcEncounter, type RevealedSpawnLocation } from "./npc-encounter-service.js";
+import { isOpenAtLocalMinute, type WeeklyOpeningSchedule } from "../world/local-life-simulation.js";
+import { getSettlementLocalTime } from "../world/world-clock-service.js";
 
 export interface NpcDialogueChoice {
   choiceKey: string;
@@ -21,6 +23,8 @@ interface NpcDefinitionRow {
   npc_key: string;
   display_name: string;
   start_node_key: string;
+  settlement_id: string | null;
+  presence_schedule: WeeklyOpeningSchedule | null;
 }
 
 interface DialogueNodeRow {
@@ -32,6 +36,31 @@ interface DialogueNodeRow {
 interface DialogueChoiceRow {
   choice_key: string;
   choice_label: string;
+}
+
+
+/** Un calendrier de PNJ est évalué dans le fuseau de sa localité.
+ * Sans calendrier, le placement reste disponible. Avec un calendrier mais
+ * sans heure locale connue (notamment en zone de départ), il n'est pas affiché.
+ */
+async function isNpcPresentAtLocalTime(
+  pool: Pool,
+  input: {
+    accountId: string;
+    settlementId: string | null;
+    schedule: WeeklyOpeningSchedule | null;
+    now?: Date;
+  }
+): Promise<boolean> {
+  if (!input.schedule) return true;
+  if (!input.settlementId) return false;
+  const clock = await getSettlementLocalTime(pool, input.settlementId, input.now);
+  if (clock.status !== "available") return false;
+  return isOpenAtLocalMinute(
+    input.schedule,
+    clock.localDate.weekday,
+    clock.localDate.minuteOfDay
+  );
 }
 
 export class NpcDialogueError extends Error {
@@ -107,8 +136,12 @@ export async function listNpcEncountersAtCharacterLocation(
     npc_key: string;
     display_name: string;
     description: string | null;
+    settlement_id: string | null;
+    presence_schedule: WeeklyOpeningSchedule | null;
   }>(
-    `SELECT DISTINCT n.npc_key, n.display_name, n.description
+    `SELECT DISTINCT n.npc_key, n.display_name, n.description,
+            c.current_settlement_id AS settlement_id,
+            COALESCE(nl.presence_schedule, sl.presence_schedule) AS presence_schedule
      FROM characters c
      JOIN npc_definitions n ON n.editorial_status = 'approved' AND n.is_active = TRUE
      LEFT JOIN npc_spawn_locations sl
@@ -136,7 +169,15 @@ export async function listNpcEncountersAtCharacterLocation(
      ORDER BY n.display_name`,
     [input.accountId]
   );
-  return result.rows.map((row) => ({
+  const available = await Promise.all(result.rows.map(async (row) => ({
+    row,
+    present: await isNpcPresentAtLocalTime(pool, {
+      accountId: input.accountId,
+      settlementId: row.settlement_id,
+      schedule: row.presence_schedule
+    })
+  })));
+  return available.filter((entry) => entry.present).map(({ row }) => ({
     npcKey: row.npc_key,
     displayName: row.display_name,
     description: row.description
@@ -166,7 +207,9 @@ export async function startNpcConversation(
   }
 
   const npcResult = await pool.query<NpcDefinitionRow>(
-    `SELECT n.npc_key, n.display_name, n.start_node_key
+    `SELECT n.npc_key, n.display_name, n.start_node_key,
+            c.current_settlement_id AS settlement_id,
+            COALESCE(nl.presence_schedule, sl.presence_schedule) AS presence_schedule
      FROM characters c
      JOIN npc_definitions n
        ON n.npc_key = $3
@@ -205,6 +248,14 @@ export async function startNpcConversation(
   const npc = npcResult.rows[0];
   if (!npc) {
     throw new NpcDialogueError("Ce personnage n'est pas disponible dans ton lieu actuel ou ce lieu n'a pas encore été découvert.");
+  }
+  const isPresent = await isNpcPresentAtLocalTime(pool, {
+    accountId: input.accountId,
+    settlementId: npc.settlement_id,
+    schedule: npc.presence_schedule
+  });
+  if (!isPresent) {
+    throw new NpcDialogueError("Ce personnage n'est pas présent à cette heure dans cette localité.");
   }
 
   const encounter = await recordNpcEncounter(pool, {
