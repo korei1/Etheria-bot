@@ -264,7 +264,7 @@ export function addCompanionSpecies(
   }
   const species = new Map(registry.species);
   species.set(entry.definition.key, entry);
-  return { regions: registry.regions, species };
+  return { regions: registry.regions, editorialSpecies: registry.editorialSpecies, species };
 }
 
 export function transitionCompanionSpeciesEditorialStatus(
@@ -287,7 +287,7 @@ export function transitionCompanionSpeciesEditorialStatus(
     editorialStatus: nextStatus,
     availabilityStatus: nextStatus === "draft" ? "unavailable" : current.availabilityStatus
   });
-  return { regions: registry.regions, species };
+  return { regions: registry.regions, editorialSpecies: registry.editorialSpecies, species };
 }
 
 export function transitionCompanionSpeciesAvailability(
@@ -311,7 +311,7 @@ export function transitionCompanionSpeciesAvailability(
   }
   const species = new Map(registry.species);
   species.set(speciesKey, { ...current, availabilityStatus: nextStatus });
-  return { regions: registry.regions, species };
+  return { regions: registry.regions, editorialSpecies: registry.editorialSpecies, species };
 }
 
 /**
