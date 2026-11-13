@@ -41,6 +41,11 @@ test("les opérations administratives essentielles sont exposées", () => {
     "ajouter-stock-local"
   ]);
   assert.ok(names.length <= 25, "Discord limite les sous-commandes à 25.");
+
+  const routes = subcommands.find((option) => option.name === "itineraires");
+  assert.ok(routes);
+  assert.deepEqual(routes.options?.map((option) => option.name), ["pnj", "itineraire", "depart_dans"]);
+  assert.ok(routes.options?.every((option) => !option.required));
 });
 
 test("la disponibilité ne permet pas de réactiver directement une espèce retirée", () => {
