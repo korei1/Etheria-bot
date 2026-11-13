@@ -276,5 +276,4 @@ export const bestiaryAdminCommand = new SlashCommandBuilder()
       .setDescription("Approuver un contenu local après validation éditoriale.")
       .addStringOption((option) => option.setName("cle").setDescription("Clé du contenu.").setRequired(true))
       .addIntegerOption((option) => option.setName("revision").setDescription("Révision courante du contenu.").setMinValue(1).setRequired(true))
-  )
   );
