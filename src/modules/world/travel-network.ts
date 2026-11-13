@@ -111,8 +111,7 @@ export function listAvailableWorldTravelLinks(
 ): readonly WorldTravelLinkDefinition[] {
   return links.filter((link) =>
     link.status === "approved" &&
-    (link.visibility === "public" ||
-      (discoveredKeys.has(link.from.key) && discoveredKeys.has(link.to.key)))
+    (link.visibility === "public" || discoveredKeys.has(link.key))
   );
 }
 
@@ -125,8 +124,7 @@ export function getWorldTravelNeighbors(
   const neighbors: WorldTravelEndpoint[] = [];
   for (const link of links) {
     if (link.status !== "approved") continue;
-    if (link.visibility === "discovery_locked" &&
-        (!discoveredKeys.has(link.from.key) || !discoveredKeys.has(link.to.key))) continue;
+    if (link.visibility === "discovery_locked" && !discoveredKeys.has(link.key)) continue;
     if (link.from.kind === endpoint.kind && link.from.key === endpoint.key) {
       neighbors.push(link.to);
     } else if (link.bidirectional &&
