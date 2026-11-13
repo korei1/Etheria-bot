@@ -50,6 +50,8 @@ import {
 } from "../modules/crafting/crafting-service.js";
 import { getItemDisplayName } from "../modules/inventory/item-model.js";
 import { getDatabasePool } from "../database/client.js";
+import { getPersistedDiscoveryState } from "../modules/world/discovery-repository.js";
+import { getPersonalMapProgress } from "../modules/world/discovery.js";
 import { logger } from "../core/logger.js";
 import {
   approvePersistedEditorialSpecies,
@@ -590,6 +592,61 @@ export default {
     }
 
     if (interaction.isChatInputCommand() && interaction.commandName === "etheria") {
+      const subcommand = interaction.options.getSubcommand(false);
+      if (subcommand === "carte" || subcommand === "progression") {
+        await interaction.deferReply({ ephemeral: true });
+        try {
+          const account = await getAccount(interaction);
+          const state = await getPersistedDiscoveryState(getDatabase(), account.accountId);
+          const progress = getPersonalMapProgress(state, account.accountId);
+
+          if (subcommand === "progression") {
+            const labels: Record<string, string> = {
+              continent: "Continents",
+              country: "Pays",
+              administrative_area: "Territoires administratifs",
+              settlement: "Localités",
+              geographic_feature: "Caractéristiques géographiques",
+              travel_link: "Liaisons découvertes"
+            };
+            const lines = Object.entries(progress.byKind)
+              .filter(([, count]) => count > 0)
+              .map(([kind, count]) => `• ${labels[kind] ?? kind} : **${count}**`);
+            await interaction.editReply(
+              `**Ta progression cartographique**\\n\\nDécouvertes enregistrées : **${progress.discoveredCount}**\\n\\n` +
+              (lines.length ? lines.join("\\n") : "Tu n'as pas encore enregistré de découverte.")
+            );
+            return;
+          }
+
+          const recent = [...state.records]
+            .sort((a, b) => b.discoveredAt.localeCompare(a.discoveredAt))
+            .slice(0, 15);
+          const kindLabels: Record<string, string> = {
+            continent: "Continent",
+            country: "Pays",
+            administrative_area: "Territoire",
+            settlement: "Localité",
+            geographic_feature: "Lieu naturel",
+            travel_link: "Liaison"
+          };
+          const entries = recent.map((record) =>
+            `• **${kindLabels[record.targetKind] ?? record.targetKind}** : ${record.targetKey.replaceAll("_", " ")}`
+          );
+          await interaction.editReply(
+            `**Ta carte personnelle**\\n\\n` +
+            (entries.length ? entries.join("\\n") : "Ta carte est encore vierge. Les lieux apparaîtront au fil de tes découvertes.") +
+            (progress.discoveredCount > recent.length ? `\\n\\nEt ${progress.discoveredCount - recent.length} autre(s) découverte(s).` : "")
+          );
+        } catch (error) {
+          logger.error("Impossible de charger la carte personnelle.", error);
+          await interaction.editReply(
+            "La carte personnelle est temporairement indisponible. Ta progression n'a pas été modifiée."
+          );
+        }
+        return;
+      }
+
       const startButton = new ButtonBuilder()
         .setCustomId("etheria:start")
         .setLabel("Commencer")
