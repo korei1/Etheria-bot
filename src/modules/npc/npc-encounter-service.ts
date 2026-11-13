@@ -134,13 +134,14 @@ export async function recordNpcEncounter(
     );
 
     if (!isFirst) {
+      const isOriginalFirstNpc = row.first_npc_key === npcKey;
       await client.query("COMMIT");
       return {
         recorded: true,
-        firstEncounter: false,
+        firstEncounter: isOriginalFirstNpc,
         npcKey,
         occurredAt: occurredAt.toISOString(),
-        revealedLocation: null
+        revealedLocation: isOriginalFirstNpc ? mapLocation(row) : null
       };
     }
 
