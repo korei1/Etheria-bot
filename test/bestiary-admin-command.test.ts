@@ -37,10 +37,10 @@ test("les opérations administratives essentielles sont exposées", () => {
     "ajouter-contenu-local",
     "modifier-contenu-local",
     "approuver-contenu-local",
-    "definir-horaires-local",
     "stocks-locaux",
     "ajouter-stock-local"
   ]);
+  assert.ok(names.length <= 25, "Discord limite les sous-commandes à 25.");
 });
 
 test("la disponibilité ne permet pas de réactiver directement une espèce retirée", () => {
@@ -81,7 +81,8 @@ test("la modification et l'approbation des contenus locaux exigent une révision
 
 test("les commandes de gestion des horaires et stocks sont exposées", () => {
   const options = bestiaryAdminCommand.toJSON().options ?? [];
-  assert.ok(options.some((option) => option.name === "definir-horaires-local"));
+  const modify = options.find((option) => option.name === "modifier-contenu-local");
+  assert.ok(modify?.options?.some((option) => option.name === "horaires_json"));
   assert.ok(options.some((option) => option.name === "stocks-locaux"));
   assert.ok(options.some((option) => option.name === "ajouter-stock-local"));
 });
