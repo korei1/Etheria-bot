@@ -73,3 +73,23 @@ export const bestiaryAdminCommand = new SlashCommandBuilder()
       .addBooleanOption((option) => option.setName("approuvee").setDescription("Approuver immédiatement la fiche.").setRequired(true))
   );
 
+
+  .addSubcommand((subcommand) =>
+    subcommand
+      .setName("approuver")
+      .setDescription("Approuver une fiche éditoriale.")
+      .addStringOption((option) => option.setName("espece").setDescription("Clé technique de l'espèce.").setRequired(true))
+      .addIntegerOption((option) => option.setName("revision").setDescription("Révision courante de la fiche.").setRequired(true).setMinValue(1))
+  )
+  .addSubcommand((subcommand) =>
+    subcommand
+      .setName("visibilite-region")
+      .setDescription("Modifier la visibilité d'une région.")
+      .addStringOption((option) => option.setName("region").setDescription("Clé technique de la région.").setRequired(true))
+      .addStringOption((option) => option.setName("visibilite").setDescription("Nouvelle visibilité.").setRequired(true)
+        .addChoices(
+          { name: "Publique", value: "public" },
+          { name: "Verrouillée jusqu'à découverte", value: "discovery_locked" }
+        ))
+      .addIntegerOption((option) => option.setName("revision").setDescription("Révision affichée par /etheria-admin regions.").setRequired(true).setMinValue(1))
+  );
