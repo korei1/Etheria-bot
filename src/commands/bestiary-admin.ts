@@ -135,12 +135,21 @@ export const bestiaryAdminCommand = new SlashCommandBuilder()
       .addBooleanOption((option) => option.setName("bidirectionnel").setDescription("Le trajet peut-il être parcouru dans les deux sens ?").setRequired(true))
       .addStringOption((option) => option.setName("visibilite").setDescription("Visibilité de l'itinéraire.").setRequired(true)
         .addChoices({ name: "Publique", value: "public" }, { name: "Verrouillée jusqu'à découverte", value: "discovery_locked" }))
+      .addIntegerOption((option) => option.setName("duree_minutes").setDescription("Durée Etheria validée du trajet, nécessaire aux voyages des PNJ.").setRequired(false).setMinValue(1).setMaxValue(1000000))
   )
   .addSubcommand((subcommand) =>
     subcommand
       .setName("approuver-itineraire")
       .setDescription("Approuver un itinéraire après validation de ses deux extrémités.")
       .addStringOption((option) => option.setName("cle").setDescription("Clé de l'itinéraire.").setRequired(true))
+  )
+  .addSubcommand((subcommand) =>
+    subcommand
+      .setName("programmer-voyage-pnj")
+      .setDescription("Programmer un voyage unique pour un PNJ sur un itinéraire approuvé.")
+      .addStringOption((option) => option.setName("pnj").setDescription("Clé du PNJ approuvé.").setRequired(true))
+      .addStringOption((option) => option.setName("itineraire").setDescription("Clé de l'itinéraire approuvé et chronométré.").setRequired(true))
+      .addIntegerOption((option) => option.setName("depart_dans").setDescription("Départ dans ce nombre de minutes Etheria (0 = maintenant).").setRequired(true).setMinValue(0).setMaxValue(1000000))
   )
   .addSubcommand((subcommand) =>
     subcommand
