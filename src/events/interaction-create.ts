@@ -870,6 +870,30 @@ export default {
         if (subcommand === "placer-pnj-localite") {
           const npcKey = interaction.options.getString("pnj", true).trim().toLowerCase();
           const settlementKey = interaction.options.getString("localite", true).trim().toLowerCase();
+          const scheduleInput = interaction.options.getString("horaires_json");
+          const activityLabel = interaction.options.getString("activite")?.trim() || null;
+          let schedule: WeeklyOpeningSchedule | null = null;
+          if (scheduleInput !== null) {
+            try {
+              const parsed: unknown = JSON.parse(scheduleInput.trim());
+              if (parsed === null) {
+                schedule = null;
+              } else if (
+                typeof parsed === "object" && parsed !== null &&
+                "days" in parsed && Array.isArray((parsed as { days?: unknown }).days)
+              ) {
+                schedule = parsed as WeeklyOpeningSchedule;
+                const issues = validateOpeningSchedule(schedule);
+                if (issues.length) throw new Error(issues.join(" "));
+              } else {
+                throw new Error("Le JSON doit être null ou un objet contenant un tableau days.");
+              }
+            } catch (error) {
+              const message = error instanceof Error ? error.message : "JSON invalide.";
+              throw new Error(`Calendrier invalide : ${message}`);
+            }
+          }
+          if (activityLabel && activityLabel.length > 120) throw new Error("L'activité ne peut pas dépasser 120 caractères.");
           const client = await database.connect();
           try {
             await client.query("BEGIN");
@@ -886,11 +910,17 @@ export default {
               throw new Error("Cette localité n'existe pas ou n'a pas été approuvée.");
             }
             await client.query(
-              `INSERT INTO npc_settlement_locations (npc_key, settlement_id)
-               VALUES ($1, $2)
+              `INSERT INTO npc_settlement_locations
+                 (npc_key, settlement_id, presence_schedule, activity_label)
+               VALUES ($1, $2, $3::jsonb, $4)
                ON CONFLICT (npc_key, settlement_id)
-               DO UPDATE SET is_active = TRUE`,
-              [npcKey, settlement.rows[0].id]
+               DO UPDATE SET
+                 is_active = TRUE,
+                 presence_schedule = CASE WHEN $5 THEN EXCLUDED.presence_schedule ELSE npc_settlement_locations.presence_schedule END,
+                 activity_label = CASE WHEN $6 THEN EXCLUDED.activity_label ELSE npc_settlement_locations.activity_label END`,
+              [npcKey, settlement.rows[0].id,
+                scheduleInput === null || schedule === null ? null : JSON.stringify(schedule),
+                activityLabel, scheduleInput !== null, interaction.options.getString("activite") !== null]
             );
             await client.query("COMMIT");
           } catch (error) {
@@ -899,103 +929,7 @@ export default {
           } finally {
             client.release();
           }
-          await interaction.editReply("Placement du PNJ enregistré. Il apparaîtra aux personnages présents dans cette localité et l'ayant découverte.");
-          return;
-        }
-
-        if (subcommand === "programmer-pnj") {
-          const npcKey = interaction.options.getString("pnj", true).trim().toLowerCase();
-          const placeType = interaction.options.getString("lieu_type", true);
-          const placeKey = interaction.options.getString("lieu", true).trim().toLowerCase();
-          const scheduleInput = interaction.options.getString("horaires_json", true).trim();
-          const activityLabel = interaction.options.getString("activite")?.trim() || null;
-          if (!/^[a-z0-9_-]{1,80}$/.test(npcKey) || !/^[a-z0-9_-]{1,80}$/.test(placeKey)) {
-            throw new Error("Les clés du PNJ et du lieu doivent utiliser uniquement lettres minuscules, chiffres, tirets ou tirets bas.");
-          }
-          if (activityLabel && activityLabel.length > 120) {
-            throw new Error("L'activité ne peut pas dépasser 120 caractères.");
-          }
-
-          let schedule: WeeklyOpeningSchedule | null;
-          try {
-            const parsed: unknown = JSON.parse(scheduleInput);
-            if (parsed === null) {
-              schedule = null;
-            } else if (
-              typeof parsed === "object" && parsed !== null &&
-              "days" in parsed && Array.isArray((parsed as { days?: unknown }).days)
-            ) {
-              schedule = parsed as WeeklyOpeningSchedule;
-              const issues = validateOpeningSchedule(schedule);
-              if (issues.length) throw new Error(issues.join(" "));
-            } else {
-              throw new Error("Le JSON doit être null ou un objet contenant un tableau days.");
-            }
-          } catch (error) {
-            const message = error instanceof Error ? error.message : "JSON invalide.";
-            throw new Error(`Calendrier invalide : ${message}`);
-          }
-
-          if (placeType === "zone_depart" && schedule !== null) {
-            throw new Error("Les horaires des zones de départ attendent la prise en charge de leur fuseau local. Tu peux y définir une activité sans restriction horaire avec le calendrier null.");
-          }
-
-          const client = await database.connect();
-          try {
-            await client.query("BEGIN");
-            const npc = await client.query(
-              "SELECT 1 FROM npc_definitions WHERE npc_key = $1 AND editorial_status <> 'retired'",
-              [npcKey]
-            );
-            if (!npc.rowCount) throw new Error("PNJ introuvable ou retiré.");
-
-            let placement;
-            if (placeType === "localite") {
-              placement = await client.query<{ id: string }>(
-                `SELECT nl.settlement_id AS id
-                 FROM npc_settlement_locations nl
-                 JOIN world_settlements s ON s.id = nl.settlement_id
-                 WHERE nl.npc_key = $1 AND s.settlement_key = $2
-                   AND nl.is_active = TRUE AND s.editorial_status = 'approved'
-                 FOR UPDATE OF nl`,
-                [npcKey, placeKey]
-              );
-              if (!placement.rows[0]) throw new Error("Aucun placement actif de ce PNJ dans cette localité approuvée.");
-              await client.query(
-                `UPDATE npc_settlement_locations
-                 SET presence_schedule = $3::jsonb, activity_label = $4
-                 WHERE npc_key = $1 AND settlement_id = $2`,
-                [npcKey, placement.rows[0].id, schedule === null ? null : JSON.stringify(schedule), activityLabel]
-              );
-            } else {
-              placement = await client.query<{ id: string }>(
-                `SELECT sl.spawn_zone_id AS id
-                 FROM npc_spawn_locations sl
-                 JOIN starting_spawn_zones z ON z.id = sl.spawn_zone_id
-                 WHERE sl.npc_key = $1 AND z.zone_key = $2 AND sl.is_active = TRUE
-                 FOR UPDATE OF sl`,
-                [npcKey, placeKey]
-              );
-              if (!placement.rows[0]) throw new Error("Aucun placement actif de ce PNJ dans cette zone de départ.");
-              await client.query(
-                `UPDATE npc_spawn_locations
-                 SET presence_schedule = $3::jsonb, activity_label = $4
-                 WHERE npc_key = $1 AND spawn_zone_id = $2`,
-                [npcKey, placement.rows[0].id, schedule === null ? null : JSON.stringify(schedule), activityLabel]
-              );
-            }
-            await client.query("COMMIT");
-          } catch (error) {
-            await client.query("ROLLBACK").catch(() => undefined);
-            throw error;
-          } finally {
-            client.release();
-          }
-          await interaction.editReply(
-            schedule === null
-              ? "Programmation enregistrée : aucune restriction horaire."
-              : "Programmation hebdomadaire et activité enregistrées pour ce placement."
-          );
+          await interaction.editReply("Placement du PNJ enregistré. Ses horaires et son activité ont été actualisés lorsque ces champs ont été fournis.");
           return;
         }
 
