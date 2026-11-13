@@ -59,6 +59,27 @@ CREATE TRIGGER world_local_shop_stock_parent_guard
   FOR EACH ROW
   EXECUTE FUNCTION enforce_local_shop_stock_parent();
 
+CREATE FUNCTION prevent_shop_kind_change_with_stock()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $local_stock_kind$
+BEGIN
+  IF NEW.content_kind <> 'shop' AND EXISTS (
+    SELECT 1 FROM world_local_shop_stock stock
+    WHERE stock.local_content_id = OLD.id
+  ) THEN
+    RAISE EXCEPTION 'Un commerce possédant du stock ne peut pas changer de type';
+  END IF;
+  RETURN NEW;
+END;
+$local_stock_kind$;
+
+CREATE TRIGGER world_local_content_shop_stock_guard
+  BEFORE UPDATE OF content_kind
+  ON world_local_content
+  FOR EACH ROW
+  EXECUTE FUNCTION prevent_shop_kind_change_with_stock();
+
 ALTER TABLE world_local_shop_stock ENABLE ROW LEVEL SECURITY;
 
 COMMIT;
