@@ -2,7 +2,10 @@ import assert from "node:assert/strict";
 import testRunner from "node:test";
 import {
   addCompanionSpecies,
+  addEditorialCompanionSpecies,
   createCompanionSpeciesRegistry,
+  createInitialFantasyBestiaryRegistry,
+  listVisibleEditorialCompanionSpecies,
   getRegisteredCompanionSpecies,
   listPublicCompanionSpecies,
   transitionCompanionSpeciesAvailability,
@@ -128,4 +131,45 @@ testRunner("les formes évolutives sont extensibles sans imposer un nombre fixe 
   ];
   const registry = createCompanionSpeciesRegistry([region], [extended]);
   assert.equal(registry.species.get("many_forms")?.evolutionForms.length, 6);
+});
+
+testRunner("les 43 fiches canoniques sont intégrées au registre extensible sans données gameplay inventées", () => {
+  const registry = createInitialFantasyBestiaryRegistry();
+  assert.equal(registry.editorialSpecies.size, 43);
+  assert.equal(registry.species.size, 0);
+  assert.equal(registry.regions.size, 7);
+  for (const entry of registry.editorialSpecies.values()) {
+    assert.equal(entry.editorialStatus, "approved");
+    assert.equal(entry.forms.length, 4);
+    assert.ok(entry.element);
+  }
+});
+
+testRunner("le registre éditorial masque les six espèces d'Umbrelune avant découverte", () => {
+  const registry = createInitialFantasyBestiaryRegistry();
+  const visibleBeforeDiscovery = listVisibleEditorialCompanionSpecies(registry, new Set());
+  assert.equal(visibleBeforeDiscovery.length, 37);
+  assert.equal(visibleBeforeDiscovery.some((entry) => entry.regionKey === "umbrelune"), false);
+  const visibleAfterDiscovery = listVisibleEditorialCompanionSpecies(
+    registry,
+    new Set(["umbrelune"])
+  );
+  assert.equal(visibleAfterDiscovery.length, 43);
+});
+
+testRunner("une fiche éditoriale peut être ajoutée sans rareté ni méthode d'acquisition", () => {
+  const registry = createInitialFantasyBestiaryRegistry();
+  const editorial = {
+    key: "future_species",
+    name: "Espèce future",
+    regionKey: "sylvaria",
+    element: "terre" as const,
+    editorialStatus: "approved" as const,
+    forms: [
+      { key: "initial", name: "Forme initiale", order: 0 },
+      { key: "adult", name: "Forme adulte", order: 1 }
+    ]
+  };
+  const next = addEditorialCompanionSpecies(registry, editorial);
+  assert.equal(next.editorialSpecies.size, 44);
 });
