@@ -67,3 +67,16 @@ Le catalogue prend également en charge les décisions déjà validées pour la 
 - Le catalogue accepte des espèces animales existantes aussi bien que des créatures fantastiques, sans limiter le monde à l'une de ces familles.
 
 Les fiches d'espèces réelles ou fantastiques restent à renseigner avec leurs habitats, répartitions et variantes vérifiés. Aucune espèce, répartition ou capacité n'est inventée dans le catalogue par défaut.
+
+
+## Protection et conservation
+
+Le catalogue distingue trois origines : animal réel, créature fantastique et hybride.
+
+Pour les espèces réelles, une évaluation de conservation IUCN est facultative, mais lorsqu'elle est renseignée elle doit comporter une catégorie reconnue, une autorité, une source HTTPS et une date d'évaluation. Une protection légale n'est pas déduite de la catégorie IUCN : elle devra être documentée séparément par juridiction avant d'être ajoutée.
+
+Pour les espèces fantastiques, le statut de conservation est propre à l'univers Etheria et reste distinct des évaluations réelles. Aucun statut n'est attribué automatiquement.
+
+Le fichier `companion-species-candidates.ts` contient une première liste de pistes (animaux réels et créatures fantastiques). Ce sont uniquement des candidates éditoriales : elles ne sont pas jouables et ne reçoivent aucune rareté, région, habitat, élément, capacité, variante ou protection avant validation de leur fiche.
+
+Les données écologiques réelles doivent être sourcées et datées. Les catégories de rareté Etheria, les éléments, les chances de rencontre et les règles d'acquisition restent des décisions de gameplay, pas des déductions automatiques à partir du statut de conservation réel.
