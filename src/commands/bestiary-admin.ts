@@ -105,6 +105,8 @@ export const bestiaryAdminCommand = new SlashCommandBuilder()
       .setDescription("Placer un PNJ dans une localité approuvée.")
       .addStringOption((option) => option.setName("pnj").setDescription("Clé du PNJ.").setRequired(true))
       .addStringOption((option) => option.setName("localite").setDescription("Clé de la localité approuvée.").setRequired(true))
+      .addStringOption((option) => option.setName("horaires_json").setDescription("Calendrier hebdomadaire JSON facultatif ; null retire la restriction.").setRequired(false).setMaxLength(1000))
+      .addStringOption((option) => option.setName("activite").setDescription("Activité affichée aux joueurs.").setRequired(false).setMaxLength(120))
   )
   .addSubcommand((subcommand) =>
     subcommand
@@ -155,6 +157,7 @@ export const bestiaryAdminCommand = new SlashCommandBuilder()
       .addStringOption((option) => option.setName("noeud").setDescription("Clé du premier nœud de dialogue.").setRequired(true))
       .addStringOption((option) => option.setName("texte").setDescription("Texte prononcé lors de la première rencontre.").setRequired(true))
       .addStringOption((option) => option.setName("description").setDescription("Description courte du PNJ.").setRequired(false))
+      .addStringOption((option) => option.setName("activite").setDescription("Activité dans sa zone de départ (120 caractères max).").setRequired(false).setMaxLength(120))
   )
   .addSubcommand((subcommand) =>
     subcommand
@@ -174,17 +177,6 @@ export const bestiaryAdminCommand = new SlashCommandBuilder()
       .addStringOption((option) => option.setName("cle").setDescription("Clé technique du choix.").setRequired(true))
       .addStringOption((option) => option.setName("libelle").setDescription("Texte affiché au joueur.").setRequired(true))
       .addStringOption((option) => option.setName("destination").setDescription("Clé du nœud suivant.").setRequired(true))
-  )
-  .addSubcommand((subcommand) =>
-    subcommand
-      .setName("programmer-pnj")
-      .setDescription("Définir les heures de présence et l'activité d'un PNJ dans un lieu.")
-      .addStringOption((option) => option.setName("pnj").setDescription("Clé technique du PNJ.").setRequired(true))
-      .addStringOption((option) => option.setName("lieu_type").setDescription("Type de lieu concerné.").setRequired(true)
-        .addChoices({ name: "Localité", value: "localite" }, { name: "Zone de départ", value: "zone_depart" }))
-      .addStringOption((option) => option.setName("lieu").setDescription("Clé de la localité ou de la zone de départ.").setRequired(true))
-      .addStringOption((option) => option.setName("horaires_json").setDescription("Calendrier JSON hebdomadaire, ou null pour aucune restriction.").setRequired(true).setMaxLength(1000))
-      .addStringOption((option) => option.setName("activite").setDescription("Activité affichée aux joueurs (120 caractères max).").setRequired(false).setMaxLength(120))
   )
   .addSubcommand((subcommand) =>
     subcommand
