@@ -52,6 +52,22 @@ Les 28 pays déjà présents dans la migration 0004 sont rattachés à leur cont
 - La progression cartographique est calculée séparément pour chaque compte.
 - Ce module définit les règles métier en mémoire ; aucune persistance SQL ni commande Discord n'est encore branchée.
 
+
+## Persistance des découvertes
+
+- La migration `0026_world_discoveries.sql` crée `world_discoveries` et `world_discovery_events`.
+- Les découvertes sont rattachées à `accounts.id`, jamais à un personnage : elles survivent aux générations successives d'un joueur.
+- Une cible n'est enregistrée qu'une fois par compte, type et clé stable. Son premier événement, sa méthode et sa date restent conservés.
+- Chaque événement accepté est journalisé, y compris les nouvelles tentatives visant une cible déjà découverte. Le couple compte/identifiant d'événement est idempotent.
+- Les identifiants d'événement sont du texte afin d'accepter les identifiants Discord (snowflakes) sans conversion arbitraire.
+- Les prérequis sont contrôlés dans la transaction avant une première découverte. Les brouillons sont refusés.
+- Les tables n'ont aucune dépendance FK vers le catalogue géographique : retirer une fiche ne détruit donc jamais la progression des joueurs.
+- Le repository recharge l'état et les identifiants d'événements afin de reconstruire le contrat `DiscoveryState` existant.
+- Les contraintes uniques SQL arbitrent les appels concurrents provenant de plusieurs processus.
+- Les deux tables sont protégées par RLS et ne doivent être utilisées que par le backend de confiance.
+- Le test PostgreSQL dédié utilise un schéma isolé et couvre l'isolation des comptes, les prérequis, les doublons d'événements, les cibles déjà découvertes et la protection contre la suppression d'un compte possédant un historique.
+- La migration 0026 n'a pas été exécutée sur Supabase. Aucune commande Discord n'est encore raccordée à ce repository.
+
 ## Déplacements
 
 - `travel-network.ts` décrit les connexions entre localités et caractéristiques géographiques.
