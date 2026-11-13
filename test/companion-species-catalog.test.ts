@@ -1,0 +1,85 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import {
+  assertValidIndividualTraits,
+  createCompanionSpeciesCatalog,
+  getCompanionSpecies,
+  validateCompanionSpeciesDefinition,
+  validateIndividualTraits,
+  CompanionSpeciesCatalogError,
+  type CompanionSpeciesDefinition
+} from "../src/modules/companions/companion-species-catalog.js";
+
+const woodlandSpecies: CompanionSpeciesDefinition = {
+  key: "woodland_companion",
+  name: "Espèce forestière de test",
+  category: "terrestrial",
+  rarity: "commun",
+  acquisitionMethods: ["wild_encounter", "adoption"],
+  discordShopElementChoice: false,
+  fixedElement: "terre",
+  individualTraits: [
+    { key: "coat_pattern", label: "Motif du pelage", type: "choice", values: ["uni", "tachete"] },
+    { key: "temperament_note", label: "Tempérament", type: "text" },
+    { key: "is_nocturnal", label: "Nocturne", type: "boolean" }
+  ]
+};
+
+test("une espèce hors boutique doit imposer un élément valide", () => {
+  assert.deepEqual(validateCompanionSpeciesDefinition(woodlandSpecies), []);
+  assert.ok(validateCompanionSpeciesDefinition({
+    ...woodlandSpecies,
+    fixedElement: undefined
+  }).some((issue) => issue.includes("élément fixe")));
+});
+
+test("une espèce de boutique autorise le choix d'élément sans élément fixe", () => {
+  const shopSpecies: CompanionSpeciesDefinition = {
+    ...woodlandSpecies,
+    key: "shop_companion",
+    acquisitionMethods: ["discord_shop"],
+    discordShopElementChoice: true,
+    fixedElement: undefined
+  };
+  assert.deepEqual(validateCompanionSpeciesDefinition(shopSpecies), []);
+  assert.ok(validateCompanionSpeciesDefinition({
+    ...shopSpecies,
+    fixedElement: "feu"
+  }).some((issue) => issue.includes("élément fixe")));
+});
+
+test("le catalogue refuse les clés dupliquées et les définitions invalides", () => {
+  const catalog = createCompanionSpeciesCatalog([woodlandSpecies]);
+  assert.equal(getCompanionSpecies(catalog, woodlandSpecies.key)?.name, woodlandSpecies.name);
+  assert.equal(getCompanionSpecies(catalog, "missing_species"), undefined);
+  assert.throws(
+    () => createCompanionSpeciesCatalog([woodlandSpecies, woodlandSpecies]),
+    CompanionSpeciesCatalogError
+  );
+  assert.throws(
+    () => createCompanionSpeciesCatalog([{ ...woodlandSpecies, rarity: "unknown" as never }]),
+    CompanionSpeciesCatalogError
+  );
+});
+
+test("les caractéristiques individuelles doivent correspondre au modèle de l'espèce", () => {
+  assert.deepEqual(validateIndividualTraits(woodlandSpecies, {
+    coat_pattern: "tachete",
+    temperament_note: "Curieux",
+    is_nocturnal: false
+  }), []);
+  assertValidIndividualTraits(woodlandSpecies, { coat_pattern: "uni" });
+});
+
+test("les caractéristiques inconnues et les valeurs de mauvais type sont refusées", () => {
+  assert.ok(validateIndividualTraits(woodlandSpecies, {
+    coat_pattern: "rayures",
+    temperament_note: 12,
+    is_nocturnal: "oui",
+    invented_power: true
+  }).length >= 4);
+  assert.throws(
+    () => assertValidIndividualTraits(woodlandSpecies, { coat_pattern: "rayures" }),
+    CompanionSpeciesCatalogError
+  );
+});
