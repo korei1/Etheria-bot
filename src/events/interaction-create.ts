@@ -64,6 +64,7 @@ import {
   type WeeklyOpeningSchedule
 } from "../modules/world/local-life-simulation.js";
 import { logger } from "../core/logger.js";
+import { getCurrentLocalLife, formatLocalOpeningSchedule } from "../modules/world/local-life-service.js";
 import {
   approvePersistedEditorialSpecies,
   createPersistedCompanionRegion,
@@ -1294,6 +1295,63 @@ export default {
         } catch (error) {
           logger.error("Impossible de charger les itinéraires accessibles.", error);
           await interaction.editReply("Les itinéraires ne sont pas disponibles pour le moment. Ta position n'a pas été modifiée.");
+        }
+        return;
+      }
+
+      if (subcommand === "localite") {
+        await interaction.deferReply({ ephemeral: true });
+        try {
+          const account = await getAccount(interaction);
+          const result = await getCurrentLocalLife(getDatabase(), account.accountId);
+          if (result.status === "no_active_character") {
+            await interaction.editReply("Tu dois d'abord créer un personnage actif pour consulter la vie locale.");
+            return;
+          }
+          if (result.status === "not_in_settlement") {
+            await interaction.editReply("Tu es encore dans ta zone de départ. Les activités, services et commerces seront consultables après ton arrivée dans une localité.");
+            return;
+          }
+          if (result.status === "settlement_not_discovered") {
+            await interaction.editReply("Cette localité n'est pas encore enregistrée dans ta carte personnelle.");
+            return;
+          }
+          if (result.entries.length === 0) {
+            await interaction.editReply("Aucune activité, aucun service ni commerce public n'est actuellement configuré à **" + result.settlementName + "**.");
+            return;
+          }
+
+          const kindLabels: Record<string, string> = {
+            activity: "Activité",
+            service: "Service",
+            shop: "Commerce",
+            event: "Événement"
+          };
+          const lines = result.entries.slice(0, 20).map((entry) => {
+            const details = [
+              "**" + entry.displayName + "** · " + (kindLabels[entry.kind] ?? entry.kind),
+              entry.description,
+              entry.startDay !== null && entry.endDay !== null
+                ? "Calendrier Etheria : jours " + entry.startDay + " à " + entry.endDay
+                : null,
+              entry.openingSchedule
+                ? "Horaires : " + formatLocalOpeningSchedule(entry.openingSchedule)
+                : null,
+              entry.kind === "shop"
+                ? (entry.stock.length
+                  ? "Articles : " + entry.stock.map((item) =>
+                      item.displayName + " (" + item.quantity + "/" + item.maximumQuantity + ") · " + item.priceTeas + " Teas"
+                    ).join("; ")
+                  : "Aucun article en stock n'est configuré.")
+                : null
+            ].filter(Boolean);
+            return details.join("\n");
+          });
+          const message = "**Vie locale de " + result.settlementName + "**\n\n" + lines.join("\n\n");
+          await interaction.editReply(message.slice(0, 1950));
+        } catch (error) {
+          logger.error("Impossible de charger la vie locale du personnage.", error);
+          await interaction.editReply("La vie locale est temporairement indisponible. Aucune donnée de personnage ou de stock n'a été modifiée.");
         }
         return;
       }
