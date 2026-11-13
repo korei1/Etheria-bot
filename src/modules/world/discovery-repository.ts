@@ -1,4 +1,4 @@
-import type { Pool } from "pg";
+import type { Pool, PoolClient } from "pg";
 import {
   createDiscoveryState,
   type DiscoveryMethod,
@@ -41,15 +41,15 @@ function toDiscoveryRecord(row: DiscoveryRow): DiscoveryRecord {
 }
 
 /** Recharge l'état personnel et les identifiants d'événements déjà consommés. */
-export async function getPersistedDiscoveryState(
-  pool: Pool,
+async function loadDiscoveryState(
+  queryable: Pool | PoolClient,
   accountId: string
 ): Promise<DiscoveryState> {
   if (!accountId.trim()) {
     throw new WorldDiscoveryRepositoryError("Compte joueur absent.");
   }
   const [discoveries, events] = await Promise.all([
-    pool.query<DiscoveryRow>(
+    queryable.query<DiscoveryRow>(
       `SELECT d.account_id, d.target_key, d.target_kind, d.discovery_method,
               d.discovered_at, e.event_id
        FROM world_discoveries d
@@ -59,7 +59,7 @@ export async function getPersistedDiscoveryState(
        ORDER BY d.discovered_at, d.target_kind, d.target_key`,
       [accountId]
     ),
-    pool.query<EventIdRow>(
+    queryable.query<EventIdRow>(
       "SELECT event_id FROM world_discovery_events WHERE account_id = $1",
       [accountId]
     )
@@ -68,6 +68,13 @@ export async function getPersistedDiscoveryState(
     discoveries.rows.map(toDiscoveryRecord),
     new Set(events.rows.map((row) => row.event_id))
   );
+}
+
+export async function getPersistedDiscoveryState(
+  pool: Pool,
+  accountId: string
+): Promise<DiscoveryState> {
+  return loadDiscoveryState(pool, accountId);
 }
 
 /**
@@ -112,7 +119,7 @@ export async function recordPersistedWorldDiscovery(
     );
     if (duplicate.rows.length > 0) {
       await client.query("ROLLBACK");
-      const state = await getPersistedDiscoveryState(pool, input.accountId);
+      const state = await loadDiscoveryState(client, input.accountId);
       return { status: "duplicate_event", state };
     }
 
@@ -140,11 +147,11 @@ export async function recordPersistedWorldDiscovery(
         await client.query("ROLLBACK");
         return {
           status: "duplicate_event",
-          state: await getPersistedDiscoveryState(pool, input.accountId)
+          state: await loadDiscoveryState(client, input.accountId)
         };
       }
       await client.query("COMMIT");
-      const state = await getPersistedDiscoveryState(pool, input.accountId);
+      const state = await loadDiscoveryState(client, input.accountId);
       result = {
         status: "already_discovered",
         state,
@@ -157,7 +164,7 @@ export async function recordPersistedWorldDiscovery(
       await client.query("ROLLBACK");
       return {
         status: "rejected",
-        state: await getPersistedDiscoveryState(pool, input.accountId),
+        state: await loadDiscoveryState(client, input.accountId),
         reason: "Cette découverte n'est pas approuvée."
       };
     }
@@ -176,7 +183,7 @@ export async function recordPersistedWorldDiscovery(
         await client.query("ROLLBACK");
         return {
           status: "rejected",
-          state: await getPersistedDiscoveryState(pool, input.accountId),
+          state: await loadDiscoveryState(client, input.accountId),
           reason: "Les prérequis de découverte ne sont pas remplis."
         };
       }
@@ -194,7 +201,7 @@ export async function recordPersistedWorldDiscovery(
       await client.query("ROLLBACK");
       return {
         status: "duplicate_event",
-        state: await getPersistedDiscoveryState(pool, input.accountId)
+        state: await loadDiscoveryState(client, input.accountId)
       };
     }
 
@@ -222,7 +229,7 @@ export async function recordPersistedWorldDiscovery(
     }
     await client.query("COMMIT");
 
-    const state = await getPersistedDiscoveryState(pool, input.accountId);
+    const state = await loadDiscoveryState(client, input.accountId);
     const record = state.records.find((entry) =>
       entry.targetKind === input.target.kind && entry.targetKey === input.target.key
     );
