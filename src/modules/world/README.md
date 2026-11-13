@@ -144,3 +144,17 @@ Les migrations 0024 à 0029 sont préparées dans le dépôt mais ne doivent pas
 - Les fiches de commerce affichent les articles, leurs prix en Teas et les quantités disponibles. Les horaires configurés sont présentés tels quels, sans prétendre déterminer si un établissement est actuellement ouvert.
 - Les achats ne sont pas activés à cette étape : le portefeuille partagé Sweet Tea n'a pas encore de pont entrant fonctionnel et testé. Aucun portefeuille secondaire, débit fictif ou décrément de stock n'est créé.
 - La commande est en lecture seule. Elle n'invente ni contenu, ni horaire, ni stock ; elle affiche uniquement les fiches approuvées par l'équipe éditoriale.
+
+
+## Horloge mondiale et fuseaux horaires
+
+- `world-clock.ts` définit une horloge Etheria unique exprimée en minutes absolues depuis le début du calendrier, ainsi que la projection déterministe du temps réel vers le temps du jeu.
+- Le calendrier conserve ses cinq cycles de 24 jours (120 jours par année) et sa semaine de sept jours.
+- Chaque localité peut recevoir un fuseau horaire distinct. Deux localités d'un même pays peuvent donc afficher des heures différentes.
+- Un fuseau stocke un décalage en minutes par rapport au méridien de référence Etheria. Une longitude peut être conservée et utilisée pour estimer un décalage par bandes de 15 degrés, mais cette estimation doit être validée éditorialement.
+- Les fuseaux sont configurés explicitement : aucune affectation géographique n'est préremplie tant que les coordonnées des territoires ne sont pas définies.
+- Les changements saisonniers d'heure ne sont pas pris en charge en V1 ; ils ne sont pas simulés implicitement.
+- La migration `0032_world_clock_and_time_zones.sql` crée une horloge persistante initialement en pause, sans rythme d'écoulement inventé, un registre de fuseaux et l'affectation facultative d'un fuseau à chaque localité.
+- Les horaires d'ouverture et événements locaux devront utiliser l'heure locale calculée depuis la même minute mondiale. Les déplacements changent le fuseau affiché lorsqu'une localité de destination possède une affectation.
+- Les tests `world-clock.test.ts` couvrent les décalages, les passages de minuit et d'année, les cycles, l'estimation par longitude et la projection de l'horloge.
+- La migration 0032 est préparée mais n'a pas été exécutée sur Supabase. Aucun fuseau réel ni rythme de progression n'est configuré.
