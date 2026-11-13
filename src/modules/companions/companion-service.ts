@@ -1,4 +1,5 @@
 import type { Pool, PoolClient } from "pg";
+import type { CompanionIndividualTraits } from "./companion-species-catalog.js";
 import {
   applyFreeRation,
   calculateRestRecovery,
@@ -37,6 +38,7 @@ export interface CompanionRecord {
   acquisitionMethod: CompanionAcquisitionMethod;
   acquiredAt: Date;
   selectedAt: Date | null;
+  individualTraits: CompanionIndividualTraits;
 }
 
 export interface CompanionCareState {
@@ -63,6 +65,7 @@ interface CompanionRow {
   acquisition_method: CompanionAcquisitionMethod;
   acquired_at: Date;
   selected_at: Date | null;
+  individual_traits: CompanionIndividualTraits;
 }
 
 interface CareRow {
@@ -99,7 +102,8 @@ function mapCompanion(row: CompanionRow): CompanionRecord {
     experience: Number(row.experience),
     acquisitionMethod: row.acquisition_method,
     acquiredAt: row.acquired_at,
-    selectedAt: row.selected_at
+    selectedAt: row.selected_at,
+    individualTraits: row.individual_traits ?? {}
   };
 }
 
@@ -124,7 +128,7 @@ async function lockOwnedCompanion(
 ): Promise<CompanionRow> {
   const result = await client.query<CompanionRow>(
     `SELECT id, owner_account_id, species_key, display_name, rarity, element,
-            level, experience, acquisition_method, acquired_at, selected_at
+            level, experience, acquisition_method, acquired_at, selected_at, individual_traits
      FROM companion_instances
      WHERE id = $1 AND owner_account_id = $2
      FOR UPDATE`,
@@ -152,6 +156,7 @@ export async function createCompanion(
     initialHungerPercent: number;
     initialThirstPercent: number;
     initialEnergy: number;
+    individualTraits?: CompanionIndividualTraits;
     now?: Date;
   }
 ): Promise<CompanionRecord> {
@@ -191,17 +196,18 @@ export async function createCompanion(
 
     const inserted = await client.query<CompanionRow>(
       `INSERT INTO companion_instances (
-         owner_account_id, species_key, display_name, rarity, element, acquisition_method
-       ) VALUES ($1, $2, $3, $4, $5, $6)
+         owner_account_id, species_key, display_name, rarity, element, acquisition_method, individual_traits
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb)
        RETURNING id, owner_account_id, species_key, display_name, rarity, element,
-                 level, experience, acquisition_method, acquired_at, selected_at`,
+                 level, experience, acquisition_method, acquired_at, selected_at, individual_traits`,
       [
         input.accountId,
         speciesKey,
         input.displayName?.trim() || null,
         input.rarity,
         input.element,
-        input.acquisitionMethod
+        input.acquisitionMethod,
+        JSON.stringify(input.individualTraits ?? {})
       ]
     );
     const companion = inserted.rows[0];
@@ -229,7 +235,7 @@ export async function listCompanions(
 ): Promise<CompanionRecord[]> {
   const result = await pool.query<CompanionRow>(
     `SELECT id, owner_account_id, species_key, display_name, rarity, element,
-            level, experience, acquisition_method, acquired_at, selected_at
+            level, experience, acquisition_method, acquired_at, selected_at, individual_traits
      FROM companion_instances
      WHERE owner_account_id = $1
      ORDER BY acquired_at, id`,
@@ -481,7 +487,7 @@ export async function selectCompanion(
       `UPDATE companion_instances SET selected_at = $3, updated_at = $3
        WHERE id = $1 AND owner_account_id = $2
        RETURNING id, owner_account_id, species_key, display_name, rarity, element,
-                 level, experience, acquisition_method, acquired_at, selected_at`,
+                 level, experience, acquisition_method, acquired_at, selected_at, individual_traits`,
       [input.companionId, input.accountId, now]
     );
     await client.query("COMMIT");
