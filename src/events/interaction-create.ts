@@ -53,6 +53,10 @@ import { getItemDisplayName } from "../modules/inventory/item-model.js";
 import { getDatabasePool } from "../database/client.js";
 import { getPersistedDiscoveryState } from "../modules/world/discovery-repository.js";
 import { getPersonalMapProgress } from "../modules/world/discovery.js";
+import {
+  listAvailableCharacterTravelRoutes,
+  travelCharacter
+} from "../modules/world/travel-service.js";
 import { chooseNpcDialogueOption, listNpcEncountersAtCharacterLocation, startNpcConversation, type NpcDialogueView } from "../modules/npc/npc-dialogue-service.js";
 import { logger } from "../core/logger.js";
 import {
@@ -1035,6 +1039,41 @@ export default {
         return;
       }
 
+      if (subcommand === "voyager") {
+        await interaction.deferReply({ ephemeral: true });
+        try {
+          const account = await getAccount(interaction);
+          const character = await getActiveCharacter(getDatabase(), account.accountId);
+          if (!character) {
+            await interaction.editReply("Tu dois d'abord créer un personnage actif pour voyager dans Etheria.");
+            return;
+          }
+          const routes = await listAvailableCharacterTravelRoutes(getDatabase(), {
+            accountId: account.accountId
+          });
+          if (routes.length === 0) {
+            await interaction.editReply("Aucun itinéraire approuvé et accessible ne part de ton lieu actuel. Les chemins apparaîtront lorsque le monde aura été configuré et que tu les auras découverts.");
+            return;
+          }
+          const menu = new StringSelectMenuBuilder()
+            .setCustomId("etheria:travel:choose")
+            .setPlaceholder("Choisir un itinéraire")
+            .addOptions(routes.map((route) => ({
+              label: route.displayName.slice(0, 100),
+              value: route.linkKey,
+              description: `${route.destinationLabel} · ${route.mode}`.slice(0, 100)
+            })));
+          await interaction.editReply({
+            content: "Voici les itinéraires accessibles depuis ton lieu actuel. Choisis celui que tu souhaites emprunter.",
+            components: [new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(menu)]
+          });
+        } catch (error) {
+          logger.error("Impossible de charger les itinéraires accessibles.", error);
+          await interaction.editReply("Les itinéraires ne sont pas disponibles pour le moment. Ta position n'a pas été modifiée.");
+        }
+        return;
+      }
+
       if (subcommand === "carte" || subcommand === "progression") {
         await interaction.deferReply({ ephemeral: true });
         try {
@@ -1103,6 +1142,37 @@ export default {
         components: [row],
         ephemeral: true
       });
+      return;
+    }
+
+    if (interaction.isStringSelectMenu() && interaction.customId === "etheria:travel:choose") {
+      await interaction.deferReply({ ephemeral: true });
+      try {
+        const account = await getAccount(interaction);
+        const character = await getActiveCharacter(getDatabase(), account.accountId);
+        if (!character) {
+          await interaction.editReply("Aucun personnage actif n'a été trouvé.");
+          return;
+        }
+        const result = await travelCharacter(getDatabase(), {
+          interactionId: interaction.id,
+          accountId: account.accountId,
+          characterId: character.id,
+          linkKey: interaction.values[0]
+        });
+        await interaction.editReply(
+          result.status === "traveled"
+            ? `Tu as emprunté **${result.routeName}** et atteint **${result.destinationName}**. Cette découverte a été ajoutée à ta carte personnelle.`
+            : `Ce voyage avait déjà été enregistré. Ta destination est **${result.destinationName}**.`
+        );
+      } catch (error) {
+        logger.error("Impossible d'effectuer le déplacement Etheria.", error);
+        await interaction.editReply(
+          error instanceof Error
+            ? error.message
+            : "Le voyage n'a pas pu être effectué. Ta position précédente est conservée."
+        );
+      }
       return;
     }
 
