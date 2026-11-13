@@ -428,7 +428,6 @@ export default {
       try {
         const database = getDatabase();
         const subcommand = interaction.options.getSubcommand();
-        const account = await getAccount(interaction);
 
         if (subcommand === "historique") {
           const limit = interaction.options.getInteger("limite") ?? 10;
@@ -490,6 +489,7 @@ export default {
         }
 
         if (subcommand === "ajouter-region") {
+          const account = await getAccount(interaction);
           await createPersistedCompanionRegion(database, {
             regionKey: interaction.options.getString("cle", true).trim().toLowerCase(),
             name: interaction.options.getString("nom", true).trim(),
@@ -502,6 +502,7 @@ export default {
         }
 
         if (subcommand === "visibilite-region") {
+          const account = await getAccount(interaction);
           const result = await setPersistedRegionVisibility(database, {
             regionKey: interaction.options.getString("region", true).trim().toLowerCase(),
             visibility: interaction.options.getString("visibilite", true) as "public" | "discovery_locked",
@@ -516,6 +517,7 @@ export default {
         }
 
         if (subcommand === "approuver") {
+          const account = await getAccount(interaction);
           const revision = await approvePersistedEditorialSpecies(database, {
             speciesKey: interaction.options.getString("espece", true).trim().toLowerCase(),
             expectedRevision: interaction.options.getInteger("revision", true),
@@ -529,6 +531,7 @@ export default {
         }
 
         if (subcommand === "ajouter-espece") {
+          const account = await getAccount(interaction);
           const rawForms = interaction.options.getString("formes", true);
           const forms = rawForms.split("\n").map((line, order) => {
             const separator = line.indexOf("|");
@@ -563,6 +566,7 @@ export default {
         }
 
         if (subcommand === "disponibilite") {
+          const account = await getAccount(interaction);
           const result = await setPersistedSpeciesAvailability(database, {
             speciesKey: interaction.options.getString("espece", true).trim().toLowerCase(),
             nextStatus: interaction.options.getString("statut", true) as "discoverable" | "available" | "retired",
