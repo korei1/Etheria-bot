@@ -1,3 +1,4 @@
+import test from "node:test";
 
 import type { Pool } from "pg";
 import { getCurrentLocalLife, formatLocalAvailability } from "../src/modules/world/local-life-service.js";
