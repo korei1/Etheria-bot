@@ -22,6 +22,7 @@ test("PostgreSQL conserve compagnons, soins et repos entre connexions", {
 }, async () => {
   const pool = new Pool({ connectionString: databaseUrl, max: 1 });
   const client = await pool.connect();
+  let clientReleased = false;
   const schema = `etheria_companions_${randomUUID().replaceAll("-", "")}`;
   const accountId = randomUUID();
   const now = new Date("2026-01-01T00:00:00.000Z");
@@ -38,6 +39,7 @@ test("PostgreSQL conserve compagnons, soins et repos entre connexions", {
     );
     await client.query(migration);
     client.release();
+    clientReleased = true;
 
     const baseInput = {
       accountId,
@@ -137,7 +139,7 @@ test("PostgreSQL conserve compagnons, soins et repos entre connexions", {
     assert.equal(persisted.hungerPercent, 100);
     assert.equal(persisted.restStartedAt, null);
   } finally {
-    if (!client.released) {
+    if (!clientReleased) {
       client.release();
     }
     const cleanup = await pool.connect();
