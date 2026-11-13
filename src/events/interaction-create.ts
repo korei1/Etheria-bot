@@ -430,6 +430,30 @@ export default {
         const subcommand = interaction.options.getSubcommand();
         const account = await getAccount(interaction);
 
+        if (subcommand === "historique") {
+          const limit = interaction.options.getInteger("limite") ?? 10;
+          const result = await database.query<{
+            action: string;
+            entity_type: string;
+            entity_key: string;
+            revision: number;
+            created_at: Date;
+          }>(
+            `SELECT action, entity_type, entity_key, revision, created_at
+             FROM companion_species_admin_events
+             ORDER BY created_at DESC, id DESC
+             LIMIT $1`,
+            [limit]
+          );
+          const content = result.rows.map((row) =>
+            `• ${row.action} — ${row.entity_type} ${row.entity_key} · révision ${row.revision} · ${row.created_at.toISOString()}`
+          ).join("\n");
+          await interaction.editReply(content
+            ? `**Historique administratif** (\${result.rows.length} événements)\n\n\${content}`
+            : "Aucune opération administrative enregistrée.");
+          return;
+        }
+
         if (subcommand === "regions") {
           const result = await database.query<{
             region_key: string; display_name: string; visibility: string; revision: number;
