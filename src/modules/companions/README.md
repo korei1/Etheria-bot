@@ -100,7 +100,7 @@ Les données documentaires sont séparées du catalogue de gameplay afin d'évit
 
 ### Extension des dossiers documentaires
 
-Quatre dossiers supplémentaires portent le registre à huit espèces réelles :
+Huit dossiers supplémentaires portent désormais le registre à douze espèces réelles :
 
 - Loutre d'Europe (`Lutra lutra`) : évaluation mondiale quasi menacée, évaluée en 2020 et publiée en 2022.
 - Cerf élaphe (`Cervus elaphus`) : évaluation mondiale préoccupation mineure, évaluée en 2015 et publiée en 2018 ; la fiche IUCN signale que cette évaluation nécessite une mise à jour.
@@ -109,4 +109,16 @@ Quatre dossiers supplémentaires portent le registre à huit espèces réelles :
 
 Le modèle distingue désormais les périmètres global, européen, UE-27 et national. Une catégorie ne peut pas être interprétée sans son périmètre. Les dates d'évaluation absentes restent facultatives plutôt que d'être estimées.
 
-Ces huit dossiers restent `research_only` : ils ne sont pas des espèces jouables et ne déterminent aucune règle de rareté, d'élément, de capacité ou d'acquisition Etheria.
+Ces douze dossiers restent `research_only` : ils ne sont pas des espèces jouables et ne déterminent aucune règle de rareté, d'élément, de capacité ou d'acquisition Etheria.
+
+
+### Deuxième extension des dossiers documentaires
+
+Quatre dossiers supplémentaires complètent le registre à douze espèces réelles :
+
+- Dauphin commun (`Delphinus delphis`) : évaluation mondiale préoccupation mineure, évaluée en 2020 et publiée en 2021.
+- Grand requin blanc (`Carcharodon carcharias`) : évaluation mondiale vulnérable, évaluée en 2018 et publiée dans une version amendée en 2022.
+- Pipistrelle commune (`Pipistrellus pipistrellus`) : évaluation mondiale préoccupation mineure, évaluée en 2019 et publiée en 2020.
+- Monarque (`Danaus plexippus`) : évaluation mondiale préoccupation mineure, évaluée en 2021 et publiée en 2022. La sous-espèce migratrice `Danaus plexippus plexippus` possède une évaluation distincte en danger ; elle n'est pas fusionnée avec le statut de l'espèce entière.
+
+Toutes ces fiches sont documentaires (`research_only`). Elles n'attribuent aucune rareté, élément, capacité, méthode d'acquisition ou fréquence de rencontre dans Etheria.
