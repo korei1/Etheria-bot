@@ -39,3 +39,17 @@ Le seuil Rare (troisième rang) est validé pour l'exception de choix libre des 
 - Les variantes héréditaires, capacités hybrides et évolutions nécessitent leurs propres règles canoniques.
 
 Les fonctions de soin sont pures et testables. Elles ne créent aucune table SQL, ne débitent aucun portefeuille et ne modifient aucune donnée distante.
+
+
+## Catalogue des espèces et profils individuels
+
+Le fichier `companion-species-catalog.ts` fournit le contrat du catalogue :
+
+- Une espèce possède une clé technique stable, un nom, une catégorie, une rareté et ses méthodes d'acquisition.
+- Les catégories disponibles couvrent les espèces terrestres, aquatiques, volantes, reptiles/amphibiens, insectes/arthropodes, fantastiques, végétales/élémentaires, esprits/magiques, artificielles et hybrides.
+- Une espèce achetable dans la boutique Discord autorise le choix de l'élément et ne déclare pas d'élément fixe.
+- Toute autre espèce doit déclarer son élément fixe.
+- Chaque espèce peut définir ses caractéristiques individuelles descriptives : texte, choix parmi des valeurs validées ou booléen.
+- Le validateur refuse les clés dupliquées, les catégories/raretés/méthodes inconnues, les configurations élémentaires incohérentes et les caractéristiques individuelles non autorisées.
+
+Aucune espèce concrète n'est préremplie : leurs noms, raretés, éléments, méthodes d'acquisition et caractéristiques doivent être confirmés avant d'entrer dans le catalogue. Les caractéristiques individuelles sont descriptives et n'accordent aucun bonus de gameplay tant que leurs effets ne sont pas définis séparément.
