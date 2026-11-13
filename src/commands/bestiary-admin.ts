@@ -114,10 +114,10 @@ export const bestiaryAdminCommand = new SlashCommandBuilder()
   .addSubcommand((subcommand) =>
     subcommand
       .setName("ajouter-pnj")
-      .setDescription("Créer un PNJ brouillon et son premier dialogue dans une zone de départ.")
+      .setDescription("Créer un PNJ brouillon et son premier dialogue.")
       .addStringOption((option) => option.setName("cle").setDescription("Identifiant technique du PNJ.").setRequired(true))
       .addStringOption((option) => option.setName("nom").setDescription("Nom affiché du PNJ.").setRequired(true))
-      .addStringOption((option) => option.setName("zone").setDescription("Clé d'une zone de départ existante.").setRequired(true))
+      .addStringOption((option) => option.setName("zone").setDescription("Clé facultative d'une zone de départ existante.").setRequired(false))
       .addStringOption((option) => option.setName("noeud").setDescription("Clé du premier nœud de dialogue.").setRequired(true))
       .addStringOption((option) => option.setName("texte").setDescription("Texte prononcé lors de la première rencontre.").setRequired(true))
       .addStringOption((option) => option.setName("description").setDescription("Description courte du PNJ.").setRequired(false))
