@@ -160,6 +160,16 @@ test("une première conversation PNJ révèle le lieu et persiste les choix", {
     assert.equal(next.completed, true);
     assert.equal(next.dialogueText, "Prends soin de toi.");
 
+    const replayedChoice = await chooseNpcDialogueOption(appPool, {
+      interactionId: "discord-interaction-choice",
+      accountId,
+      characterId,
+      conversationId: first.conversationId,
+      choiceKey: "ask_where"
+    });
+    assert.equal(replayedChoice.completed, true);
+    assert.equal(replayedChoice.dialogueText, "Prends soin de toi.");
+
     const repeated = await startNpcConversation(appPool, {
       interactionId: "discord-interaction-repeat",
       accountId,
