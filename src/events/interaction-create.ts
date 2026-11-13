@@ -437,7 +437,7 @@ export default {
             "SELECT region_key, display_name, visibility, revision FROM companion_regions ORDER BY region_key"
           );
           const content = result.rows.map((row) =>
-            `• **${row.display_name}** (`${row.region_key}`) — ${row.visibility}, révision ${row.revision}`
+            `• **${row.display_name}** (${row.region_key}) — ${row.visibility}, révision ${row.revision}`
           ).join("\n");
           await interaction.editReply(content ? `**Régions Etheria**\n\n${content}` : "Aucune région enregistrée.");
           return;
@@ -457,7 +457,7 @@ export default {
             [region]
           );
           const content = result.rows.map((row) =>
-            `• **${row.display_name}** (`${row.species_key}`) — ${row.region_key} · ${row.element} · ${row.editorial_status}/${row.availability_status} · rev ${row.revision}`
+            `• **${row.display_name}** (${row.species_key}) — ${row.region_key} · ${row.element} · ${row.editorial_status}/${row.availability_status} · rev ${row.revision}`
           ).join("\n");
           await interaction.editReply(content
             ? `**Espèces Etheria** (15 maximum par affichage)\n\n${content}`
