@@ -160,8 +160,10 @@ function draftButtons() {
 
 
 function npcDialoguePayload(view: NpcDialogueView) {
-  const reveal = view.firstEncounter && view.revealedLocation
-    ? "\\n\\n**Tu découvres enfin où tu te trouves.**\\n" +
+  const reveal = view.revealedLocation
+    ? (view.firstEncounter
+      ? "\\n\\n**Ton premier interlocuteur te révèle enfin où tu te trouves.**\\n"
+      : "\\n\\n**Tu retrouves les indications données lors de votre première rencontre.**\\n") +
       `Pays : **${view.revealedLocation.countryName}**\\nRégion : **${view.revealedLocation.regionName}**\\n` +
       (view.revealedLocation.localityName ? `Localité : **${view.revealedLocation.localityName}**\\n` : "") +
       `Environnement : **${view.revealedLocation.biomeName}**`
