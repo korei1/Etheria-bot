@@ -335,8 +335,8 @@ export const COMPANION_SPECIES_RESEARCH_DOSSIERS: readonly CompanionSpeciesResea
     ],
     additionalSources: [],
     gameplayStatus: "research_only"
-  }
-  ,{
+  },
+  {
     key: "short_beaked_common_dolphin",
     commonName: "Dauphin commun",
     scientificName: "Delphinus delphis",
