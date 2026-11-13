@@ -1,0 +1,64 @@
+version: 2.1
+
+jobs:
+  verify:
+    docker:
+      - image: cimg/node:24.11
+      - image: postgres:16
+        environment:
+          POSTGRES_USER: etheria
+          POSTGRES_PASSWORD: etheria_test
+          POSTGRES_DB: etheria_test
+    resource_class: small
+    environment:
+      TEST_DATABASE_URL: postgresql://etheria:etheria_test@127.0.0.1:5432/etheria_test
+    steps:
+      - checkout
+
+      - run:
+          name: Installer les dépendances
+          command: npm install --no-audit --no-fund
+
+      - run:
+          name: Attendre PostgreSQL
+          command: |
+            node --input-type=module <<'NODE'
+            import pg from "pg";
+
+            const pool = new pg.Pool({
+              connectionString: process.env.TEST_DATABASE_URL
+            });
+            let lastError;
+
+            for (let attempt = 0; attempt < 30; attempt += 1) {
+              try {
+                await pool.query("SELECT 1");
+                await pool.end();
+                console.log("PostgreSQL est prêt.");
+                process.exit(0);
+              } catch (error) {
+                lastError = error;
+                await new Promise((resolve) => setTimeout(resolve, 1000));
+              }
+            }
+
+            await pool.end();
+            throw lastError ?? new Error("PostgreSQL n'est pas devenu disponible.");
+            NODE
+
+      - run:
+          name: Vérifier les types TypeScript
+          command: npm run typecheck
+
+      - run:
+          name: Compiler le projet
+          command: npm run build
+
+      - run:
+          name: Exécuter les tests unitaires et PostgreSQL
+          command: npm test
+
+workflows:
+  verify:
+    jobs:
+      - verify
