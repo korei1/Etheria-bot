@@ -1317,7 +1317,7 @@ export default {
             return;
           }
           const clockLine = result.localClock.status === "available"
-            ? "Heure locale : **" + result.localClock.formatted + "** · " + result.localClock.localDate.timeZoneKey
+            ? "Heure locale : **" + result.localClock.formatted + "** · " + result.localClock.timeZoneName
             : result.localClock.status === "time_zone_not_configured"
               ? "Heure locale indisponible : aucun fuseau approuvé n'est encore attribué à cette localité."
               : "Horloge locale indisponible.";
