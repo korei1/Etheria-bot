@@ -16,7 +16,7 @@ const zone = {
 test("valide un calendrier hebdomadaire de voyage", () => {
   assert.deepEqual(validateNpcWeeklyTravelSchedule({
     weekdays: [1, 4, 7],
-    departureMinute: 8 * 60 + 30,
+    departureMinute: 10 * 60,
     routeKey: "route_test"
   }), []);
 });
