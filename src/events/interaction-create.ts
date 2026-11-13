@@ -459,6 +459,33 @@ export default {
         const database = getDatabase();
         const subcommand = interaction.options.getSubcommand();
 
+        if (subcommand === "zones-depart") {
+          const result = await database.query<{
+            zone_key: string;
+            country_name: string;
+            region_name: string;
+            locality_name: string | null;
+            biome_name: string;
+            is_active: boolean;
+          }>(
+            `SELECT z.zone_key, co.display_name AS country_name,
+                    z.region_name, z.locality_name, z.biome_name, z.is_active
+             FROM starting_spawn_zones z
+             JOIN countries co ON co.id = z.country_id
+             ORDER BY co.display_name, z.region_name, z.zone_key
+             LIMIT 25`
+          );
+          const lines = result.rows.map((row) =>
+            `• ${row.zone_key} — ${row.country_name} · ${row.region_name}` +
+            (row.locality_name ? ` · ${row.locality_name}` : "") +
+            ` · ${row.biome_name} · ${row.is_active ? "active" : "inactive"}`
+          );
+          await interaction.editReply(
+            lines.length ? `**Zones de départ configurées**\\n\\n${lines.join("\\n")}` : "Aucune zone de départ n'est encore configurée."
+          );
+          return;
+        }
+
         if (subcommand === "pnjs") {
           const result = await database.query<{
             npc_key: string;
