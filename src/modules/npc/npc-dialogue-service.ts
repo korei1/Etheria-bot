@@ -17,7 +17,7 @@ export interface NpcDialogueView {
   revealedLocation: RevealedSpawnLocation | null;
 }
 
-interface NpcAtSpawnRow {
+interface NpcDefinitionRow {
   npc_key: string;
   display_name: string;
   start_node_key: string;
@@ -131,7 +131,6 @@ export async function listNpcEncountersAtCharacterLocation(
            nl.npc_key IS NOT NULL
            AND s.editorial_status = 'approved'
            AND wd.account_id IS NOT NULL
-           AND (s.visibility = 'public' OR wd.account_id IS NOT NULL)
          )
        )
      ORDER BY n.display_name`,
@@ -166,7 +165,7 @@ export async function startNpcConversation(
     throw new NpcDialogueError("Les informations de conversation sont incomplètes.");
   }
 
-  const npcResult = await pool.query<NpcAtSpawnRow>(
+  const npcResult = await pool.query<NpcDefinitionRow>(
     `SELECT n.npc_key, n.display_name, n.start_node_key
      FROM characters c
      JOIN npc_definitions n
