@@ -19,7 +19,7 @@ function createFakeClient(
   const client = {
     async query(sql: string, values?: unknown[]) {
       calls.push({ sql, values });
-      const rows = respond(sql.replace(/\\s+/g, " ").trim().toLowerCase(), values);
+      const rows = respond(sql.replace(/\s+/g, " ").trim().toLowerCase(), values);
       return {
         rows,
         rowCount: rows.length,
