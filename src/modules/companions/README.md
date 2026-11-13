@@ -194,7 +194,7 @@ Elle insère les sept régions, les 43 espèces approuvées et leurs 172 formes.
 
 RLS est activée sans politique d'accès client. Le backend de confiance doit utiliser son accès serveur ; aucun client Discord ou navigateur ne reçoit de droit direct d'administration.
 
-`companion-species-catalog-repository.ts` fournit la lecture du catalogue visible selon les régions découvertes, ainsi que des opérations administratives transactionnelles pour changer la disponibilité d'une espèce ou la visibilité d'une région. Elles utilisent un verrou de ligne, une révision attendue pour éviter les écrasements concurrents et un journal d'audit. L'appelant reste responsable de l'authentification et de l'autorisation du compte administrateur avant d'appeler ces fonctions.
+`companion-species-catalog-repository.ts` fournit la lecture du catalogue visible selon les régions découvertes, ainsi que des opérations administratives transactionnelles pour créer des régions, ajouter des espèces et leurs formes, approuver une fiche brouillon, changer la disponibilité d'une espèce ou modifier la visibilité d'une région. Les changements d'état utilisent un verrou de ligne, une révision attendue pour éviter les écrasements concurrents et un journal d'audit. L'appelant reste responsable de l'authentification et de l'autorisation du compte administrateur avant d'appeler ces fonctions.
 
 Le test PostgreSQL d'intégration `companion-species-catalog-postgres.integration.test.ts` vérifie le seed (7 régions, 43 espèces, 172 formes), le verrouillage d'Umbrelune et le journal. Il est ignoré si `TEST_DATABASE_URL` n'est pas configurée.
 
