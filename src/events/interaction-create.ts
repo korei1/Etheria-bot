@@ -64,7 +64,7 @@ import {
   type WeeklyOpeningSchedule
 } from "../modules/world/local-life-simulation.js";
 import { logger } from "../core/logger.js";
-import { getCurrentLocalLife, formatLocalOpeningSchedule } from "../modules/world/local-life-service.js";
+import { getCurrentLocalLife, formatLocalAvailability, formatLocalOpeningSchedule } from "../modules/world/local-life-service.js";
 import {
   approvePersistedEditorialSpecies,
   createPersistedCompanionRegion,
@@ -1316,8 +1316,17 @@ export default {
             await interaction.editReply("Cette localité n'est pas encore enregistrée dans ta carte personnelle.");
             return;
           }
+          const clockLine = result.localClock.status === "available"
+            ? "Heure locale : **" + result.localClock.formatted + "** · " + result.localClock.localDate.timeZoneKey
+            : result.localClock.status === "time_zone_not_configured"
+              ? "Heure locale indisponible : aucun fuseau approuvé n'est encore attribué à cette localité."
+              : "Horloge locale indisponible.";
+
           if (result.entries.length === 0) {
-            await interaction.editReply("Aucune activité, aucun service ni commerce public n'est actuellement configuré à **" + result.settlementName + "**.");
+            await interaction.editReply(
+              "**Vie locale de " + result.settlementName + "**\n" + clockLine +
+              "\n\nAucune activité, aucun service ni commerce public n'est actuellement configuré."
+            );
             return;
           }
 
@@ -1337,6 +1346,9 @@ export default {
               entry.openingSchedule
                 ? "Horaires : " + formatLocalOpeningSchedule(entry.openingSchedule)
                 : null,
+              entry.openingSchedule || entry.kind === "event"
+                ? "État : " + formatLocalAvailability(entry)
+                : null,
               entry.kind === "shop"
                 ? (entry.stock.length
                   ? "Articles : " + entry.stock.map((item) =>
@@ -1347,7 +1359,7 @@ export default {
             ].filter(Boolean);
             return details.join("\n");
           });
-          const message = "**Vie locale de " + result.settlementName + "**\n\n" + lines.join("\n\n");
+          const message = "**Vie locale de " + result.settlementName + "**\n" + clockLine + "\n\n" + lines.join("\n\n");
           await interaction.editReply(message.slice(0, 1950));
         } catch (error) {
           logger.error("Impossible de charger la vie locale du personnage.", error);
