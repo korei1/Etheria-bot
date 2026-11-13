@@ -207,7 +207,7 @@ La commande `/etheria-admin` est enregistrée avec la permission Discord Adminis
 
 Sous-commandes disponibles :
 
-- `/etheria-admin historique [limite]` : affiche les dernières opérations administratives journalisées.
+- `/etheria-admin historique [limite]` : affiche jusqu'à 10 opérations administratives journalisées.
 - `/etheria-admin regions` : liste les régions, leur visibilité et leur révision.
 - `/etheria-admin especes [region]` : affiche les fiches, leur élément, leurs statuts et leur révision (15 résultats maximum).
 - `/etheria-admin ajouter-region` : crée une région publique ou verrouillée.
@@ -219,4 +219,4 @@ Sous-commandes disponibles :
 Les commandes d'administration nécessitent la migration 0023 préalablement exécutée. Elles ne l'exécutent jamais automatiquement. Le compte Discord de l'administrateur est enregistré comme acteur du journal d'audit.
 
 
-Le test unitaire `test/bestiary-admin-command.test.ts` vérifie l'enregistrement des sous-commandes, la restriction aux administrateurs et les choix de disponibilité exposés.
+Le test unitaire `test/bestiary-admin-command.test.ts` vérifie l'enregistrement des sous-commandes, la restriction aux administrateurs et les choix de disponibilité exposés. Le test PostgreSQL couvre aussi les opérations réelles du repository : création de région et d'espèce, approbation, transitions de disponibilité, rejet d'une révision périmée, visibilité régionale et journal d'audit.
