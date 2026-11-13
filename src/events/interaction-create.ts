@@ -589,6 +589,7 @@ export default {
                  cultural_tags = COALESCE($5::text[], cultural_tags),
                  cultural_rationale = COALESCE($6, cultural_rationale),
                  visibility = COALESCE($7, visibility),
+                 opening_schedule = COALESCE($8::jsonb, opening_schedule),
                  editorial_status = 'draft',
                  revision = revision + 1,
                  updated_at = NOW()
