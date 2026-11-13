@@ -114,14 +114,14 @@ export async function recordNpcEncounter(
       [encounterId]
     );
     if (duplicate.rowCount) {
-      const first = row.first_npc_encounter_at !== null;
+      const isOriginalFirstNpc = row.first_npc_key === npcKey;
       await client.query("COMMIT");
       return {
         recorded: false,
-        firstEncounter: first,
+        firstEncounter: isOriginalFirstNpc,
         npcKey: row.first_npc_key ?? npcKey,
         occurredAt: row.first_npc_encounter_at?.toISOString() ?? null,
-        revealedLocation: first ? mapLocation(row) : null
+        revealedLocation: isOriginalFirstNpc ? mapLocation(row) : null
       };
     }
 
