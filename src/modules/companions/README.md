@@ -135,3 +135,17 @@ Quatre espèces domestiques supplémentaires complètent le registre à seize do
 **Précaution taxonomique et de conservation :** « non évalué » ne signifie pas « préoccupation mineure ». Les fiches ne convertissent pas l'absence d'évaluation en diagnostic positif. Les informations écologiques sur les animaux domestiques sont également séparées des situations locales des populations féraux.
 
 Ces quatre fiches restent `research_only`.
+
+## Registre évolutif des espèces et régions
+
+Le fichier `companion-species-registry.ts` sépare le cycle éditorial de l'espèce de sa définition de gameplay :
+
+- Le registre ne fixe aucune limite globale au nombre de régions, d'espèces ou de formes évolutives.
+- Chaque espèce et chaque forme possède une clé stable ; une clé existante ne peut pas être réutilisée.
+- Les formes évolutives sont des données ordonnées et peuvent être ajoutées sans modifier le moteur.
+- Les régions peuvent être publiques ou masquées jusqu'à leur découverte.
+- Le cycle de vie est contrôlé : `draft` → `approved` → (`discovery_locked` ou `discoverable`) → `available` → `retired`.
+- Une espèce retirée reste dans le registre afin que les références des compagnons déjà possédés restent résolubles ; elle n'est plus proposée aux nouvelles acquisitions.
+- Le catalogue public filtre les régions secrètes non découvertes et les espèces qui ne sont pas encore publiables.
+
+Ce registre est une couche métier en mémoire, sans migration SQL ni intégration Discord à ce stade. La persistance et l'administration du catalogue devront être ajoutées séparément après validation de la structure et des données canoniques du bestiaire.
