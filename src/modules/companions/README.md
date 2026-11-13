@@ -211,6 +211,8 @@ Sous-commandes disponibles :
 - `/etheria-admin especes [region]` : affiche les fiches, leur élément, leurs statuts et leur révision (50 résultats maximum).
 - `/etheria-admin ajouter-region` : crée une région publique ou verrouillée.
 - `/etheria-admin ajouter-espece` : crée une fiche avec 2 à 4 formes au format `cle|nom`, une par ligne. La fiche peut être approuvée immédiatement, mais reste indisponible en jeu.
+- `/etheria-admin approuver` : approuve une fiche brouillon avec contrôle de révision.
 - `/etheria-admin disponibilite` : fait évoluer la disponibilité en fournissant la révision courante, afin d'éviter d'écraser une modification concurrente.
+- `/etheria-admin visibilite-region` : modifie la visibilité d'une région avec contrôle de révision.
 
 Les commandes d'administration nécessitent la migration 0023 préalablement exécutée. Elles ne l'exécutent jamais automatiquement. Le compte Discord de l'administrateur est enregistré comme acteur du journal d'audit.
