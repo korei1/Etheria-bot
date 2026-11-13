@@ -7,6 +7,7 @@ import {
   approvePersistedEditorialSpecies,
   createPersistedCompanionRegion,
   createPersistedEditorialSpecies,
+  listVisiblePersistedCompanionSpecies,
   setPersistedRegionVisibility,
   setPersistedSpeciesAvailability
 } from "../src/modules/companions/companion-species-catalog-repository.js";
@@ -151,6 +152,17 @@ test("PostgreSQL persiste les 43 fiches, leurs 172 formes et journalise les chan
         expectedRevision: 3
       }),
       /fiche a changé/
+    );
+
+    const hiddenFromUndiscoveredPlayer = await listVisiblePersistedCompanionSpecies(repositoryPool, []);
+    assert.equal(
+      hiddenFromUndiscoveredPlayer.some((species) => species.key === "espece_admin_test"),
+      false
+    );
+    const visibleAfterDiscovery = await listVisiblePersistedCompanionSpecies(repositoryPool, ["region_admin_test"]);
+    assert.equal(
+      visibleAfterDiscovery.some((species) => species.key === "espece_admin_test"),
+      true
     );
 
     const regionVisibility = await setPersistedRegionVisibility(repositoryPool, {
