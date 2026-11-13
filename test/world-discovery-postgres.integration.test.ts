@@ -123,10 +123,37 @@ test("PostgreSQL conserve les découvertes par compte et journalise les événem
     });
     assert.equal(isolated.status, "discovered");
 
+    const raceTarget: DiscoveryTargetDefinition = {
+      key: "settlement_race",
+      kind: "settlement",
+      editorialStatus: "approved",
+      visibility: "public"
+    };
+    const concurrent = await Promise.all([
+      recordPersistedWorldDiscovery(repositoryPool, {
+        accountId: accountOne,
+        target: raceTarget,
+        method: "exploration",
+        discoveredAt,
+        eventId: "discord-interaction-3001"
+      }),
+      recordPersistedWorldDiscovery(repositoryPool, {
+        accountId: accountOne,
+        target: raceTarget,
+        method: "quest",
+        discoveredAt,
+        eventId: "discord-interaction-3002"
+      })
+    ]);
+    assert.deepEqual(
+      concurrent.map((entry) => entry.status).sort(),
+      ["already_discovered", "discovered"]
+    );
+
     const stateOne = await getPersistedDiscoveryState(repositoryPool, accountOne);
     const stateTwo = await getPersistedDiscoveryState(repositoryPool, accountTwo);
-    assert.equal(stateOne.records.length, 3);
-    assert.equal(stateOne.eventIds.size, 4);
+    assert.equal(stateOne.records.length, 4);
+    assert.equal(stateOne.eventIds.size, 6);
     assert.equal(stateTwo.records.length, 1);
     assert.equal(stateTwo.eventIds.size, 1);
     assert.equal(stateOne.records.some((record) => record.targetKey === "country_hidden"), true);
@@ -140,8 +167,8 @@ test("PostgreSQL conserve les découvertes par compte et journalise les événem
       [accountOne]
     );
     assert.deepEqual(outcomes.rows, [
-      { outcome: "already_discovered", count: "1" },
-      { outcome: "discovered", count: "3" }
+      { outcome: "already_discovered", count: "2" },
+      { outcome: "discovered", count: "4" }
     ]);
 
     await assert.rejects(
