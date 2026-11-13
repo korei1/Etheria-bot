@@ -10,6 +10,11 @@ export const etheriaCommand = new SlashCommandBuilder()
   )
   .addSubcommand((subcommand) =>
     subcommand
+      .setName("voyager")
+      .setDescription("Consulter les itinéraires accessibles depuis ton lieu actuel.")
+  )
+  .addSubcommand((subcommand) =>
+    subcommand
       .setName("carte")
       .setDescription("Consulter les lieux déjà découverts dans ta carte personnelle.")
   )
