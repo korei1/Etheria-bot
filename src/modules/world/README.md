@@ -66,7 +66,11 @@ Les 28 pays déjà présents dans la migration 0004 sont rattachés à leur cont
 - Les contraintes uniques SQL arbitrent les appels concurrents provenant de plusieurs processus.
 - Les deux tables sont protégées par RLS et ne doivent être utilisées que par le backend de confiance.
 - Le test PostgreSQL dédié utilise un schéma isolé et couvre l'isolation des comptes, les prérequis, les doublons d'événements, les cibles déjà découvertes et la protection contre la suppression d'un compte possédant un historique.
-- La migration 0026 n'a pas été exécutée sur Supabase. Aucune commande Discord n'est encore raccordée à ce repository.
+- `/etheria carte` affiche les quinze découvertes les plus récentes du compte Discord ; `/etheria progression` affiche le total et la répartition par type.
+- `npc-encounter-service.ts` est le point d'entrée transactionnel de la première rencontre PNJ : il révèle le pays et la zone de départ seulement à cet instant, puis les inscrit dans la carte du compte. Les rencontres suivantes ne révèlent pas à nouveau le lieu.
+- La table des découvertes utilise aussi le type `spawn_zone` pour distinguer le lieu exact d'apparition du pays d'origine.
+- Le service de rencontre PNJ est prêt à être appelé par le futur parcours interactif des PNJ ; aucun parcours de dialogue PNJ n'existe encore dans les interactions Discord actuelles.
+- La migration 0026 n'a pas été exécutée sur Supabase. Les commandes de consultation nécessitent donc que les migrations du monde soient installées avant leur utilisation.
 
 ## Déplacements
 
