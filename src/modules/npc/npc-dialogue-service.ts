@@ -2,6 +2,7 @@ import type { Pool } from "pg";
 import { recordNpcEncounter, type RevealedSpawnLocation } from "./npc-encounter-service.js";
 import { isOpenAtLocalMinute, validateOpeningSchedule, type WeeklyOpeningSchedule } from "../world/local-life-simulation.js";
 import { getSettlementLocalTime } from "../world/world-clock-service.js";
+import { advanceNpcTravelPlans } from "./npc-travel-service.js";
 
 export interface NpcDialogueChoice {
   choiceKey: string;
@@ -141,6 +142,7 @@ export async function listNpcEncountersAtCharacterLocation(
   pool: Pool,
   input: { accountId: string }
 ): Promise<Array<{ npcKey: string; displayName: string; description: string | null; activityLabel: string | null }>> {
+  await advanceNpcTravelPlans(pool);
   const result = await pool.query<{
     npc_key: string;
     display_name: string;
@@ -211,6 +213,7 @@ export async function startNpcConversation(
     npcKey: string;
   }
 ): Promise<NpcDialogueView> {
+  await advanceNpcTravelPlans(pool);
   const interactionId = input.interactionId.trim();
   const npcKey = input.npcKey.trim();
   if (!interactionId || !input.accountId.trim() || !input.characterId.trim() || !npcKey) {
