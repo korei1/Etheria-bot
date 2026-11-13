@@ -210,6 +210,33 @@ export async function travelCharacter(
       throw new CharacterTravelError("Aucun personnage actif avec un lieu de départ valide n'a été trouvé.");
     }
 
+    const previousTravel = await client.query<{
+      display_name: string;
+      destination_name: string | null;
+      destination_key: string | null;
+      to_settlement_id: string | null;
+    }>(
+      `SELECT l.display_name, s.display_name AS destination_name,
+              s.settlement_key AS destination_key, e.to_settlement_id
+       FROM world_travel_events e
+       JOIN world_travel_links l ON l.link_key = e.link_key
+       LEFT JOIN world_settlements s ON s.id = e.to_settlement_id
+       WHERE e.event_id = $1 AND e.account_id = $2 AND e.character_id = $3`,
+      [input.interactionId, input.accountId, input.characterId]
+    );
+    if (previousTravel.rows[0]) {
+      const previous = previousTravel.rows[0];
+      await client.query("COMMIT");
+      return {
+        status: "duplicate_event",
+        routeName: previous.display_name,
+        destinationName: previous.to_settlement_id === null
+          ? "Ton lieu de départ"
+          : previous.destination_name ?? "Localité déjà visitée",
+        destinationSettlementKey: previous.destination_key
+      };
+    }
+
     const routeResult = await client.query<TravelRouteRow & {
       destination_spawn_zone_id: string | null;
     }>(
