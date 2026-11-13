@@ -47,7 +47,8 @@ test("PostgreSQL déplace un personnage sur un itinéraire approuvé et révèle
       account_id UUID NOT NULL REFERENCES accounts(id),
       spawn_zone_id UUID NOT NULL REFERENCES starting_spawn_zones(id),
       current_settlement_id UUID REFERENCES world_settlements(id),
-      status TEXT NOT NULL
+      status TEXT NOT NULL,
+      UNIQUE (account_id, id)
     )`);
     await setup.query("INSERT INTO accounts (id) VALUES ($1)", [accountId]);
     await setup.query("INSERT INTO countries (id, display_name) VALUES ($1, 'Pays de test')", [countryId]);
