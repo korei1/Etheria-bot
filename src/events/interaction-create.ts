@@ -58,6 +58,11 @@ import {
   travelCharacter
 } from "../modules/world/travel-service.js";
 import { chooseNpcDialogueOption, listNpcEncountersAtCharacterLocation, startNpcConversation, type NpcDialogueView } from "../modules/npc/npc-dialogue-service.js";
+import {
+  validateOpeningSchedule,
+  validateLocalStockItem,
+  type WeeklyOpeningSchedule
+} from "../modules/world/local-life-simulation.js";
 import { logger } from "../core/logger.js";
 import {
   approvePersistedEditorialSpecies,
@@ -598,6 +603,98 @@ export default {
             throw new Error("Contenu introuvable, déjà publié, révision dépassée ou localité non approuvée.");
           }
           await interaction.editReply(`Contenu local approuvé (révision ${result.rows[0].revision}). Il peut maintenant apparaître selon sa visibilité et les découvertes du joueur.`);
+          return;
+        }
+
+
+        if (subcommand === "definir-horaires-local") {
+          const key = interaction.options.getString("cle", true).trim().toLowerCase();
+          const expectedRevision = interaction.options.getInteger("revision", true);
+          let parsed: unknown;
+          try {
+            parsed = JSON.parse(interaction.options.getString("horaires_json", true));
+          } catch {
+            throw new Error("Le JSON des horaires est invalide.");
+          }
+          if (!parsed || typeof parsed !== "object" || !Array.isArray((parsed as { days?: unknown }).days)) {
+            throw new Error("Le format attendu est un objet contenant un tableau days.");
+          }
+          const schedule = parsed as WeeklyOpeningSchedule;
+          if (schedule.days.some((day) => !day || typeof day !== "object" || !Array.isArray(day.intervals))) {
+            throw new Error("Chaque jour doit contenir un tableau intervals.");
+          }
+          const issues = validateOpeningSchedule(schedule);
+          if (issues.length) throw new Error(issues.join("\\n"));
+          const result = await database.query<{ revision: number }>(
+            `UPDATE world_local_content
+             SET opening_schedule = $3::jsonb, revision = revision + 1, updated_at = NOW()
+             WHERE content_key = $1 AND revision = $2
+               AND editorial_status <> 'retired' AND content_kind <> 'event'
+             RETURNING revision`,
+            [key, expectedRevision, JSON.stringify(schedule)]
+          );
+          if (!result.rows[0]) {
+            throw new Error("Contenu introuvable, retiré, événement non compatible ou révision dépassée.");
+          }
+          await interaction.editReply(`Horaires enregistrés (révision ${result.rows[0].revision}).`);
+          return;
+        }
+
+        if (subcommand === "stocks-locaux") {
+          const result = await database.query<{
+            content_key: string; shop_name: string; stock_key: string; display_name: string;
+            price_teas: string; quantity: number; maximum_quantity: number;
+            restock_every_days: number | null; revision: number;
+          }>(
+            `SELECT c.content_key, c.display_name AS shop_name, st.stock_key, st.display_name,
+                    st.price_teas::text, st.quantity, st.maximum_quantity,
+                    st.restock_every_days, st.revision
+             FROM world_local_shop_stock st
+             JOIN world_local_content c ON c.id = st.local_content_id
+             ORDER BY c.display_name, st.display_name
+             LIMIT 25`
+          );
+          const lines = result.rows.map((row) =>
+            `• **${row.display_name}** (${row.stock_key}) — ${row.shop_name} [${row.content_key}] · ${row.price_teas} Teas · ${row.quantity}/${row.maximum_quantity} · réapprovisionnement : ${row.restock_every_days === null ? "manuel" : `tous les ${row.restock_every_days} jours`} · rév. ${row.revision}`
+          );
+          await interaction.editReply(lines.length
+            ? `**Stocks des commerces** (25 maximum)\\n\\n${lines.join("\\n")}`
+            : "Aucun article n'est encore enregistré dans les commerces.");
+          return;
+        }
+
+        if (subcommand === "ajouter-stock-local") {
+          const shopKey = interaction.options.getString("commerce", true).trim().toLowerCase();
+          const item: {
+            key: string; displayName: string; priceTeas: number; quantity: number;
+            maximumQuantity: number; restockEveryDays: number | null; lastRestockOrdinal: number | null;
+          } = {
+            key: interaction.options.getString("cle", true).trim().toLowerCase(),
+            displayName: interaction.options.getString("nom", true).trim(),
+            priceTeas: interaction.options.getInteger("prix_teas", true),
+            quantity: interaction.options.getInteger("quantite", true),
+            maximumQuantity: interaction.options.getInteger("maximum", true),
+            restockEveryDays: interaction.options.getInteger("reapprovisionnement_jours"),
+            lastRestockOrdinal: interaction.options.getInteger("dernier_jour_absolu")
+          };
+          const issues = validateLocalStockItem(item);
+          if (issues.length) throw new Error(issues.join("\\n"));
+          if ((item.restockEveryDays === null) !== (item.lastRestockOrdinal === null)) {
+            throw new Error("Pour un réapprovisionnement automatique, renseigne à la fois l'intervalle et le dernier jour absolu.");
+          }
+          const result = await database.query(
+            `INSERT INTO world_local_shop_stock
+             (local_content_id, stock_key, display_name, price_teas, quantity,
+              maximum_quantity, restock_every_days, last_restock_ordinal)
+             SELECT c.id, $2, $3, $4, $5, $6, $7, $8
+             FROM world_local_content c
+             WHERE c.content_key = $1 AND c.content_kind = 'shop'
+               AND c.editorial_status <> 'retired'`,
+            [shopKey, item.key, item.displayName, item.priceTeas, item.quantity,
+              item.maximumQuantity, item.restockEveryDays, item.lastRestockOrdinal]
+          );
+          if (!result.rowCount) throw new Error("Commerce introuvable, retiré ou de type incorrect.");
+          await interaction.editReply("Article ajouté au stock du commerce.");
           return;
         }
 
