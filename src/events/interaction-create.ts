@@ -195,7 +195,8 @@ function npcDialoguePayload(view: NpcDialogueView) {
     components
   };
 }
-\nfunction explorationButton(customId: string, label: string, style = ButtonStyle.Primary) {
+
+function explorationButton(customId: string, label: string, style = ButtonStyle.Primary) {
   return new ButtonBuilder().setCustomId(customId).setLabel(label).setStyle(style);
 }
 
