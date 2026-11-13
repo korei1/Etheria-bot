@@ -69,17 +69,6 @@ test("PostgreSQL persiste les 43 fiches, leurs 172 formes et journalise les chan
     );
     assert.equal(audit.rows[0]?.count, "1");
 
-    await assert.rejects(
-      client.query(`
-        UPDATE companion_species_catalog
-        SET availability_status = 'available'
-        WHERE species_key = 'cerf_des_racines'
-      `).then(async () => {
-        // The database intentionally permits state storage; transition policy
-        // is enforced by the trusted administrative repository.
-      }),
-      { message: /./ }
-    ).catch(() => undefined);
   } finally {
     try {
       await client.query("ROLLBACK");
