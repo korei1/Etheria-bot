@@ -556,10 +556,30 @@ export default {
           const tags = rawTags === null ? null : rawTags.split(",").map((tag) => tag.trim()).filter(Boolean);
           const rationale = interaction.options.getString("justification")?.trim() ?? null;
           const visibility = interaction.options.getString("visibilite");
+          const rawSchedule = interaction.options.getString("horaires_json");
+          let scheduleJson: string | null = null;
+          if (rawSchedule !== null) {
+            let parsed: unknown;
+            try { parsed = JSON.parse(rawSchedule); }
+            catch { throw new Error("Le JSON des horaires est invalide."); }
+            if (!parsed || typeof parsed !== "object" ||
+                !Array.isArray((parsed as { days?: unknown }).days)) {
+              throw new Error("Le format attendu est un objet contenant un tableau days.");
+            }
+            const schedule = parsed as WeeklyOpeningSchedule;
+            if (schedule.days.some((day) => !day || typeof day !== "object" ||
+                !Array.isArray(day.intervals) ||
+                day.intervals.some((interval) => !interval || typeof interval !== "object"))) {
+              throw new Error("Chaque jour doit contenir un tableau intervals.");
+            }
+            const scheduleIssues = validateOpeningSchedule(schedule);
+            if (scheduleIssues.length) throw new Error(scheduleIssues.join("\\n"));
+            scheduleJson = JSON.stringify(schedule);
+          }
           if (name === "" || description === "" || rationale === "" || (tags !== null && tags.length === 0)) {
             throw new Error("Les champs fournis ne peuvent pas être vides.");
           }
-          if ([name, description, rationale, visibility, rawTags].every((value) => value === null)) {
+          if ([name, description, rationale, visibility, rawTags, rawSchedule].every((value) => value === null)) {
             throw new Error("Renseigne au moins un champ à modifier.");
           }
           const result = await database.query<{ revision: number }>(
@@ -574,7 +594,7 @@ export default {
                  updated_at = NOW()
              WHERE content_key = $1 AND revision = $2 AND editorial_status <> 'retired'
              RETURNING revision`,
-            [key, expectedRevision, name, description, tags, rationale, visibility]
+            [key, expectedRevision, name, description, tags, rationale, visibility, scheduleJson]
           );
           if (!result.rows[0]) {
             throw new Error("Contenu introuvable, retiré ou révision dépassée. Consulte /etheria-admin contenus-locaux avant de réessayer.");
@@ -606,39 +626,6 @@ export default {
           return;
         }
 
-
-        if (subcommand === "definir-horaires-local") {
-          const key = interaction.options.getString("cle", true).trim().toLowerCase();
-          const expectedRevision = interaction.options.getInteger("revision", true);
-          let parsed: unknown;
-          try {
-            parsed = JSON.parse(interaction.options.getString("horaires_json", true));
-          } catch {
-            throw new Error("Le JSON des horaires est invalide.");
-          }
-          if (!parsed || typeof parsed !== "object" || !Array.isArray((parsed as { days?: unknown }).days)) {
-            throw new Error("Le format attendu est un objet contenant un tableau days.");
-          }
-          const schedule = parsed as WeeklyOpeningSchedule;
-          if (schedule.days.some((day) => !day || typeof day !== "object" || !Array.isArray(day.intervals) || day.intervals.some((interval) => !interval || typeof interval !== "object"))) {
-            throw new Error("Chaque jour doit contenir un tableau intervals.");
-          }
-          const issues = validateOpeningSchedule(schedule);
-          if (issues.length) throw new Error(issues.join("\\n"));
-          const result = await database.query<{ revision: number }>(
-            `UPDATE world_local_content
-             SET opening_schedule = $3::jsonb, revision = revision + 1, updated_at = NOW()
-             WHERE content_key = $1 AND revision = $2
-               AND editorial_status <> 'retired' AND content_kind <> 'event'
-             RETURNING revision`,
-            [key, expectedRevision, JSON.stringify(schedule)]
-          );
-          if (!result.rows[0]) {
-            throw new Error("Contenu introuvable, retiré, événement non compatible ou révision dépassée.");
-          }
-          await interaction.editReply(`Horaires enregistrés (révision ${result.rows[0].revision}).`);
-          return;
-        }
 
         if (subcommand === "stocks-locaux") {
           const result = await database.query<{
