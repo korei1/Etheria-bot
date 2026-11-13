@@ -140,15 +140,17 @@ async function loadDialogueView(
 export async function listNpcEncountersAtCharacterLocation(
   pool: Pool,
   input: { accountId: string }
-): Promise<Array<{ npcKey: string; displayName: string; description: string | null }>> {
+): Promise<Array<{ npcKey: string; displayName: string; description: string | null; activityLabel: string | null }>> {
   const result = await pool.query<{
     npc_key: string;
     display_name: string;
     description: string | null;
+    activity_label: string | null;
     settlement_id: string | null;
     presence_schedule: WeeklyOpeningSchedule | null;
   }>(
     `SELECT DISTINCT n.npc_key, n.display_name, n.description,
+            COALESCE(nl.activity_label, sl.activity_label) AS activity_label,
             c.current_settlement_id AS settlement_id,
             COALESCE(nl.presence_schedule, sl.presence_schedule) AS presence_schedule
      FROM characters c
@@ -188,7 +190,8 @@ export async function listNpcEncountersAtCharacterLocation(
   return available.filter((entry) => entry.present).map(({ row }) => ({
     npcKey: row.npc_key,
     displayName: row.display_name,
-    description: row.description
+    description: row.description,
+    activityLabel: row.activity_label
   }));
 }
 
