@@ -26,7 +26,7 @@ describe("world clock and local time zones", () => {
   });
 
   it("handles local midnight and year rollover", () => {
-    const previousDay = getLocalWorldDate(30, zone(-60));
+    const previousDay = getLocalWorldDate(120 * 1440 + 30, zone(-60));
     expect(previousDay.dayOfYear).toBe(120);
     expect(previousDay.year).toBe(1);
     expect(previousDay.minuteOfDay).toBe(23 * 60 + 30);
