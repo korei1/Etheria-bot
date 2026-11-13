@@ -120,10 +120,16 @@ test("PostgreSQL garantit la cohérence réelle des lots du sac et du camp", {
     );
     await client.query("ROLLBACK");
 
+    await client.query("BEGIN");
     const fiberStorage = await client.query<{ id: string }>(
       "INSERT INTO character_temporary_camp_storage (camp_id, item_code, quantity) VALUES ($1, 'braiding_plant_fibers', 6) RETURNING id",
       [camp.rows[0]!.id]
     );
+    await client.query(
+      "INSERT INTO character_item_lots (item_code, quantity, container_kind, camp_storage_entry_id, origin_type) VALUES ('braiding_plant_fibers', 6, 'temporary_camp_storage', $1, 'collection')",
+      [fiberStorage.rows[0]!.id]
+    );
+    await client.query("COMMIT");
 
     await client.query("BEGIN");
     await client.query(
@@ -136,11 +142,11 @@ test("PostgreSQL garantit la cohérence réelle des lots du sac et du camp", {
     );
     await client.query("COMMIT");
 
+    await client.query("BEGIN");
     const newSlot = await client.query<{ id: string }>(
       "INSERT INTO character_inventory_slots (bag_id, slot_number, item_code, quantity) VALUES ($1, 1, 'braiding_plant_fibers', 2) RETURNING id",
       [bag.rows[0]!.id]
     );
-    await client.query("BEGIN");
     await client.query(
       "INSERT INTO character_item_lots (item_code, quantity, container_kind, inventory_slot_id, origin_type, origin_reference) VALUES ('braiding_plant_fibers', 2, 'character_bag', $1, 'collection', 'test-source')",
       [newSlot.rows[0]!.id]
