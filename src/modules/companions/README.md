@@ -208,7 +208,7 @@ La commande `/etheria-admin` est enregistrée avec la permission Discord Adminis
 Sous-commandes disponibles :
 
 - `/etheria-admin regions` : liste les régions, leur visibilité et leur révision.
-- `/etheria-admin especes [region]` : affiche les fiches, leur élément, leurs statuts et leur révision (50 résultats maximum).
+- `/etheria-admin especes [region]` : affiche les fiches, leur élément, leurs statuts et leur révision (15 résultats maximum).
 - `/etheria-admin ajouter-region` : crée une région publique ou verrouillée.
 - `/etheria-admin ajouter-espece` : crée une fiche avec 2 à 4 formes au format `cle|nom`, une par ligne. La fiche peut être approuvée immédiatement, mais reste indisponible en jeu.
 - `/etheria-admin approuver` : approuve une fiche brouillon avec contrôle de révision.
