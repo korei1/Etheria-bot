@@ -192,7 +192,7 @@ test("les dossiers documentaires réels sont sourcés et restent non jouables", 
     validateSpeciesResearchDossiers
   } = await import("../src/modules/companions/companion-species-research.js");
 
-  assert.equal(COMPANION_SPECIES_RESEARCH_DOSSIERS.length, 12);
+  assert.equal(COMPANION_SPECIES_RESEARCH_DOSSIERS.length, 16);
   assert.deepEqual(validateSpeciesResearchDossiers(), []);
   assert.ok(COMPANION_SPECIES_RESEARCH_DOSSIERS.every(
     (dossier) => dossier.gameplayStatus === "research_only"
@@ -214,7 +214,7 @@ test("les dossiers refusent les sources non HTTPS et les identifiants dupliqués
   const first = COMPANION_SPECIES_RESEARCH_DOSSIERS[0]!;
   assert.ok(validateSpeciesResearchDossiers([
     first,
-    { ...first, key: "duplicate_key", assessment: { ...first.assessment, sourceUrl: "http://invalid.test" } }
+    { ...first, assessment: { ...first.assessment, sourceUrl: "http://invalid.test" } }
   ]).some((issue) => issue.includes("Clé de dossier dupliquée")));
   assert.ok(validateSpeciesResearchDossiers([
     { ...first, assessment: { ...first.assessment, sourceUrl: "http://invalid.test" } }
