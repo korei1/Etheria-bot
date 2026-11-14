@@ -91,3 +91,15 @@ test("les commandes de gestion des horaires et stocks sont exposées", () => {
   assert.ok(options.some((option) => option.name === "stocks-locaux"));
   assert.ok(options.some((option) => option.name === "ajouter-stock-local"));
 });
+
+test("les options obligatoires précèdent toujours les options facultatives", () => {
+  for (const command of bestiaryAdminCommand.toJSON().options ?? []) {
+    let optionalSeen = false;
+    for (const option of command.options ?? []) {
+      if (option.required === false) optionalSeen = true;
+      if (option.required === true) {
+        assert.equal(optionalSeen, false, `Option obligatoire placée après une option facultative dans ${command.name}.`);
+      }
+    }
+  }
+});
