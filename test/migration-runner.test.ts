@@ -96,19 +96,19 @@ function createFakePool(coreTables: string[] = []) {
           rowCount: coreTables.length
         };
       }
-      if (query.startsWith("CREATE TABLE IF NOT EXISTS public.etheria_schema_migrations")) {
+      if (query.startsWith("CREATE TABLE IF NOT EXISTS etheria_internal.schema_migrations")) {
         historyExists = true;
         statements.push("CREATE HISTORY");
         return { rows: [], rowCount: 0 };
       }
-      if (query.includes("FROM public.etheria_schema_migrations")) {
+      if (query.includes("FROM etheria_internal.schema_migrations")) {
         return { rows: [...history], rowCount: history.length };
       }
       if (query === "BEGIN" || query === "COMMIT" || query === "ROLLBACK") {
         statements.push(query);
         return { rows: [], rowCount: 0 };
       }
-      if (query.startsWith("INSERT INTO public.etheria_schema_migrations")) {
+      if (query.startsWith("INSERT INTO etheria_internal.schema_migrations")) {
         history.push({
           migration_name: String(values[0]),
           checksum: String(values[1]),
