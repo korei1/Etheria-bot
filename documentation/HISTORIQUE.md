@@ -16,5 +16,5 @@ La documentation de référence reste sans numéro de version. Les évolutions s
 - **Élément modifié :** organisation documentaire du dépôt.
 - **Modification :** création du dossier `documentation/`, de son index, du présent historique et d'un dossier `documentation/database/`.
 - **Élément modifié :** documentation du modèle et de la conservation des données.
-- **Modification :** centralisation des documents explicatifs dans `documentation/database/`.
+- **Modification :** centralisation des documents explicatifs dans `documentation/`, avec les documents de base de données dans `documentation/database/` et l'architecture dans `documentation/developpement/`.
 - **Statut :** état documentaire du dépôt ; ne signifie pas que la base distante est créée ou opérationnelle.
