@@ -52,6 +52,7 @@ La documentation de référence reste sans numéro de version. Les évolutions s
 - **Modification :** revue individuelle des migrations SQL `0001` à `0035`, regroupement par domaine, relevé des données initiales, des dépendances et des points de vigilance.
 - **Constats :** `0001` correspond au socle déjà présent sur Supabase et doit être enregistré comme baseline sans rejouer son SQL ; `0002` à `0035` restent à tester et appliquer de façon contrôlée. Le script npm `db:check` vérifie uniquement la connexion et ne constitue pas un exécuteur de migrations.
 - **Écarts identifiés :** références résiduelles à SCNX dans le code économique ; absence de relation SQL entre le catalogue d'espèces et les individus compagnons ; règles de sélection élémentaire et de reproduction à garantir côté métier ; droits institutionnels à modéliser ; fuseaux locaux à affecter à partir de données validées ; cohérence des itinéraires et plans de voyage PNJ à vérifier.
+- **Sécurité :** plusieurs tables personnelles de jeu n'activent pas explicitement RLS dans les migrations. Les privilèges SQL doivent être audités avant toute exposition par l'API Supabase, puis des politiques doivent limiter l'accès aux données propres à chaque joueur.
 - **Éléments modifiés :** `documentation/README.md` et `documentation/database/ETAT_DATABASE.md`.
 - **Modification :** ajout du lien vers le plan de reprise et actualisation de l'état technique.
 - **Statut :** documentation et revue uniquement. Aucun code applicatif, migration SQL, donnée ou paramètre Supabase n'a été modifié pendant cette étape.
