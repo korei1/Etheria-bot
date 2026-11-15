@@ -115,6 +115,15 @@ export function validateMigrationNames(names: string[]): string[] {
     versions.add(version);
   }
 
+  sorted.forEach((name, index) => {
+    const expectedVersion = String(index + 1).padStart(4, "0");
+    if (name.slice(0, 4) !== expectedVersion) {
+      throw new Error(
+        `Séquence de migrations incomplète : ${name} est présente, mais ${expectedVersion} est attendue.`
+      );
+    }
+  });
+
   return sorted;
 }
 
@@ -290,12 +299,17 @@ async function releaseMigrationLock(client: PoolClient): Promise<void> {
   );
 }
 
+export function runMigrations(
+  pool: Pool,
+  options: { directory?: string; dryRun: true }
+): Promise<MigrationPlan>;
+export function runMigrations(
+  pool: Pool,
+  options?: { directory?: string; dryRun?: false }
+): Promise<MigrationRunResult>;
 export async function runMigrations(
   pool: Pool,
-  options: {
-    directory?: string;
-    dryRun?: boolean;
-  } = {}
+  options: { directory?: string; dryRun?: boolean } = {}
 ): Promise<MigrationRunResult | MigrationPlan> {
   const directory = options.directory ?? DEFAULT_MIGRATIONS_DIRECTORY;
   if (options.dryRun) return getMigrationPlan(pool, directory);
