@@ -35,7 +35,7 @@ La documentation de référence reste sans numéro de version. Les évolutions s
 ### Catégorie : Base de données / Audit
 - **Élément modifié :** `documentation/database/ETAT_DATABASE.md`.
 - **Modification :** remplacement de l'ancien statut « base distante non inspectée » par les résultats de l'inspection Supabase en lecture seule du 15 novembre 2026.
-- **Constat :** six tables de base sont présentes et correspondent au socle de `0001_initial_core.sql). La table `currencies` contient `TEAS` ; les cinq autres tables sont vides. L'historique distant des migrations est vide et les tables introduites par les migrations suivantes ne sont pas présentes.
+- **Constat :** six tables de base sont présentes et correspondent au socle de `0001_initial_core.sql`. La table `currencies` contient `TEAS` ; les cinq autres tables sont vides. L'historique distant des migrations est vide et les tables introduites par les migrations suivantes ne sont pas présentes.
 - **Sécurité :** RLS est activé sur les six tables, sans politique RLS. L'advisor signale aussi une clé étrangère non indexée sur `wallets.currency_code`.
 - **Statut :** audit en lecture seule ; aucune donnée, migration, politique ou configuration distante n'a été modifiée.
 
