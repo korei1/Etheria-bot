@@ -79,6 +79,8 @@ La règle confirmée est que chaque territoire suit son heure locale et que les 
 
 Les six tables du socle distant ont RLS activé sans politique. Plusieurs migrations ultérieures activent également RLS sans politique client. En revanche, plusieurs tables contenant des données personnelles ou appartenant aux joueurs ne déclarent pas explicitement RLS dans les migrations examinées, notamment les personnages, brouillons, inventaires, besoins, camps, compagnons et leurs états.
 
+**Écart important dans le SQL initial :** `0001_initial_core.sql` ne contient pas de commande `ALTER TABLE ... ENABLE ROW LEVEL SECURITY` pour ses six tables. L'état RLS observé sur Supabase ne provient donc pas de ce fichier. Une base neuve qui exécute uniquement `0001` ne reproduit pas cette protection ; une migration de sécurité dédiée devra activer RLS avant toute exposition de ces tables par l'API.
+
 L'absence de RLS n'implique pas automatiquement que ces tables sont accessibles publiquement : cela dépend aussi des privilèges SQL accordés aux rôles Supabase. Ces privilèges n'ont pas été audités pour les tables qui ne sont pas encore présentes sur le projet distant.
 
 **Action requise :** avant toute exposition via l'API Supabase, auditer les privilèges et activer des politiques RLS adaptées aux tables personnelles. Les joueurs ne doivent pouvoir lire ou modifier que leurs propres données selon les règles du jeu. Les catalogues institutionnels et contenus publics doivent conserver des droits d'administration réservés aux institutions et au backend autorisé. Ne pas ajouter de politiques génériques qui ouvriraient l'écriture aux joueurs.

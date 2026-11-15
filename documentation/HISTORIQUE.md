@@ -10,7 +10,7 @@ La documentation de référence reste sans numéro de version. Les évolutions s
 - **Présentation :** écran d'accueil « Bienvenue dans Etheria », avec les boutons « Commencer mon aventure » et « Découvrir Etheria ».
 - **Parcours :** le bouton de démarrage réutilise le parcours existant de création ou de récupération du compte et du personnage.
 - **Compatibilité :** les cinq sous-commandes actuelles de `/etheria` et la commande `/etheria-admin` sont conservées.
-- **Statut :** fusionné dans `main` le 15 novembre 2026 (commit `47e2fedf865c0404e5b0b77da1ed293f78b7b1b2`). Déploiement et test Discord à effectuer.
+- **Statut corrigé le 15 novembre 2026 :** le dépôt contient une définition de `/commencer` et un code d'enregistrement au démarrage, mais sa disponibilité réelle dans le serveur Discord n'est pas confirmée. L'utilisateur indique que la commande n'existe pas dans son Discord. Elle ne doit donc pas être présentée comme une fonctionnalité opérationnelle avant vérification côté serveur et déploiement.
 
 ### Catégorie : Documentation / Database
 - **Élément modifié :** organisation documentaire du dépôt.
@@ -56,3 +56,14 @@ La documentation de référence reste sans numéro de version. Les évolutions s
 - **Éléments modifiés :** `documentation/README.md` et `documentation/database/ETAT_DATABASE.md`.
 - **Modification :** ajout du lien vers le plan de reprise et actualisation de l'état technique.
 - **Statut :** documentation et revue uniquement. Aucun code applicatif, migration SQL, donnée ou paramètre Supabase n'a été modifié pendant cette étape.
+
+## Version 5 — Gestionnaire de migrations PostgreSQL
+
+### Catégorie : Backend / Base de données
+- **Éléments créés :** `src/database/migration-runner.ts`, `src/database/migrate.ts`, `scripts/copy-migrations.mjs`, `test/migration-runner.test.ts` et `documentation/database/GESTIONNAIRE_MIGRATIONS.md`.
+- **Modification :** ajout d'un gestionnaire de migrations avec verrou consultatif PostgreSQL, ordre strict, contrôle SHA-256, détection des fichiers manquants ou modifiés, transactions par migration et historique dans le schéma privé `etheria_internal.schema_migrations`, hors du schéma API `public`.
+- **Sécurité de reprise :** le moteur refuse de rejouer `0001` lorsqu'il détecte le socle existant sans historique. La commande de baseline est distincte et vérifie que le schéma public ne contient que les six tables du socle, puis contrôle leurs colonnes, contraintes essentielles, activation RLS et monnaie TEAS avant d'enregistrer `0001` sans exécuter son SQL.
+- **Commandes ajoutées :** `db:migrate:status`, `db:migrate:plan`, `db:migrate` et `db:migrate:baseline`. Le bot ne lance aucune migration automatiquement au démarrage.
+- **Build :** copie des fichiers SQL dans `dist/database/migrations`.
+- **Sécurité complémentaire :** la revue a confirmé que `0001_initial_core.sql` n'active pas lui-même RLS sur les six tables du socle, alors que l'état Supabase inspecté présente RLS activé. Une migration de sécurité dédiée reste à prévoir pour les installations neuves.
+- **Statut :** implémentation proposée sur la branche `feature/postgres-migration-runner`. Tests automatisés ajoutés ; CI actuellement en échec avant l'exécution des étapes, sans journaux de job disponibles. Aucune migration n'a été exécutée sur Supabase et aucune donnée distante n'a été modifiée.
