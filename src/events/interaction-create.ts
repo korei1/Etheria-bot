@@ -170,6 +170,69 @@ function draftButtons() {
 
 
 
+function etheriaWelcomePayload() {
+  const embed = new EmbedBuilder()
+    .setTitle("Bienvenue dans Etheria")
+    .setDescription(
+      "Un monde vivant, façonné par le temps, les rencontres et les choix de ceux qui l'habitent.\\n\\n" +
+      "Etheria continue d'exister, même lorsque tu es absent. Explore ses territoires, rencontre ses habitants, découvre ses secrets et construis ta propre histoire."
+    )
+    .addFields({
+      name: "Ton histoire commence ici",
+      value: "Tu peux commencer ton aventure immédiatement ou prendre le temps de découvrir le monde avant de te lancer."
+    })
+    .setFooter({ text: "Ton histoire n'a pas encore commencé." });
+
+  const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder()
+      .setCustomId("etheria:start")
+      .setLabel("Commencer mon aventure")
+      .setStyle(ButtonStyle.Primary),
+    new ButtonBuilder()
+      .setCustomId("etheria:discover")
+      .setLabel("Découvrir Etheria")
+      .setStyle(ButtonStyle.Secondary)
+  );
+
+  return { embeds: [embed], components: [row] };
+}
+
+function etheriaDiscoveryPayload() {
+  const embed = new EmbedBuilder()
+    .setTitle("Découvrir Etheria")
+    .setDescription(
+      "Etheria est un monde persistant : il continue d'évoluer même lorsque tu n'es pas connecté.\\n\\n" +
+      "Au fil de ton aventure, tu explores des territoires, découvres des lieux, rencontres leurs habitants et apprends progressivement à connaître le monde qui t'entoure."
+    )
+    .addFields(
+      {
+        name: "Explorer",
+        value: "Découvre ton environnement et ajoute progressivement de nouveaux lieux à ta carte personnelle."
+      },
+      {
+        name: "Rencontrer",
+        value: "Échange avec les habitants que tu croises et découvre des informations au fil de tes rencontres."
+      },
+      {
+        name: "Construire ton histoire",
+        value: "Tes découvertes et tes choix accompagnent la progression de ton personnage."
+      }
+    );
+
+  const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder()
+      .setCustomId("etheria:welcome")
+      .setLabel("Retour à l'accueil")
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId("etheria:start")
+      .setLabel("Commencer mon aventure")
+      .setStyle(ButtonStyle.Primary)
+  );
+
+  return { embeds: [embed], components: [row] };
+}
+
 function npcDialoguePayload(view: NpcDialogueView) {
   const reveal = view.revealedLocation
     ? (view.firstEncounter
@@ -1313,6 +1376,14 @@ export default {
       return;
     }
 
+    if (interaction.isChatInputCommand() && interaction.commandName === "commencer") {
+      await interaction.reply({
+        ...etheriaWelcomePayload(),
+        ephemeral: true
+      });
+      return;
+    }
+
     if (interaction.isChatInputCommand() && interaction.commandName === "etheria") {
       const subcommand = interaction.options.getSubcommand(false);
       if (subcommand === "rencontrer") {
@@ -1610,6 +1681,16 @@ export default {
             : "Ce choix n'a pas pu être enregistré. La conversation précédente est conservée."
         );
       }
+      return;
+    }
+
+    if (interaction.isButton() && interaction.customId === "etheria:discover") {
+      await interaction.update(etheriaDiscoveryPayload());
+      return;
+    }
+
+    if (interaction.isButton() && interaction.customId === "etheria:welcome") {
+      await interaction.update(etheriaWelcomePayload());
       return;
     }
 
