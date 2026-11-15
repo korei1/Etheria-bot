@@ -12,18 +12,14 @@ export interface EtheriaAccount {
   created: boolean;
 }
 
-async function ensureWallet(client: PoolClient, accountId: string): Promise<void> {
-  await client.query(
-    `INSERT INTO wallets (account_id, currency_code)
-     VALUES ($1, 'TEAS')
-     ON CONFLICT (account_id, currency_code) DO NOTHING`,
-    [accountId]
-  );
-}
-
 /**
- * Retrouve ou crée un compte Etheria pour une identité externe.
- * L'identifiant du fournisseur (Discord, web, etc.) reste séparé du compte central.
+ * Retrouve ou crée le compte de jeu rattaché à une identité Discord.
+ * Dans Etheria, provider="discord" et providerUserId est le snowflake du membre :
+ * tous ses personnages et données de jeu sont rattachés à ce compte unique.
+ *
+ * Les Teas restent ceux du portefeuille Sweet Tea Economy dans SCNX.
+ * Ce service ne crée donc aucun portefeuille TEAS parallèle dans PostgreSQL.
+ * La lecture/écriture du solde partagé nécessite le pont d'intégration dédié.
  */
 export async function getOrCreateAccount(
   pool: Pool,
@@ -80,7 +76,6 @@ export async function getOrCreateAccount(
         [account.account_id]
       );
 
-      await ensureWallet(client, account.account_id);
       await client.query("COMMIT");
 
       return {
@@ -110,7 +105,6 @@ export async function getOrCreateAccount(
       [accountId, displayName]
     );
 
-    await ensureWallet(client, accountId);
     await client.query("COMMIT");
 
     return { accountId, displayName, created: true };

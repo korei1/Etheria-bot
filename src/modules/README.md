@@ -6,9 +6,9 @@ Chaque domaine du jeu possède son propre dossier. Un module ne doit pas accéde
 
 - `accounts/` : comptes, profils et identité des joueurs.
 - `companions/` : compagnons, espèces, raretés, besoins et relations.
-- `inventory/` : objets, réserves et équipements.
+- `inventory/` : objets, réserves et équipements. Le service de réception transactionnelle des ressources collectées est posé ; il attend le futur résolveur du monde.
 - `economy/` : Teas, prix, boutiques et transactions.
-- `world/` : continents, pays, villes, lieux, climat et calendrier.
+- `world/` : géographie physique, continents, caractéristiques naturelles, pays, lieux, climat et calendrier. La fondation du registre géographique est ajoutée ; les lieux concrets restent à valider.
 - `exploration/` : déplacements, découvertes et rencontres.
 - `quests/` : quêtes, objectifs et récompenses.
 - `guilds/` : guildes, alliances et territoires.
