@@ -20,6 +20,7 @@ Ce dossier est la référence documentaire du dépôt Etheria-bot.
 - [Architecture modulaire](developpement/architecture-modulaire.md)
 - [État de la base de données](database/ETAT_DATABASE.md)
 - [Revue des migrations et plan de reprise sécurisé](database/PLAN_REPRISE_MIGRATIONS.md)
+- [Gestionnaire de migrations PostgreSQL](database/GESTIONNAIRE_MIGRATIONS.md)
 - [Historique des versions documentaires et techniques](HISTORIQUE.md)
 
 ## Structure technique actuelle
@@ -29,3 +30,4 @@ Ce dossier est la référence documentaire du dépôt Etheria-bot.
 - Supabase : projet distant Etheria raccordé et inspecté en lecture seule.
 - Migrations SQL : `src/database/migrations/`.
 - Le script `db:check` vérifie uniquement la connexion ; il n'applique pas les migrations.
+- Le gestionnaire de migrations propose les commandes `db:migrate:status`, `db:migrate:plan`, `db:migrate` et `db:migrate:baseline` ; aucune migration n'est exécutée automatiquement au démarrage du bot.
