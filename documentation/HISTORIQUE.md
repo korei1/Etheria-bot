@@ -61,7 +61,7 @@ La documentation de référence reste sans numéro de version. Les évolutions s
 
 ### Catégorie : Backend / Base de données
 - **Éléments créés :** `src/database/migration-runner.ts`, `src/database/migrate.ts`, `scripts/copy-migrations.mjs`, `test/migration-runner.test.ts` et `documentation/database/GESTIONNAIRE_MIGRATIONS.md`.
-- **Modification :** ajout d'un gestionnaire de migrations avec verrou consultatif PostgreSQL, ordre strict, contrôle SHA-256, détection des fichiers manquants ou modifiés, transactions par migration et historique `public.etheria_schema_migrations`.
+- **Modification :** ajout d'un gestionnaire de migrations avec verrou consultatif PostgreSQL, ordre strict, contrôle SHA-256, détection des fichiers manquants ou modifiés, transactions par migration et historique dans le schéma privé `etheria_internal.schema_migrations`, hors du schéma API `public`.
 - **Sécurité de reprise :** le moteur refuse de rejouer `0001` lorsqu'il détecte le socle existant sans historique. La commande de baseline est distincte et vérifie les six tables, colonnes, contraintes essentielles, activation RLS et monnaie TEAS avant d'enregistrer `0001` sans exécuter son SQL.
 - **Commandes ajoutées :** `db:migrate:status`, `db:migrate:plan`, `db:migrate` et `db:migrate:baseline`. Le bot ne lance aucune migration automatiquement au démarrage.
 - **Build :** copie des fichiers SQL dans `dist/database/migrations`.
