@@ -384,6 +384,22 @@ export async function runMigrations(
 async function assertInitialSchemaMatches(
   client: PoolClient
 ): Promise<void> {
+  const publicTablesResult = await client.query<{ table_name: string }>(
+    `SELECT table_name
+     FROM information_schema.tables
+     WHERE table_schema = 'public'
+       AND table_type = 'BASE TABLE'
+     ORDER BY table_name`
+  );
+  const unexpectedPublicTables = publicTablesResult.rows
+    .map((row) => row.table_name)
+    .filter((table) => !CORE_TABLES.includes(table as (typeof CORE_TABLES)[number]));
+  if (unexpectedPublicTables.length > 0) {
+    throw new Error(
+      `Baseline refusée : d'autres tables existent déjà dans public (${unexpectedPublicTables.join(", ")}). Une reprise manuelle est nécessaire pour éviter de marquer comme vierge un schéma partiellement migré.`
+    );
+  }
+
   const existingTables = await detectExistingCoreTables(client);
   const missingTables = CORE_TABLES.filter((table) => !existingTables.includes(table));
   if (missingTables.length > 0) {
