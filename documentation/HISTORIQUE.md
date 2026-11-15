@@ -44,3 +44,14 @@ La documentation de référence reste sans numéro de version. Les évolutions s
 - **Modification :** alignement des instructions sur la décision confirmée d'une économie Etheria indépendante de SCNX, avec PostgreSQL comme source de vérité et `TEAS` comme code de monnaie.
 - **Clarification :** le client et les instructions de l'ancien pont Sweet Tea Economy / SCNX sont identifiés comme hérités et ne doivent pas être configurés ou activés.
 - **Statut :** documentation uniquement. Le code du client SCNX reste présent et devra être retiré ou remplacé dans une évolution de code dédiée ; le service économique PostgreSQL reste à implémenter.
+
+## Version 4 — Revue complète des migrations et préparation de reprise
+
+### Catégorie : Base de données / Migrations
+- **Élément créé :** `documentation/database/PLAN_REPRISE_MIGRATIONS.md`.
+- **Modification :** revue individuelle des migrations SQL `0001` à `0035`, regroupement par domaine, relevé des données initiales, des dépendances et des points de vigilance.
+- **Constats :** `0001` correspond au socle déjà présent sur Supabase et doit être enregistré comme baseline sans rejouer son SQL ; `0002` à `0035` restent à tester et appliquer de façon contrôlée. Le script npm `db:check` vérifie uniquement la connexion et ne constitue pas un exécuteur de migrations.
+- **Écarts identifiés :** références résiduelles à SCNX dans le code économique ; absence de relation SQL entre le catalogue d'espèces et les individus compagnons ; règles de sélection élémentaire et de reproduction à garantir côté métier ; droits institutionnels à modéliser ; fuseaux locaux à affecter à partir de données validées ; cohérence des itinéraires et plans de voyage PNJ à vérifier.
+- **Éléments modifiés :** `documentation/README.md` et `documentation/database/ETAT_DATABASE.md`.
+- **Modification :** ajout du lien vers le plan de reprise et actualisation de l'état technique.
+- **Statut :** documentation et revue uniquement. Aucun code applicatif, migration SQL, donnée ou paramètre Supabase n'a été modifié pendant cette étape.
