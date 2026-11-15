@@ -75,11 +75,13 @@ La règle confirmée est que chaque territoire suit son heure locale et que les 
 
 **Action requise :** vérifier cette cohérence dans le service transactionnel de planification et de déplacement des PNJ, ou ajouter une contrainte adaptée après revue du modèle d'itinéraire.
 
-### 4.6 Sécurité RLS
+### 4.6 Sécurité RLS et privilèges
 
-Les tables du socle distant ont RLS activé sans politique. Plusieurs migrations ultérieures activent également RLS sans politique client. C'est cohérent avec un accès exclusivement serveur, à condition que le backend utilise un rôle PostgreSQL de confiance et que les secrets ne soient jamais transmis aux clients.
+Les six tables du socle distant ont RLS activé sans politique. Plusieurs migrations ultérieures activent également RLS sans politique client. En revanche, plusieurs tables contenant des données personnelles ou appartenant aux joueurs ne déclarent pas explicitement RLS dans les migrations examinées, notamment les personnages, brouillons, inventaires, besoins, camps, compagnons et leurs états.
 
-**Action requise :** documenter et tester le rôle utilisé par le backend. Ne pas exposer les tables directement au navigateur ou à l'application mobile avant définition et tests des politiques. Ne pas ajouter de politiques génériques qui ouvriraient l'écriture aux joueurs sur les données institutionnelles.
+L'absence de RLS n'implique pas automatiquement que ces tables sont accessibles publiquement : cela dépend aussi des privilèges SQL accordés aux rôles Supabase. Ces privilèges n'ont pas été audités pour les tables qui ne sont pas encore présentes sur le projet distant.
+
+**Action requise :** avant toute exposition via l'API Supabase, auditer les privilèges et activer des politiques RLS adaptées aux tables personnelles. Les joueurs ne doivent pouvoir lire ou modifier que leurs propres données selon les règles du jeu. Les catalogues institutionnels et contenus publics doivent conserver des droits d'administration réservés aux institutions et au backend autorisé. Ne pas ajouter de politiques génériques qui ouvriraient l'écriture aux joueurs.
 
 ### 4.7 Index
 
@@ -92,7 +94,7 @@ L'advisor Supabase a signalé l'absence d'index couvrant la clé étrangère `wa
 3. Ajouter un exécuteur de migrations avec verrouillage, transactions lorsque possible, checksum des fichiers et journal d'exécution. Le script `db:check` actuel ne remplit pas ce rôle.
 4. Tester `0002` à `0035` dans un environnement isolé, dans l'ordre numérique, en vérifiant aussi les données initiales et les contraintes.
 5. Corriger les divergences confirmées avant la mise en service : économie indépendante de SCNX, intégrité du catalogue de compagnons, autorisations institutionnelles, fuseaux locaux et cohérence des trajets PNJ.
-6. Définir les politiques d'accès et les rôles backend.
+6. Définir et tester les privilèges SQL et les politiques RLS des tables personnelles et institutionnelles.
 7. Exécuter les tests d'intégration PostgreSQL et les tests métier.
 8. Après sauvegarde vérifiée et autorisation explicite, appliquer les migrations validées au projet cible, puis contrôler le schéma et les données.
 
@@ -105,5 +107,5 @@ L'advisor Supabase a signalé l'absence d'index couvrant la clé étrangère `wa
 - Exécuteur de migrations : **absent des scripts npm examinés**.
 - Divergence SCNX dans le code : **confirmée, correction de code à planifier**.
 - Règle élémentaire des compagnons : **à garantir dans la couche métier et à renforcer dans le schéma**.
-- Politiques RLS : **à concevoir avant toute exposition client**.
+- Privilèges et RLS des tables de jeu : **audit à compléter avant exposition client**.
 - Modifications de code ou de base effectuées pendant cette revue : **aucune**.
