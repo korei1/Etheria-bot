@@ -18,12 +18,14 @@ Ce dossier est la référence documentaire du dépôt Etheria-bot.
 - [Architecture économique indépendante de SCNX](economie/architecture-economique.md)
 - [Politique de conservation des données](database/data-retention-policy.md)
 - [Architecture modulaire](developpement/architecture-modulaire.md)
-- [État et plan de mise en service de la database](database/ETAT_DATABASE.md)
+- [État de la base de données](database/ETAT_DATABASE.md)
+- [Revue des migrations et plan de reprise sécurisé](database/PLAN_REPRISE_MIGRATIONS.md)
 - [Historique des versions documentaires et techniques](HISTORIQUE.md)
 
 ## Structure technique actuelle
 
 - Bot Discord : interface initiale d'Etheria.
 - PostgreSQL : base relationnelle commune prévue pour le bot, le futur site et l'application.
-- Supabase : fournisseur ciblé dans le modèle de configuration actuel, à confirmer lors de la création ou du raccordement du projet.
+- Supabase : projet distant Etheria raccordé et inspecté en lecture seule.
 - Migrations SQL : `src/database/migrations/`.
+- Le script `db:check` vérifie uniquement la connexion ; il n'applique pas les migrations.
