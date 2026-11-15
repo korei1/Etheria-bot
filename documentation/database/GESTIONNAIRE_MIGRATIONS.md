@@ -25,7 +25,7 @@ Toutes les commandes nécessitent `DATABASE_URL`. Elles ferment le pool PostgreS
 
 ## Historique
 
-Le gestionnaire crée `public.etheria_schema_migrations` au premier lancement réel. Chaque entrée conserve le nom du fichier, son checksum, la date, la durée et le statut éventuel de baseline.
+Le gestionnaire crée le schéma privé `etheria_internal` et sa table `schema_migrations` au premier lancement réel. Les droits du schéma sont retirés à `PUBLIC` ; l'historique n'est pas placé dans le schéma API `public`. Chaque entrée conserve le nom du fichier, son checksum, la date, la durée et le statut éventuel de baseline.
 
 ## Déploiement et précautions
 
