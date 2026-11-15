@@ -9,7 +9,7 @@ const DEFAULT_MIGRATIONS_DIRECTORY = join(
   "migrations"
 );
 const MIGRATION_LOCK_KEY = "etheria:postgres:migrations:v1";
-const HISTORY_TABLE = "public.etheria_schema_migrations";
+const HISTORY_TABLE = "etheria_internal.schema_migrations";
 const CORE_TABLES = [
   "accounts",
   "account_identities",
@@ -165,6 +165,9 @@ export async function loadMigrationFiles(
     entries.filter((entry) => entry.isFile() && entry.name.endsWith(".sql"))
       .map((entry) => entry.name)
   );
+  if (names.length === 0 || names[0] !== "0001_initial_core.sql") {
+    throw new Error("Le dossier de migrations doit commencer par 0001_initial_core.sql.");
+  }
 
   const migrations: MigrationFile[] = [];
   for (const name of names) {
@@ -272,6 +275,8 @@ export async function getMigrationPlan(
 }
 
 async function ensureHistoryTable(client: PoolClient): Promise<void> {
+  await client.query("CREATE SCHEMA IF NOT EXISTS etheria_internal");
+  await client.query("REVOKE ALL ON SCHEMA etheria_internal FROM PUBLIC");
   await client.query(`
     CREATE TABLE IF NOT EXISTS ${HISTORY_TABLE} (
       migration_name TEXT PRIMARY KEY,
