@@ -96,6 +96,13 @@ function createFakePool(coreTables: string[] = []) {
           rowCount: coreTables.length
         };
       }
+      if (
+        query.startsWith("CREATE SCHEMA IF NOT EXISTS etheria_internal") ||
+        query.startsWith("REVOKE ALL ON SCHEMA etheria_internal")
+      ) {
+        statements.push("CREATE PRIVATE SCHEMA");
+        return { rows: [], rowCount: 0 };
+      }
       if (query.startsWith("CREATE TABLE IF NOT EXISTS etheria_internal.schema_migrations")) {
         historyExists = true;
         statements.push("CREATE HISTORY");
