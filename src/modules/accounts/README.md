@@ -27,22 +27,27 @@ const account = await getOrCreateAccount(pool, {
 
 Le service ne dépend pas de discord.js. Le futur site et l'application devront retrouver le même compte membre via une identité liée de manière sécurisée, sans créer un deuxième compte de jeu.
 
-## Portefeuille de Teas : règle de source de vérité
+## Portefeuille Etheria
 
-Les Teas des membres restent ceux du module personnalisé **Sweet Tea Economy** de SCNX. Les champs utilisateur existants comprennent notamment `wallet`, `bank-balance` et `history`.
+La décision actuelle est que l'économie d'Etheria est gérée par Etheria, indépendamment de SCNX.
 
-Etheria ne doit pas créer un portefeuille TEAS concurrent, attribuer un nouveau solde de départ ou réinitialiser les données de Sweet Tea Economy.
+- PostgreSQL est la source de vérité des soldes et des transactions.
+- `wallets` contient le portefeuille d'un compte pour une monnaie.
+- `currency_transactions` conserve le journal des mouvements.
+- Le code de monnaie initial est `TEAS`.
+- Discord, le futur site et l'application utiliseront le même portefeuille via les services du backend.
 
-En conséquence, `getOrCreateAccount` ne crée plus de ligne dans `wallets`. Les tables historiques `wallets` et `currency_transactions` issues de la migration initiale restent présentes, mais ne constituent pas la source de vérité des Teas partagés et ne doivent pas être utilisées pour les opérations économiques.
+Le compte de jeu et le portefeuille sont deux responsabilités distinctes. À ce stade, `getOrCreateAccount` ne crée pas encore de portefeuille. Le service économique devra définir explicitement la création du portefeuille et son solde initial, sans créer de second portefeuille par interface.
 
-## Pont d'intégration restant
+## Ancienne intégration SCNX
 
-Le stockage utilisateur de SCNX et la base PostgreSQL d'Etheria sont deux stockages distincts. Le partage effectif du solde entre Sweet Tea Economy et Etheria nécessite un pont sécurisé et idempotent, utilisant le snowflake Discord du membre comme identité commune.
+L'ancien pont Sweet Tea Economy / SCNX n'est plus l'architecture économique retenue. Il ne doit pas être configuré, activé ou utilisé comme source de vérité pour Etheria.
 
-Tant que ce pont n'est pas implémenté et testé, Etheria ne doit pas afficher, créditer ou débiter un solde TEAS indépendant. Les données existantes de Sweet Tea Economy ne doivent pas être remplacées ni réinitialisées.
+Le client `SweetTeaEconomyClient` et les documents associés sont des éléments hérités à retirer ou remplacer dans une évolution dédiée. Ils ne doivent pas être utilisés par les nouveaux parcours économiques.
 
 ## Préconditions techniques
 
-- La migration `0001_initial_core.sql` doit avoir été appliquée.
+- Le socle de base de données `0001_initial_core.sql` est présent sur le projet Supabase inspecté, mais n'est pas enregistré dans l'historique distant des migrations.
 - Le service doit être appelé côté serveur avec un pool PostgreSQL privé. Ne jamais exposer la connexion PostgreSQL ni un secret de service au navigateur.
 - Les politiques RLS et l'architecture d'accès API devront être vérifiées avant d'exposer des données à un client web.
+- Les migrations suivantes doivent être examinées et appliquées de façon contrôlée avant d'utiliser les tables de jeu correspondantes.
