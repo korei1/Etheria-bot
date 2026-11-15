@@ -21,7 +21,7 @@ Toutes les commandes nécessitent `DATABASE_URL`. Elles ferment le pool PostgreS
 - retrait de l'enveloppe historique `BEGIN/COMMIT` afin d'éviter qu'elle ne valide prématurément la transaction du gestionnaire ;
 - simulation et consultation d'état sans création de table ni écriture ;
 - détection du socle initial déjà présent sans historique : aucune tentative de rejouer `0001` n'est autorisée ;
-- baseline limitée à `0001`, vérifiant les six tables, leurs colonnes attendues, les contraintes essentielles, RLS et la présence de TEAS.
+- baseline limitée à `0001`, vérifiant que le schéma public ne contient que les six tables du socle, leurs colonnes attendues, les contraintes essentielles, RLS et la présence de TEAS.
 
 ## Historique
 
