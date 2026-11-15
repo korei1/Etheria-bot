@@ -174,7 +174,7 @@ function etheriaWelcomePayload() {
   const embed = new EmbedBuilder()
     .setTitle("Bienvenue dans Etheria")
     .setDescription(
-      "Un monde vivant, façonné par le temps, les rencontres et les choix de ceux qui l'habitent.\\n\\n" +
+      "Un monde vivant, façonné par le temps, les rencontres et les choix de ceux qui l'habitent.\n\n" +
       "Etheria continue d'exister, même lorsque tu es absent. Explore ses territoires, rencontre ses habitants, découvre ses secrets et construis ta propre histoire."
     )
     .addFields({
@@ -201,7 +201,7 @@ function etheriaDiscoveryPayload() {
   const embed = new EmbedBuilder()
     .setTitle("Découvrir Etheria")
     .setDescription(
-      "Etheria est un monde persistant : il continue d'évoluer même lorsque tu n'es pas connecté.\\n\\n" +
+      "Etheria est un monde persistant : il continue d'évoluer même lorsque tu n'es pas connecté.\n\n" +
       "Au fil de ton aventure, tu explores des territoires, découvres des lieux, rencontres leurs habitants et apprends progressivement à connaître le monde qui t'entoure."
     )
     .addFields(
