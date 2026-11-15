@@ -16,6 +16,7 @@ Ce dossier est la référence documentaire du dépôt Etheria-bot.
 
 - [Modèle de données PostgreSQL](database/schema-v1.md)
 - [Politique de conservation des données](database/data-retention-policy.md)
+- [Architecture modulaire](developpement/architecture-modulaire.md)
 - [État et plan de mise en service de la database](database/ETAT_DATABASE.md)
 - [Historique des versions documentaires et techniques](HISTORIQUE.md)
 
